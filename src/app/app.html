@@ -1,0 +1,113 @@
+<div class="page">
+  <!-- Header -->
+  <header class="header">
+    <h1 class="header__title">Angular Components</h1>
+    <p class="header__subtitle">Custom UI component library showcase</p>
+  </header>
+
+  <main class="content">
+    <!-- Section: Basic Select -->
+    <section class="demo-section">
+      <h2 class="demo-section__title">Basic Select</h2>
+      <p class="demo-section__desc">A simple dropdown with framework options.</p>
+
+      <div class="demo-section__body">
+        <app-custom-select
+          [options]="basicOptions"
+          placeholder="Choose a framework"
+          label="Framework"
+          [ngModel]="basicValue()"
+          (ngModelChange)="basicValue.set($event)"
+          (selectionChange)="onSelectionChange('Basic', $event)"
+        />
+      </div>
+
+      @if (basicValue()) {
+        <div class="demo-section__output">Selected value: <strong>{{ basicValue() }}</strong></div>
+      }
+    </section>
+
+    <!-- Section: Icons -->
+    <section class="demo-section">
+      <h2 class="demo-section__title">Select with Icons</h2>
+      <p class="demo-section__desc">Options can include emoji or icon prefixes.</p>
+
+      <div class="demo-section__body">
+        <app-custom-select
+          [options]="iconOptions"
+          placeholder="Pick a theme"
+          label="Theme"
+          [ngModel]="themeValue()"
+          (ngModelChange)="themeValue.set($event)"
+          (selectionChange)="onSelectionChange('Theme', $event)"
+        />
+      </div>
+    </section>
+
+    <!-- Section: Searchable -->
+    <section class="demo-section">
+      <h2 class="demo-section__title">Searchable Select</h2>
+      <p class="demo-section__desc">Enable search to filter through large option lists.</p>
+
+      <div class="demo-section__body">
+        <app-custom-select
+          [options]="countryOptions"
+          placeholder="Select a country"
+          label="Country"
+          [searchable]="true"
+          [ngModel]="countryValue()"
+          (ngModelChange)="countryValue.set($event)"
+          (selectionChange)="onSelectionChange('Country', $event)"
+        />
+      </div>
+    </section>
+
+    <!-- Section: Disabled options -->
+    <section class="demo-section">
+      <h2 class="demo-section__title">Disabled Options</h2>
+      <p class="demo-section__desc">Individual options can be marked as disabled.</p>
+
+      <div class="demo-section__body">
+        <app-custom-select
+          [options]="planOptions"
+          placeholder="Select plan"
+          label="Subscription Plan"
+          [ngModel]="planValue()"
+          (ngModelChange)="planValue.set($event)"
+          (selectionChange)="onSelectionChange('Plan', $event)"
+        />
+      </div>
+    </section>
+
+    <!-- Section: Disabled state -->
+    <section class="demo-section">
+      <h2 class="demo-section__title">Disabled Select</h2>
+      <p class="demo-section__desc">The entire component can be disabled.</p>
+
+      <div class="demo-section__body">
+        <app-custom-select
+          [options]="basicOptions"
+          placeholder="Can't select"
+          label="Disabled"
+          [disabled]="true"
+        />
+      </div>
+    </section>
+
+    <!-- Event Log -->
+    @if (eventLog().length) {
+      <section class="demo-section event-log">
+        <h2 class="demo-section__title">Event Log</h2>
+        <div class="event-log__entries">
+          @for (entry of eventLog(); track $index) {
+            <div class="event-log__entry">{{ entry }}</div>
+          }
+        </div>
+      </section>
+    }
+  </main>
+
+  <footer class="footer">
+    <p>Built with Angular &amp; custom components</p>
+  </footer>
+</div>

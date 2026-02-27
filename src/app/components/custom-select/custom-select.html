@@ -1,0 +1,91 @@
+<!-- Label -->
+<div class="custom-select" [class.disabled]="disabled" [class.open]="isOpen()">
+  @if (label) {
+    <label class="custom-select__label">{{ label }}</label>
+  }
+
+  <!-- Trigger -->
+  <div
+    class="custom-select__trigger"
+    tabindex="0"
+    role="combobox"
+    [attr.aria-expanded]="isOpen()"
+    aria-haspopup="listbox"
+    (click)="toggle()"
+    (keydown)="onKeyDown($event)"
+  >
+    <span class="custom-select__value" [class.placeholder]="!hasValue()">
+      {{ hasValue() ? getSelectedLabel() : placeholder }}
+    </span>
+
+    <div class="custom-select__actions">
+      @if (hasValue() && !disabled) {
+        <button
+          class="custom-select__clear"
+          type="button"
+          aria-label="Clear selection"
+          (click)="clearSelection($event)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      }
+
+      <span class="custom-select__arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- Dropdown -->
+  @if (isOpen()) {
+    <div class="custom-select__dropdown" role="listbox">
+      @if (searchable) {
+        <div class="custom-select__search">
+          <input
+            type="text"
+            class="custom-select__search-input"
+            placeholder="Search..."
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            (keydown)="onKeyDown($event)"
+            autofocus
+          />
+        </div>
+      }
+
+      <div class="custom-select__options">
+        @for (option of filteredOptions(); track option.value; let i = $index) {
+          <div
+            class="custom-select__option"
+            role="option"
+            [class.selected]="isSelected(option)"
+            [class.focused]="focusedIndex() === i"
+            [class.disabled]="option.disabled"
+            [attr.aria-selected]="isSelected(option)"
+            [attr.aria-disabled]="option.disabled"
+            (click)="selectOption(option)"
+          >
+            @if (option.icon) {
+              <span class="custom-select__option-icon">{{ option.icon }}</span>
+            }
+            <span class="custom-select__option-label">{{ option.label }}</span>
+            @if (isSelected(option)) {
+              <span class="custom-select__check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+            }
+          </div>
+        } @empty {
+          <div class="custom-select__empty">No options found</div>
+        }
+      </div>
+    </div>
+  }
+</div>

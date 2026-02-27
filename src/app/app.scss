@@ -1,0 +1,124 @@
+// ─── Variables ──────────────────────────────────────────
+
+$page-bg: #f8fafc;
+$card-bg: #ffffff;
+$text-primary: #0f172a;
+$text-secondary: #64748b;
+$accent: #6366f1;
+$border: #e2e8f0;
+$radius: 14px;
+
+// ─── Page Layout ────────────────────────────────────────
+
+.page {
+  min-height: 100vh;
+  background: $page-bg;
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Header ─────────────────────────────────────────────
+
+.header {
+  text-align: center;
+  padding: 48px 24px 36px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    margin: 8px 0 0;
+    font-size: 1.0625rem;
+    opacity: 0.85;
+    font-weight: 400;
+  }
+}
+
+// ─── Content ────────────────────────────────────────────
+
+.content {
+  max-width: 640px;
+  width: 100%;
+  margin: -24px auto 0;
+  padding: 0 20px 48px;
+  flex: 1;
+}
+
+// ─── Demo Section ───────────────────────────────────────
+
+.demo-section {
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 6px;
+  }
+
+  &__desc {
+    font-size: 0.875rem;
+    color: $text-secondary;
+    margin: 0 0 20px;
+    line-height: 1.5;
+  }
+
+  &__body {
+    max-width: 360px;
+  }
+
+  &__output {
+    margin-top: 14px;
+    font-size: 0.8125rem;
+    color: $text-secondary;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    display: inline-block;
+
+    strong {
+      color: $accent;
+    }
+  }
+}
+
+// ─── Event Log ──────────────────────────────────────────
+
+.event-log {
+  &__entries {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__entry {
+    font-size: 0.8125rem;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    color: $text-secondary;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-radius: 6px;
+    border-left: 3px solid $accent;
+  }
+}
+
+// ─── Footer ─────────────────────────────────────────────
+
+.footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 0.8125rem;
+  color: $text-secondary;
+  border-top: 1px solid $border;
+}
