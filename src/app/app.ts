@@ -4,11 +4,15 @@ import {
   CustomSelectComponent,
   SelectOption,
 } from './components/custom-select/custom-select';
+import {
+  DropdownLinkCardComponent,
+  DropdownLink,
+} from './components/dropdown-link-card/dropdown-link-card';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CustomSelectComponent, FormsModule],
+  imports: [CustomSelectComponent, DropdownLinkCardComponent, FormsModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -53,7 +57,61 @@ export class App {
     { value: 'enterprise', label: 'Enterprise', disabled: true },
   ];
   planValue = signal<string | number | null>('free');
+  // ── Dropdown Link Cards ───────────────────────────────
+  docsLinks: DropdownLink[] = [
+    {
+      label: 'Angular Docs',
+      url: 'https://angular.dev',
+      icon: '📕',
+      description: 'Official Angular documentation',
+    },
+    {
+      label: 'TypeScript Handbook',
+      url: 'https://www.typescriptlang.org/docs/',
+      icon: '📘',
+      description: 'Learn TypeScript fundamentals',
+    },
+    {
+      label: 'MDN Web Docs',
+      url: 'https://developer.mozilla.org',
+      icon: '🌐',
+      description: 'Web APIs & HTML/CSS/JS reference',
+    },
+    {
+      label: 'RxJS Guide',
+      url: 'https://rxjs.dev/guide/overview',
+      icon: '⚡',
+      description: 'Reactive programming with RxJS',
+    },
+  ];
 
+  socialLinks: DropdownLink[] = [
+    { label: 'GitHub', url: 'https://github.com', icon: '🐙' },
+    { label: 'Twitter / X', url: 'https://x.com', icon: '🐦' },
+    { label: 'LinkedIn', url: 'https://linkedin.com', icon: '💼' },
+    { label: 'Stack Overflow', url: 'https://stackoverflow.com', icon: '📚' },
+  ];
+
+  toolLinks: DropdownLink[] = [
+    {
+      label: 'VS Code',
+      url: 'https://code.visualstudio.com',
+      icon: '🛠️',
+      description: 'Code editor',
+    },
+    {
+      label: 'Figma',
+      url: 'https://figma.com',
+      icon: '🎨',
+      description: 'Design tool',
+    },
+    {
+      label: 'Vercel',
+      url: 'https://vercel.com',
+      icon: '▲',
+      description: 'Deploy platform',
+    },
+  ];
   // ── Event log ─────────────────────────────────────
   eventLog = signal<string[]>([]);
 

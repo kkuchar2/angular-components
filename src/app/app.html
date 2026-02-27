@@ -94,6 +94,47 @@
       </div>
     </section>
 
+    <!-- ─── Dropdown Link Card Demos ─────────────────── -->
+
+    <section class="demo-section">
+      <h2 class="demo-section__title">Dropdown Link Card</h2>
+      <p class="demo-section__desc">A compact card that reveals a list of external links in a dropdown. Clicking a link opens it in a new tab.</p>
+
+      <div class="demo-section__body demo-section__body--cards">
+        <app-dropdown-link-card
+          title="Documentation"
+          icon="📚"
+          [links]="docsLinks"
+        />
+
+        <app-dropdown-link-card
+          title="Social Links"
+          icon="🔗"
+          [links]="socialLinks"
+        />
+
+        <app-dropdown-link-card
+          title="Dev Tools"
+          icon="⚙️"
+          [links]="toolLinks"
+        />
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h2 class="demo-section__title">Disabled Link Card</h2>
+      <p class="demo-section__desc">The card can be disabled to prevent interaction.</p>
+
+      <div class="demo-section__body">
+        <app-dropdown-link-card
+          title="Unavailable"
+          icon="🚫"
+          [links]="docsLinks"
+          [disabled]="true"
+        />
+      </div>
+    </section>
+
     <!-- Event Log -->
     @if (eventLog().length) {
       <section class="demo-section event-log">
