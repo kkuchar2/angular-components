@@ -4,6 +4,7 @@ import {
   Output,
   EventEmitter,
   ElementRef,
+  HostBinding,
   HostListener,
   forwardRef,
   signal,
@@ -43,9 +44,15 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
   @Input() label = '';
   @Input() disabled = false;
   @Input() searchable = false;
+  @Input() width = '100%';
   @Input() compareWith: (a: T, b: T) => boolean = (a, b) => a === b;
 
   @Output() selectionChange = new EventEmitter<SelectOption<T> | null>();
+
+  @HostBinding('style.width')
+  get hostWidth(): string {
+    return this.width;
+  }
 
   isOpen = signal(false);
   searchQuery = signal('');

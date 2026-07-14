@@ -1,0 +1,50 @@
+<div
+  class="custom-input"
+  [class.disabled]="disabled"
+  [class.focused]="isFocused()"
+  [class.has-error]="error"
+>
+  @if (label) {
+    <label class="custom-input__label">{{ label }}</label>
+  }
+
+  <div class="custom-input__field">
+    @if (prefixIcon) {
+      <span class="custom-input__prefix" aria-hidden="true">
+        <svg [lucideIcon]="prefixIcon" [size]="18"></svg>
+      </span>
+    }
+
+    <input
+      class="custom-input__control"
+      [class.custom-input__control--has-clear]="clearable"
+      [type]="type"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      [value]="getValue()"
+      (input)="onInput($event)"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+    />
+
+    @if (clearable && hasValue() && !disabled) {
+      <button
+        class="custom-input__clear"
+        type="button"
+        aria-label="Clear input"
+        (mousedown)="clearValue($event)"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    }
+  </div>
+
+  @if (error) {
+    <span class="custom-input__message custom-input__message--error">{{ error }}</span>
+  } @else if (hint) {
+    <span class="custom-input__message custom-input__message--hint">{{ hint }}</span>
+  }
+</div>

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { CustomSelectDemoComponent } from './pages/custom-select-demo/custom-select-demo.component';
+import { CustomInputDemoComponent } from './pages/custom-input-demo/custom-input-demo.component';
 import { DropdownLinkCardDemoComponent } from './pages/dropdown-link-card-demo/dropdown-link-card-demo.component';
 import { GenericTableDemoComponent } from './pages/generic-table-demo/generic-table-demo.component';
 
@@ -19,6 +20,11 @@ export const routes: Routes = [
     path: 'custom-select',
     component: CustomSelectDemoComponent,
     title: 'Custom Select',
+  },
+  {
+    path: 'custom-input',
+    component: CustomInputDemoComponent,
+    title: 'Custom Input',
   },
   {
     path: 'dropdown-link-card',

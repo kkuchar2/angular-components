@@ -50,6 +50,14 @@ export class CustomSelectDemoComponent {
   ];
   readonly planValue = signal<string | number | null>('free');
 
+  readonly widthOptions: SelectOption[] = [
+    { value: 'xs', label: 'XS' },
+    { value: 'small', label: 'Small option' },
+    { value: 'medium-length', label: 'A medium-length label' },
+    { value: 'very-long', label: 'This is a very long option label that would stretch the trigger' },
+  ];
+  readonly widthValue = signal<string | number | null>('xs');
+
   readonly eventLog = signal<string[]>([]);
 
   onSelectionChange(label: string, option: SelectOption | null): void {

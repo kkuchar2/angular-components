@@ -16,6 +16,11 @@ export const COMPONENT_NAV_ITEMS: ComponentNavItem[] = [
     description: 'Accessible dropdown with search and icons',
   },
   {
+    path: 'custom-input',
+    label: 'Custom Input',
+    description: 'Styled text fields with labels and validation',
+  },
+  {
     path: 'dropdown-link-card',
     label: 'Dropdown Link Card',
     description: 'Card with expandable external links',

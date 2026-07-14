@@ -1,0 +1,117 @@
+<section class="demo-page">
+  <header class="demo-page__header">
+    <h1 class="demo-page__title">Custom Input</h1>
+    <p class="demo-page__subtitle">Styled text fields with labels, hints, validation, and clear actions.</p>
+  </header>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Basic Input</h2>
+    <p class="demo-section__desc">A simple text field with label and placeholder.</p>
+
+    <div class="demo-section__body">
+      <app-custom-input
+        label="Full name"
+        placeholder="Enter your name"
+        [ngModel]="nameValue()"
+        (ngModelChange)="nameValue.set($event)"
+        (valueChange)="onValueChange('Name', $event)"
+      />
+    </div>
+
+    @if (nameValue()) {
+      <div class="demo-section__output">Current value: <strong>{{ nameValue() }}</strong></div>
+    }
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Email with Hint</h2>
+    <p class="demo-section__desc">Helper text below the field for additional guidance.</p>
+
+    <div class="demo-section__body">
+      <app-custom-input
+        label="Email address"
+        type="email"
+        placeholder="you@example.com"
+        [prefixIcon]="LucideMail"
+        hint="We'll never share your email."
+        [ngModel]="emailValue()"
+        (ngModelChange)="emailValue.set($event)"
+        (valueChange)="onValueChange('Email', $event)"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Searchable with Clear</h2>
+    <p class="demo-section__desc">Clear button appears when the field has a value.</p>
+
+    <div class="demo-section__body">
+      <app-custom-input
+        label="Search"
+        type="search"
+        placeholder="Search components..."
+        [prefixIcon]="LucideSearch"
+        [clearable]="true"
+        [ngModel]="searchValue()"
+        (ngModelChange)="searchValue.set($event)"
+        (valueChange)="onValueChange('Search', $event)"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Password &amp; Error State</h2>
+    <p class="demo-section__desc">Validation errors are shown below the field.</p>
+
+    <div class="demo-section__body">
+      <app-custom-input
+        label="Password"
+        type="password"
+        placeholder="At least 8 characters"
+        [error]="passwordValue().length > 0 && passwordValue().length < 8 ? 'Password must be at least 8 characters.' : ''"
+        [ngModel]="passwordValue()"
+        (ngModelChange)="passwordValue.set($event)"
+        (valueChange)="onValueChange('Password', $event)"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Fixed Width</h2>
+    <p class="demo-section__desc">Use the <code>width</code> input to lock the field size regardless of content length.</p>
+
+    <div class="demo-section__body demo-section__body--fixed-width">
+      <app-custom-input
+        label="Project code"
+        placeholder="Short code"
+        width="10rem"
+        hint="Fixed at 10rem wide."
+        [clearable]="true"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Disabled Input</h2>
+    <p class="demo-section__desc">The entire field can be disabled.</p>
+
+    <div class="demo-section__body">
+      <app-custom-input
+        label="Read only"
+        placeholder="Can't edit"
+        [disabled]="true"
+      />
+    </div>
+  </article>
+
+  @if (eventLog().length) {
+    <article class="demo-section event-log">
+      <h2 class="demo-section__title">Event Log</h2>
+      <div class="event-log__entries">
+        @for (entry of eventLog(); track $index) {
+          <div class="event-log__entry">{{ entry }}</div>
+        }
+      </div>
+    </article>
+  }
+</section>

@@ -23,4 +23,11 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.sidebar__title')?.textContent).toContain('Angular Components');
   });
+
+  it('should render topbar theme toggle', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.topbar__theme-toggle')).toBeTruthy();
+  });
 });

@@ -78,6 +78,7 @@
 
   &__value {
     flex: 1;
+    min-width: 0;
     font-size: var(--cs-font-size);
     color: var(--cs-text);
     white-space: nowrap;

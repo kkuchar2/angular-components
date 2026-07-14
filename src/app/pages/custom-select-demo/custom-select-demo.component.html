@@ -74,6 +74,30 @@
   </article>
 
   <article class="demo-section">
+    <h2 class="demo-section__title">Fixed Width</h2>
+    <p class="demo-section__desc">
+      Use the <code>width</code> input to lock the select size. Long labels are truncated with an ellipsis
+      instead of resizing the trigger.
+    </p>
+
+    <div class="demo-section__body demo-section__body--fixed-width">
+      <app-custom-select
+        [options]="widthOptions"
+        placeholder="Pick size"
+        label="Size preset"
+        width="14rem"
+        [ngModel]="widthValue()"
+        (ngModelChange)="widthValue.set($event)"
+        (selectionChange)="onSelectionChange('Fixed width', $event)"
+      />
+    </div>
+
+    @if (widthValue()) {
+      <div class="demo-section__output">Selected value: <strong>{{ widthValue() }}</strong></div>
+    }
+  </article>
+
+  <article class="demo-section">
     <h2 class="demo-section__title">Disabled Select</h2>
     <p class="demo-section__desc">The entire component can be disabled.</p>
 

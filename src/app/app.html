@@ -17,26 +17,35 @@
         </a>
       }
     </nav>
+  </aside>
 
-    <div class="sidebar__footer">
+  <div class="content">
+    <header class="topbar">
+      <div class="topbar__title-group">
+        <h2 class="topbar__title">{{ pageTitle() }}</h2>
+        @if (pageDescription()) {
+          <p class="topbar__subtitle">{{ pageDescription() }}</p>
+        }
+      </div>
+
       <button
         type="button"
-        class="sidebar__theme-toggle"
+        class="topbar__theme-toggle"
         (click)="themeService.toggle()"
         [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
       >
         @if (themeService.theme() === 'dark') {
-          <span aria-hidden="true">☀️</span>
+          <svg [lucideIcon]="LucideSun" [size]="18" aria-hidden="true"></svg>
           <span>Light mode</span>
         } @else {
-          <span aria-hidden="true">🌙</span>
+          <svg [lucideIcon]="LucideMoon" [size]="18" aria-hidden="true"></svg>
           <span>Dark mode</span>
         }
       </button>
-    </div>
-  </aside>
+    </header>
 
-  <main class="main">
-    <router-outlet />
-  </main>
+    <main class="main">
+      <router-outlet />
+    </main>
+  </div>
 </div>
