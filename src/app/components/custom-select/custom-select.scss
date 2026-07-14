@@ -12,8 +12,8 @@
   --cs-hover: var(--color-row-hover, #f2f2f2);
   --cs-input-bg: var(--color-surface-elevated, #f5f5f5);
   --cs-disabled-bg: var(--color-surface-elevated, #f5f5f5);
-  --cs-selected-bg: color-mix(in srgb, var(--color-primary, #1565c0) 12%, var(--color-surface, #ffffff));
-  --cs-selected-text: var(--color-primary-dark, #0d47a1);
+  --cs-selected-bg: var(--color-surface-elevated, #f5f5f5);
+  --cs-selected-text: var(--color-text, #1a1a2e);
   --cs-accent: var(--color-primary, #1565c0);
   --cs-clear-hover-bg: var(--color-error-bg, #fdecea);
   --cs-clear-hover-text: var(--color-error-text, #c62828);
@@ -194,7 +194,6 @@
     &.selected {
       background: var(--cs-selected-bg);
       color: var(--cs-selected-text);
-      font-weight: 500;
     }
 
     &.disabled {
@@ -221,7 +220,7 @@
   &__check {
     display: flex;
     align-items: center;
-    color: var(--cs-accent);
+    color: var(--cs-text-muted);
     flex-shrink: 0;
   }
 
@@ -294,11 +293,6 @@
       color: var(--cs-text-muted);
       background-color: var(--cs-bg);
       transform: translate3d(0, var(--cs-label-float-y), 0) scale(var(--cs-label-scale-float));
-    }
-
-    &.focused.label-floated .custom-select__label--floating,
-    &.open.label-floated .custom-select__label--floating {
-      color: var(--cs-accent);
     }
 
     &.open.label-floated .custom-select__label--floating {
