@@ -14,10 +14,10 @@
   --ci-input-bg: var(--color-surface-elevated, #f5f5f5);
   --ci-disabled-bg: var(--color-surface-elevated, #f5f5f5);
   --ci-accent: var(--color-primary, #1565c0);
-  --ci-clear-hover-bg: color-mix(in srgb, var(--color-warning-bg, #fff3e0) 80%, transparent);
-  --ci-clear-hover-text: var(--color-warning-text, #e65100);
-  --ci-error: var(--color-warning-text, #e65100);
-  --ci-error-bg: color-mix(in srgb, var(--color-warning-bg, #fff3e0) 70%, var(--color-surface, #ffffff));
+  --ci-clear-hover-bg: var(--color-error-bg, #fdecea);
+  --ci-clear-hover-text: var(--color-error-text, #c62828);
+  --ci-error: var(--color-error-text, #c62828);
+  --ci-error-bg: var(--color-error-bg, #fdecea);
   --ci-border-radius: var(--radius-md, 0);
   --ci-font-size: 0.9375rem;
   --ci-transition: 0.2s;

@@ -1,10 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   TemplateRef,
   ViewContainerRef,
-  computed,
   inject,
   input,
   signal,
@@ -56,11 +56,6 @@ export class DropdownLinkCardComponent {
   readonly isOpen = signal(false);
   readonly focusedIndex = signal(-1);
 
-  readonly activeDescendantId = computed(() => {
-    const index = this.focusedIndex();
-    return index >= 0 ? this.linkId(index) : null;
-  });
-
   private overlayRef: OverlayRef | null = null;
   private overlaySubscriptions: Subscription[] = [];
 
@@ -72,6 +67,8 @@ export class DropdownLinkCardComponent {
         takeUntilDestroyed(),
       )
       .subscribe(() => this.close());
+
+    inject(DestroyRef).onDestroy(() => this.destroyOverlay());
   }
 
   linkId(index: number): string {
@@ -120,15 +117,16 @@ export class DropdownLinkCardComponent {
 
     this.overlayRef.attach(new TemplatePortal(this.dropdownTemplate(), this.viewContainerRef));
 
+    // Route overlay key events through `onKeyDown` so roving focus keeps working
+    // once DOM focus has moved onto a link inside the overlay.
     this.overlaySubscriptions.push(
       this.overlayRef.backdropClick().subscribe(() => this.close()),
-      this.overlayRef.keydownEvents().subscribe((event) => {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          this.close();
-        }
-      }),
+      this.overlayRef.keydownEvents().subscribe((event) => this.onKeyDown(event)),
     );
+
+    if (this.links().length > 0) {
+      queueMicrotask(() => this.focusActiveLink());
+    }
   }
 
   close(): void {
@@ -138,11 +136,17 @@ export class DropdownLinkCardComponent {
 
     this.isOpen.set(false);
     this.focusedIndex.set(-1);
+    this.destroyOverlay();
+    // `preventScroll` avoids a jarring scroll jump when the menu is dismissed by
+    // an outside scroll and focus returns to the trigger.
+    this.triggerRef().nativeElement.focus({ preventScroll: true });
+  }
+
+  private destroyOverlay(): void {
     this.overlaySubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.overlaySubscriptions = [];
     this.overlayRef?.dispose();
     this.overlayRef = null;
-    this.triggerRef().nativeElement.focus();
   }
 
   onLinkClick(): void {

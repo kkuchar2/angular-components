@@ -96,8 +96,8 @@
         <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
         <tr
           mat-row
-          *matRowDef="let row; columns: displayedColumns(); let dataIndex = dataIndex"
-          [class]="rowStripeClass(dataIndex)"
+          *matRowDef="let row; columns: displayedColumns(); let index = index"
+          [class]="rowStripeClass(index)"
           [class.generic-table__row--clickable]="rowClickable()"
           [attr.role]="rowClickable() ? 'button' : null"
           [attr.tabindex]="rowClickable() ? 0 : null"
@@ -182,8 +182,8 @@
         <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
         <tr
           mat-row
-          *matRowDef="let row; columns: displayedColumns(); let dataIndex = dataIndex"
-          [class]="rowStripeClass(dataIndex)"
+          *matRowDef="let row; columns: displayedColumns(); let index = index"
+          [class]="rowStripeClass(index)"
           [class.generic-table__row--clickable]="rowClickable()"
           [attr.role]="rowClickable() ? 'button' : null"
           [attr.tabindex]="rowClickable() ? 0 : null"

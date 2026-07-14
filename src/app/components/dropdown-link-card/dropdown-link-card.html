@@ -7,7 +7,7 @@
     [disabled]="disabled()"
     [attr.aria-expanded]="isOpen()"
     [attr.aria-controls]="menuId"
-    [attr.aria-activedescendant]="activeDescendantId()"
+    aria-haspopup="menu"
     (click)="toggle()"
     (keydown)="onKeyDown($event)"
   >
@@ -34,6 +34,7 @@
       <a
         class="link-card__link"
         role="menuitem"
+        tabindex="-1"
         [id]="linkId(i)"
         [class.focused]="focusedIndex() === i"
         [href]="link.url"

@@ -15,8 +15,8 @@
   --cs-selected-bg: color-mix(in srgb, var(--color-primary, #1565c0) 12%, var(--color-surface, #ffffff));
   --cs-selected-text: var(--color-primary-dark, #0d47a1);
   --cs-accent: var(--color-primary, #1565c0);
-  --cs-clear-hover-bg: color-mix(in srgb, var(--color-warning-bg, #fff3e0) 80%, transparent);
-  --cs-clear-hover-text: var(--color-warning-text, #e65100);
+  --cs-clear-hover-bg: var(--color-error-bg, #fdecea);
+  --cs-clear-hover-text: var(--color-error-text, #c62828);
   --cs-shadow: var(--shadow-md, 0 4px 12px rgb(0 0 0 / 10%));
   --cs-search-divider: var(--color-row-divider, rgb(0 0 0 / 4%));
   --cs-scrollbar: var(--color-border, #e0e4ef);

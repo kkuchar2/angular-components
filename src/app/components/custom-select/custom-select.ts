@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   TemplateRef,
   ViewContainerRef,
@@ -116,6 +117,8 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
         takeUntilDestroyed(),
       )
       .subscribe(() => this.close());
+
+    inject(DestroyRef).onDestroy(() => this.destroyOverlay());
   }
 
   writeValue(value: T | null): void {
@@ -213,12 +216,18 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
     this.isOpen.set(false);
     this.searchQuery.set('');
     this.focusedIndex.set(-1);
+    this.destroyOverlay();
+    this.onTouched();
+    // `preventScroll` avoids a jarring scroll jump when the panel is dismissed by
+    // an outside scroll and focus returns to the trigger.
+    this.triggerRef().nativeElement.focus({ preventScroll: true });
+  }
+
+  private destroyOverlay(): void {
     this.overlaySubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.overlaySubscriptions = [];
     this.overlayRef?.dispose();
     this.overlayRef = null;
-    this.onTouched();
-    this.triggerRef().nativeElement.focus();
   }
 
   selectOption(option: SelectOption<T>): void {
@@ -286,16 +295,17 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
         break;
 
       case 'Enter':
-      case ' ':
         event.preventDefault();
-        if (this.isOpen() && this.focusedIndex() >= 0) {
-          const option = options[this.focusedIndex()];
-          if (option && !option.disabled) {
-            this.selectOption(option);
-          }
-        } else {
-          this.open();
+        this.activateFocusedOption();
+        break;
+
+      case ' ':
+        // Space activates from the trigger, but must stay typeable in the search field.
+        if (event.target instanceof HTMLInputElement) {
+          break;
         }
+        event.preventDefault();
+        this.activateFocusedOption();
         break;
 
       case 'Escape':
@@ -350,6 +360,17 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
 
   onTriggerBlur(): void {
     this.isFocused.set(false);
+  }
+
+  private activateFocusedOption(): void {
+    if (this.isOpen() && this.focusedIndex() >= 0) {
+      const option = this.filteredOptions()[this.focusedIndex()];
+      if (option && !option.disabled) {
+        this.selectOption(option);
+      }
+    } else {
+      this.open();
+    }
   }
 
   private getInitialFocusIndex(): number {
