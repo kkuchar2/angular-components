@@ -210,6 +210,9 @@ export class GenericTableDemoComponent {
   readonly showcaseRows = signal<DemoUser[]>(this.rows().slice(0, 5));
   readonly emptyRows = signal<DemoUser[]>([]);
 
+  /** Large dataset for the virtual-scroll demo (2 500 rows). */
+  readonly virtualRows = signal<DemoUser[]>(this.buildVirtualRows(2500));
+
   readonly selectedRow = signal<DemoUser | null>(null);
 
   onRowClick(row: DemoUser): void {
@@ -231,5 +234,26 @@ export class GenericTableDemoComponent {
 
   statusBadgeClass(status: string): string {
     return `home__status-badge home__status-badge--${status.toLowerCase()}`;
+  }
+
+  private buildVirtualRows(count: number): DemoUser[] {
+    const departments = ['Engineering', 'Operations', 'Support', 'Finance'] as const;
+    const statuses = ['Active', 'Inactive', 'Pending'] as const;
+    const base = this.rows();
+
+    return Array.from({ length: count }, (_, index) => {
+      const template = base[index % base.length];
+      const id = index + 1;
+
+      return {
+        ...template,
+        id,
+        name: `${template.name} #${id}`,
+        email: `user${id}@example.com`,
+        department: departments[index % departments.length],
+        status: statuses[index % statuses.length],
+        createdAt: new Date(2020 + (index % 6), index % 12, (index % 28) + 1),
+      };
+    });
   }
 }

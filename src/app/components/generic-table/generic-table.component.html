@@ -1,4 +1,4 @@
-<div class="generic-table" [class.generic-table--fill]="isFilling()">
+<div class="generic-table" [class.generic-table--fill]="isFilling()" [class.generic-table--virtualized]="virtualized()">
   @if (showColumnToggle() && hideableColumns().length > 0) {
     <mat-chip-listbox
       class="generic-table__column-toggle"
@@ -14,90 +14,31 @@
     </mat-chip-listbox>
   }
 
-  <div
-    class="generic-table__scroll"
-    [class.generic-table__scroll--fill]="isFilling()"
-    [style.height]="height()"
-    [style.max-height]="maxHeight()"
-  >
-    <table
-      mat-table
-      matSort
-      [dataSource]="dataSource"
-      [trackBy]="trackBy()"
-      (matSortChange)="sortChange.emit($event)"
+  @if (virtualized()) {
+    <cdk-virtual-scroll-viewport
+      class="generic-table__scroll generic-table__scroll--virtual"
+      [class.generic-table__scroll--fill]="isFilling()"
+      [style.height]="height()"
+      [style.max-height]="maxHeight()"
+      [style.--gt-row-height.px]="rowHeight()"
+      [itemSize]="rowHeight()"
+      [minBufferPx]="virtualMinBufferPx()"
+      [maxBufferPx]="virtualMaxBufferPx()"
     >
-      <colgroup>
-        @for (key of displayedColumns(); track key) {
-          @if (getColumnByKey(key); as col) {
-            <col [ngStyle]="columnColStyles(col)" />
-          }
-        }
-      </colgroup>
+      <ng-container *ngTemplateOutlet="tableContent" />
+    </cdk-virtual-scroll-viewport>
+  } @else {
+    <div
+      class="generic-table__scroll"
+      [class.generic-table__scroll--fill]="isFilling()"
+      [style.height]="height()"
+      [style.max-height]="maxHeight()"
+    >
+      <ng-container *ngTemplateOutlet="tableContent" />
+    </div>
+  }
 
-      @for (col of columns(); track col.key) {
-        <ng-container [matColumnDef]="col.key">
-          @if (col.sortable) {
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              [ngStyle]="columnWidthStyles(col)"
-              [style.text-align]="col.align ?? 'left'"
-            >
-              {{ col.header }}
-            </th>
-          } @else {
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="generic-table__header--plain"
-              [ngStyle]="columnWidthStyles(col)"
-              [style.text-align]="col.align ?? 'left'"
-            >
-              {{ col.header }}
-            </th>
-          }
-          <td
-            mat-cell
-            *matCellDef="let row"
-            [ngStyle]="columnWidthStyles(col)"
-            [style.text-align]="col.align ?? 'left'"
-          >
-            @if (getCellTemplate(col.key); as template) {
-              <div class="generic-table__cell-content">
-                <ng-container
-                  [ngTemplateOutlet]="template"
-                  [ngTemplateOutletContext]="cellContext(row)"
-                />
-              </div>
-            } @else {
-              {{ formatCell(col, row) }}
-            }
-          </td>
-        </ng-container>
-      }
-
-      <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
-      <tr
-        mat-row
-        *matRowDef="let row; columns: displayedColumns()"
-        [class.generic-table__row--clickable]="rowClickable()"
-        [attr.role]="rowClickable() ? 'button' : null"
-        [attr.tabindex]="rowClickable() ? 0 : null"
-        (click)="onRowClick(row)"
-        (keydown.enter)="onRowClick(row)"
-      ></tr>
-
-      <tr *matNoDataRow>
-        <td class="generic-table__empty" [attr.colspan]="displayedColumns().length">
-          {{ emptyMessage() }}
-        </td>
-      </tr>
-    </table>
-  </div>
-
-  @if (paginated()) {
+  @if (showPaginator()) {
     <mat-paginator
       [pageSize]="pageSize()"
       [pageSizeOptions]="pageSizeOptions()"
@@ -105,3 +46,83 @@
     />
   }
 </div>
+
+<ng-template #tableContent>
+  <table
+    mat-table
+    matSort
+    [dataSource]="dataSource"
+    [trackBy]="trackBy()"
+    [fixedLayout]="virtualized()"
+    (matSortChange)="sortChange.emit($event)"
+  >
+    <colgroup>
+      @for (key of displayedColumns(); track key) {
+        @if (getColumnByKey(key); as col) {
+          <col [ngStyle]="columnColStyles(col)" />
+        }
+      }
+    </colgroup>
+
+    @for (col of columns(); track col.key) {
+      <ng-container [matColumnDef]="col.key">
+        @if (col.sortable) {
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            [ngStyle]="columnWidthStyles(col)"
+            [style.text-align]="col.align ?? 'left'"
+          >
+            {{ col.header }}
+          </th>
+        } @else {
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            class="generic-table__header--plain"
+            [ngStyle]="columnWidthStyles(col)"
+            [style.text-align]="col.align ?? 'left'"
+          >
+            {{ col.header }}
+          </th>
+        }
+        <td
+          mat-cell
+          *matCellDef="let row"
+          [ngStyle]="columnWidthStyles(col)"
+          [style.text-align]="col.align ?? 'left'"
+        >
+          @if (getCellTemplate(col.key); as template) {
+            <div class="generic-table__cell-content">
+              <ng-container
+                [ngTemplateOutlet]="template"
+                [ngTemplateOutletContext]="cellContext(row)"
+              />
+            </div>
+          } @else {
+            {{ formatCell(col, row) }}
+          }
+        </td>
+      </ng-container>
+    }
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns(); let i = index"
+      [class]="rowStripeClass(i)"
+      [class.generic-table__row--clickable]="rowClickable()"
+      [attr.role]="rowClickable() ? 'button' : null"
+      [attr.tabindex]="rowClickable() ? 0 : null"
+      (click)="onRowClick(row)"
+      (keydown.enter)="onRowClick(row)"
+    ></tr>
+
+    <tr *matNoDataRow>
+      <td class="generic-table__empty" [attr.colspan]="displayedColumns().length">
+        {{ emptyMessage() }}
+      </td>
+    </tr>
+  </table>
+</ng-template>

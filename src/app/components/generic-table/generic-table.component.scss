@@ -103,12 +103,25 @@ table {
   border-bottom: 1px solid var(--gt-header-accent);
 }
 
-.mat-mdc-row:nth-child(odd) .mat-mdc-cell {
+.mat-mdc-row.generic-table__row--odd .mat-mdc-cell {
   background: var(--gt-row-odd-bg);
 }
 
-.mat-mdc-row:nth-child(even) .mat-mdc-cell {
+.mat-mdc-row.generic-table__row--even .mat-mdc-cell {
   background: var(--gt-row-even-bg);
+}
+
+// Virtual scroll needs a fixed row height and stable scroll anchoring.
+.generic-table--virtualized {
+  .mat-mdc-row .mat-mdc-cell {
+    height: var(--gt-row-height, 48px);
+    box-sizing: border-box;
+  }
+}
+
+.generic-table__scroll--virtual {
+  overflow: auto;
+  overflow-anchor: none;
 }
 
 // Match the sort-arrow gutter (12px icon + 6px margin) on non-sortable headers.

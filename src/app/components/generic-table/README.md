@@ -8,6 +8,7 @@ A configurable, signal-based table built on Angular Material's `mat-table`. Drop
 - Column-driven configuration (`ColumnDef<T>`)
 - Optional per-column sorting
 - Optional pagination, or a scrollable body with a sticky header
+- Optional virtual scroll for large datasets (CDK viewport + fixed row height)
 - Chip-based column visibility toggle
 - Custom cell templates (badges, links, avatars, anything)
 - Optional row click (mouse + keyboard) with hover styling
@@ -94,7 +95,9 @@ The row type `T` is inferred from the `data`/`columns` inputs, so `cell`,
 | ----------------- | ------------------------ | --------------------- | -------------------------------------------------------- |
 | `columns`         | `ColumnDef<T>[]`         | required              | Column definitions in display order.                     |
 | `data`            | `readonly T[]`           | required              | Row data (sorted/paginated client-side).                 |
-| `paginated`       | `boolean`                | `false`               | Show a paginator; otherwise the body scrolls.            |
+| `paginated`       | `boolean`                | `false`               | Show a paginator; otherwise the body scrolls. Ignored when `virtualized`. |
+| `virtualized`     | `boolean`                | `false`               | Virtual scroll — only visible rows are rendered. Requires a bounded height and `rowHeight`. |
+| `rowHeight`       | `number`                 | `48`                  | Fixed row height in pixels (required for `virtualized`). |
 | `pageSize`        | `number`                 | `10`                  | Initial page size.                                       |
 | `pageSizeOptions` | `number[]`               | `[5, 10, 25, 50]`     | Page size choices.                                       |
 | `showColumnToggle`| `boolean`                | `true`                | Show the column visibility chips.                        |
@@ -124,8 +127,28 @@ the height it's given. There are three ways to decide that height:
 | **Fixed height** (always this tall) | `height="320px"` |
 | **Fill the remaining space** of a sized column | `heightMode="fill"` |
 | **Fill the parent's full height** | `heightMode="parent"` |
+| **Large dataset, scroll through all rows** | `[virtualized]="true"` + `height` + `rowHeight` |
 
 `height` and `maxHeight` accept any CSS length (`px`, `rem`, `vh`, `cqh`, …).
+
+#### Virtual scroll
+
+Use when you need to scroll through thousands of rows without pagination. Wraps the table in a
+CDK virtual scroll viewport so only visible rows are in the DOM. Requires:
+
+- A bounded scroll height (`height`, `maxHeight`, or `heightMode="fill"` / `"parent"`)
+- A fixed `rowHeight` (default `48` px) — custom cell templates should fit within that height
+- `paginated` is ignored while `virtualized` is on
+
+```html
+<app-generic-table
+  [columns]="columns"
+  [data]="rows()"
+  [virtualized]="true"
+  [rowHeight]="48"
+  height="400px"
+/>
+```
 
 #### `heightMode="fill"` (fill remaining space)
 

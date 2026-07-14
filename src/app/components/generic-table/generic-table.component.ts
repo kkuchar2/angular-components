@@ -12,6 +12,10 @@ import {
   TrackByFunction,
   viewChild,
 } from '@angular/core';
+import {
+  CdkFixedSizeVirtualScroll,
+  CdkVirtualScrollViewport,
+} from '@angular/cdk/scrolling';
 import { MatChipListboxChange, MatChipsModule } from '@angular/material/chips';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
@@ -31,7 +35,16 @@ import { ColumnDef, GenericTableCellContext, GenericTableHeightMode } from './ge
  */
 @Component({
   selector: 'app-generic-table',
-  imports: [NgStyle, NgTemplateOutlet, MatTableModule, MatSortModule, MatPaginatorModule, MatChipsModule],
+  imports: [
+    NgStyle,
+    NgTemplateOutlet,
+    CdkVirtualScrollViewport,
+    CdkFixedSizeVirtualScroll,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatChipsModule,
+  ],
   templateUrl: './generic-table.component.html',
   styleUrl: './generic-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +52,7 @@ import { ColumnDef, GenericTableCellContext, GenericTableHeightMode } from './ge
     class: 'generic-table-host',
     '[class.generic-table-host--fill]': 'isFillMode()',
     '[class.generic-table-host--parent]': 'isParentMode()',
+    '[class.generic-table-host--virtualized]': 'virtualized()',
   },
 })
 export class GenericTableComponent<T = unknown> {
@@ -46,8 +60,16 @@ export class GenericTableComponent<T = unknown> {
   readonly columns = input.required<ColumnDef<T>[]>();
   /** Row data. Sorting and pagination are applied client-side. */
   readonly data = input.required<readonly T[]>();
-  /** Show a paginator. When `false` the table body scrolls instead. */
+  /** Show a paginator. When `false` the table body scrolls instead. Ignored when `virtualized`. */
   readonly paginated = input(false);
+  /**
+   * Render rows with CDK virtual scroll (only visible rows in the DOM).
+   * Requires a bounded scroll height (`height`, `maxHeight`, or `heightMode` `'fill'`/`'parent'`)
+   * and a fixed `rowHeight`. Mutually exclusive with `paginated`.
+   */
+  readonly virtualized = input(false);
+  /** Fixed row height in pixels. Required when `virtualized` is true. Defaults to `48`. */
+  readonly rowHeight = input(48);
   /** Initial page size (used when `paginated` is true). */
   readonly pageSize = input(10);
   /** Page size options offered by the paginator. */
@@ -87,6 +109,11 @@ export class GenericTableComponent<T = unknown> {
   readonly isFillMode = computed(() => this.isFilling() && this.heightMode() === 'fill');
   /** Fill the parent's full height. */
   readonly isParentMode = computed(() => this.isFilling() && this.heightMode() === 'parent');
+  /** Paginator is shown only when pagination is on and virtualization is off. */
+  readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
+  /** Buffer sizes for the virtual scroll viewport, derived from `rowHeight`. */
+  readonly virtualMinBufferPx = computed(() => this.rowHeight() * 10);
+  readonly virtualMaxBufferPx = computed(() => this.rowHeight() * 20);
   /**
    * `trackBy` for rows (improves rendering and preserves DOM state).
    * Defaults to identity tracking, matching `mat-table`'s built-in behavior.
@@ -165,7 +192,7 @@ export class GenericTableComponent<T = unknown> {
     });
 
     effect(() => {
-      this.dataSource.paginator = this.paginated() ? (this.paginator() ?? null) : null;
+      this.dataSource.paginator = this.showPaginator() ? (this.paginator() ?? null) : null;
     });
   }
 
@@ -246,6 +273,11 @@ export class GenericTableComponent<T = unknown> {
     if (this.rowClickable()) {
       this.rowClick.emit(row);
     }
+  }
+
+  /** Zebra-striping class based on the row's data index (works with virtual scroll). */
+  rowStripeClass(index: number): 'generic-table__row--even' | 'generic-table__row--odd' {
+    return index % 2 === 0 ? 'generic-table__row--even' : 'generic-table__row--odd';
   }
 
   private getRowValue(row: T, key: string): string | number {
