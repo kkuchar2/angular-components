@@ -380,7 +380,10 @@ export class GenericTableComponent<T = unknown> {
       return;
     }
 
+    this.resetSyncedColumnWidths(headerTable, headerTrack, bodyTable);
     shell.style.setProperty('--gt-virtual-table-width', `${contentWidth}px`);
+    // Flush layout so body cells reflect the cleared widths before we measure.
+    void bodyTable.offsetWidth;
 
     const widths = this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
 
@@ -404,7 +407,7 @@ export class GenericTableComponent<T = unknown> {
     headerTrack: HTMLElement,
     contentWidth: number,
   ): void {
-    this.resetSyncedColumnWidths(headerTable, headerTrack);
+    this.resetSyncedColumnWidths(headerTable, headerTrack, bodyTable);
 
     const widths = this.computeVirtualColumnWidths(contentWidth);
     const tableWidth = Math.max(contentWidth, widths.reduce((sum, width) => sum + width, 0));
@@ -461,8 +464,18 @@ export class GenericTableComponent<T = unknown> {
     return Number.isNaN(pixels) ? 0 : pixels;
   }
 
-  private resetSyncedColumnWidths(headerTable: HTMLElement, headerTrack: HTMLElement): void {
+  private resetSyncedColumnWidths(
+    headerTable: HTMLElement,
+    headerTrack: HTMLElement,
+    bodyTable?: HTMLElement | null,
+  ): void {
     headerTable.querySelectorAll('col').forEach((col) => {
+      if (col instanceof HTMLElement) {
+        col.style.width = '';
+      }
+    });
+
+    bodyTable?.querySelectorAll('col').forEach((col) => {
       if (col instanceof HTMLElement) {
         col.style.width = '';
       }
