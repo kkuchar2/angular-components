@@ -210,13 +210,37 @@ export class GenericTableDemoComponent {
   readonly showcaseRows = signal<DemoUser[]>(this.rows().slice(0, 5));
   readonly emptyRows = signal<DemoUser[]>([]);
 
-  /** Large dataset for the virtual-scroll demo (2 500 rows). */
+  /** Always empty — used to remount a fresh virtual table instance (cold start). */
+  readonly virtualColdEmptyRows: DemoUser[] = [];
+
+  /** Toggles between populated and cleared on the same instance (hot empty). */
+  readonly virtualHotRows = signal<DemoUser[]>(this.buildVirtualRows(250));
+
+  /** Stable populated reference for column-width comparison. */
+  readonly virtualReferenceRows = signal<DemoUser[]>(this.buildVirtualRows(250));
+
+  /** Increment to destroy and recreate the cold-start table. */
+  readonly virtualColdMount = signal(0);
+
+  /** Large dataset for the virtual-scroll demo (10 000 rows). */
   readonly virtualRows = signal<DemoUser[]>(this.buildVirtualRows(10_000));
 
   readonly selectedRow = signal<DemoUser | null>(null);
 
   onRowClick(row: DemoUser): void {
     this.selectedRow.set(row);
+  }
+
+  loadVirtualHotRows(): void {
+    this.virtualHotRows.set(this.buildVirtualRows(250));
+  }
+
+  clearVirtualHotRows(): void {
+    this.virtualHotRows.set([]);
+  }
+
+  resetVirtualColdDemo(): void {
+    this.virtualColdMount.update((mount) => mount + 1);
   }
 
   trackById(_index: number, row: DemoUser): number {

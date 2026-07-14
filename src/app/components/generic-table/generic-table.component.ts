@@ -66,6 +66,12 @@ export class GenericTableComponent<T = unknown> {
   private layoutSyncFrame: number | null = null;
   private virtualResizeObserver: ResizeObserver | null = null;
   private observedVirtualViewport: HTMLElement | null = null;
+  private virtualColumnLayoutCache: {
+    contentWidth: number;
+    tableWidth: number;
+    layoutKey: string;
+    widths: number[];
+  } | null = null;
 
   /** True while the scroll body is moving; suppresses row hover styling. */
   readonly isScrolling = signal(false);
@@ -370,35 +376,117 @@ export class GenericTableComponent<T = unknown> {
     shell.style.setProperty('--gt-virtual-scrollbar-gutter', `${gutter}px`);
 
     if (this.data().length === 0) {
-      shell.classList.add('generic-table__virtual-shell--empty');
-      shell.style.setProperty('--gt-virtual-table-width', 'max-content');
-      this.resetSyncedColumnWidths(headerTable, headerTrack);
-      this.syncVirtualColumnWidthsFromDefinitions(headerTable, headerTrack);
-
-      const tableWidth = Math.max(headerTable.scrollWidth, bodyTable.scrollWidth);
-
-      if (tableWidth > contentWidth) {
-        shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
-      }
-
+      this.syncEmptyVirtualTableLayout(
+        shell,
+        headerTable,
+        bodyTable,
+        headerTrack,
+        contentWidth,
+      );
       return;
     }
 
-    shell.classList.remove('generic-table__virtual-shell--empty');
     shell.style.setProperty('--gt-virtual-table-width', `${contentWidth}px`);
 
-    this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
+    const widths = this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
 
     const tableWidth = Math.max(
       contentWidth,
       bodyTable.scrollWidth,
       headerTable.scrollWidth,
+      widths?.reduce((sum, width) => sum + width, 0) ?? 0,
     );
 
     if (tableWidth > contentWidth) {
       shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
       this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
     }
+  }
+
+  private syncEmptyVirtualTableLayout(
+    shell: HTMLElement,
+    headerTable: HTMLElement,
+    bodyTable: HTMLElement,
+    headerTrack: HTMLElement,
+    contentWidth: number,
+  ): void {
+    const layoutKey = this.getVirtualColumnLayoutKey();
+    const cache = this.virtualColumnLayoutCache;
+    let widths: number[];
+    let tableWidth = contentWidth;
+
+    if (
+      cache &&
+      cache.layoutKey === layoutKey &&
+      cache.contentWidth === contentWidth
+    ) {
+      widths = cache.widths;
+      tableWidth = cache.tableWidth;
+    } else {
+      this.resetSyncedColumnWidths(headerTable, headerTrack);
+      widths = this.computeVirtualColumnWidths(contentWidth);
+      tableWidth = Math.max(contentWidth, widths.reduce((sum, width) => sum + width, 0));
+    }
+
+    shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
+    this.applyVirtualColumnWidths(widths, headerTable, headerTrack, bodyTable);
+  }
+
+  private getVirtualColumnLayoutKey(): string {
+    return this.displayedColumns()
+      .map((key) => {
+        const column = this.columnByKey().get(key);
+        return `${key}:${column?.width ?? ''}:${column?.minWidth ?? ''}`;
+      })
+      .join('|');
+  }
+
+  private computeVirtualColumnWidths(contentWidth: number): number[] {
+    const keys = this.displayedColumns();
+    const widths = new Array<number>(keys.length).fill(0);
+    const flexIndices: number[] = [];
+    let fixedTotal = 0;
+
+    keys.forEach((key, index) => {
+      const column = this.columnByKey().get(key);
+
+      if (column?.width) {
+        widths[index] = this.parseLengthToPx(column.width, contentWidth);
+        fixedTotal += widths[index];
+        return;
+      }
+
+      if (column?.minWidth && this.isPositiveLength(column.minWidth)) {
+        widths[index] = this.parseLengthToPx(column.minWidth, contentWidth);
+        fixedTotal += widths[index];
+        return;
+      }
+
+      flexIndices.push(index);
+    });
+
+    const remaining = Math.max(0, contentWidth - fixedTotal);
+    const flexWidth = flexIndices.length > 0 ? remaining / flexIndices.length : 0;
+
+    for (const index of flexIndices) {
+      widths[index] = flexWidth;
+    }
+
+    return widths;
+  }
+
+  private parseLengthToPx(value: string, referenceWidth: number): number {
+    const trimmed = value.trim();
+
+    if (trimmed.endsWith('%')) {
+      const percent = Number.parseFloat(trimmed);
+
+      return Number.isNaN(percent) ? 0 : (referenceWidth * percent) / 100;
+    }
+
+    const pixels = Number.parseFloat(trimmed);
+
+    return Number.isNaN(pixels) ? 0 : pixels;
   }
 
   private resetSyncedColumnWidths(headerTable: HTMLElement, headerTrack: HTMLElement): void {
@@ -422,79 +510,91 @@ export class GenericTableComponent<T = unknown> {
     });
   }
 
-  private syncVirtualColumnWidthsFromDefinitions(
+  private syncVirtualColumnWidths(
+    headerTable: HTMLElement,
+    bodyTable: HTMLElement,
+    viewport: HTMLElement,
+    headerTrack: HTMLElement,
+  ): number[] | null {
+    const bodyRow = viewport.querySelector('.mat-mdc-row');
+
+    if (!bodyRow) {
+      return null;
+    }
+
+    const bodyCells = bodyRow.querySelectorAll('.mat-mdc-cell');
+
+    if (!bodyCells.length) {
+      return null;
+    }
+
+    const widths = Array.from(bodyCells)
+      .filter((cell): cell is HTMLElement => cell instanceof HTMLElement)
+      .map((cell) => cell.getBoundingClientRect().width);
+
+    const contentWidth = viewport.clientWidth;
+    const tableWidth = Math.max(
+      contentWidth,
+      widths.reduce((sum, width) => sum + width, 0),
+    );
+
+    this.virtualColumnLayoutCache = {
+      contentWidth,
+      tableWidth,
+      layoutKey: this.getVirtualColumnLayoutKey(),
+      widths,
+    };
+
+    this.applyVirtualColumnWidths(widths, headerTable, headerTrack, bodyTable, bodyCells);
+    return widths;
+  }
+
+  private applyVirtualColumnWidths(
+    widths: readonly number[],
     headerTable: HTMLElement,
     headerTrack: HTMLElement,
+    bodyTable?: HTMLElement | null,
+    referenceCells?: NodeListOf<Element>,
   ): void {
     const headerCols = headerTable.querySelectorAll('col');
     const headerCells = headerTrack.querySelectorAll('.mat-mdc-header-cell');
+    const bodyCols = bodyTable?.querySelectorAll('col');
 
-    this.displayedColumns().forEach((key, index) => {
-      const colStyles = this.columnColStyles().get(key);
-      const cellStyles = this.columnWidthStyles().get(key);
+    widths.forEach((width, index) => {
+      const widthPx = `${width}px`;
       const headerCol = headerCols[index];
       const headerCell = headerCells[index];
+      const bodyCol = bodyCols?.[index];
+      const referenceCell = referenceCells?.[index];
 
-      if (colStyles?.['width'] && headerCol instanceof HTMLElement) {
-        headerCol.style.width = colStyles['width'];
+      if (headerCol instanceof HTMLElement) {
+        headerCol.style.width = widthPx;
+      }
+
+      if (bodyCol instanceof HTMLElement) {
+        bodyCol.style.width = widthPx;
       }
 
       if (!(headerCell instanceof HTMLElement)) {
         return;
       }
 
-      if (cellStyles?.['width']) {
-        headerCell.style.width = cellStyles['width'];
-        headerCell.style.maxWidth = cellStyles['width'];
-      }
+      headerCell.style.width = widthPx;
+      headerCell.style.maxWidth = widthPx;
 
-      if (cellStyles?.['min-width']) {
-        headerCell.style.minWidth = cellStyles['min-width'];
-      }
-    });
-  }
-
-  private syncVirtualColumnWidths(
-    headerTable: HTMLElement,
-    bodyTable: HTMLElement,
-    viewport: HTMLElement,
-    headerTrack: HTMLElement,
-  ): void {
-    const bodyRow = viewport.querySelector('.mat-mdc-row');
-
-    if (!bodyRow) {
-      return;
-    }
-
-    const bodyCells = bodyRow.querySelectorAll('.mat-mdc-cell');
-
-    if (!bodyCells.length) {
-      return;
-    }
-
-    const headerCols = headerTable.querySelectorAll('col');
-    const headerCells = headerTrack.querySelectorAll('.mat-mdc-header-cell');
-
-    bodyCells.forEach((bodyCell, index) => {
-      if (!(bodyCell instanceof HTMLElement)) {
+      if (referenceCell instanceof HTMLElement) {
+        const referenceStyle = getComputedStyle(referenceCell);
+        headerCell.style.paddingLeft = referenceStyle.paddingLeft;
+        headerCell.style.paddingRight = referenceStyle.paddingRight;
+        headerCell.style.textAlign = referenceStyle.textAlign;
         return;
       }
 
-      const widthPx = `${bodyCell.getBoundingClientRect().width}px`;
-      const headerCol = headerCols[index];
-      const headerCell = headerCells[index];
+      const columnKey = this.displayedColumns()[index];
+      const column = this.columnByKey().get(columnKey);
 
-      if (headerCol instanceof HTMLElement) {
-        headerCol.style.width = widthPx;
-      }
-
-      if (headerCell instanceof HTMLElement) {
-        const bodyStyle = getComputedStyle(bodyCell);
-        headerCell.style.width = widthPx;
-        headerCell.style.maxWidth = widthPx;
-        headerCell.style.paddingLeft = bodyStyle.paddingLeft;
-        headerCell.style.paddingRight = bodyStyle.paddingRight;
-        headerCell.style.textAlign = bodyStyle.textAlign;
+      if (column?.align) {
+        headerCell.style.textAlign = column.align;
       }
     });
   }

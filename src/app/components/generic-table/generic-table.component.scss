@@ -150,16 +150,6 @@ table {
     max-width: none;
   }
 
-  // Without body rows there is nothing to measure from; size columns from header
-  // content and explicit column defs instead of stretching across the viewport.
-  .generic-table__virtual-shell--empty {
-    .generic-table__virtual-header table,
-    .generic-table__scroll--virtual table {
-      min-width: 0;
-      max-width: 100%;
-    }
-  }
-
   // Keep header/body text inset identical in the split-table layout.
   .generic-table__virtual-header .mat-mdc-header-cell,
   .generic-table__scroll--virtual .mat-mdc-cell {
