@@ -6,6 +6,7 @@ import {
   contentChildren,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
   input,
   linkedSignal,
@@ -13,6 +14,7 @@ import {
   signal,
   TemplateRef,
   TrackByFunction,
+  untracked,
   viewChild,
 } from '@angular/core';
 import {
@@ -61,6 +63,9 @@ import { ColumnDef, GenericTableCellContext, GenericTableHeightMode } from './ge
 export class GenericTableComponent<T = unknown> {
   private readonly destroyRef = inject(DestroyRef);
   private scrollEndTimer: ReturnType<typeof setTimeout> | null = null;
+  private layoutSyncFrame: number | null = null;
+  private virtualResizeObserver: ResizeObserver | null = null;
+  private observedVirtualViewport: HTMLElement | null = null;
 
   /** True while the scroll body is moving; suppresses row hover styling. */
   readonly isScrolling = signal(false);
@@ -118,6 +123,9 @@ export class GenericTableComponent<T = unknown> {
 
   private readonly sort = viewChild(MatSort);
   private readonly paginator = viewChild(MatPaginator);
+  private readonly virtualHeaderTrack = viewChild<ElementRef<HTMLElement>>('virtualHeaderTrack');
+  private readonly virtualViewport = viewChild<CdkVirtualScrollViewport>('virtualViewport');
+  private readonly virtualShell = viewChild<ElementRef<HTMLElement>>('virtualShell');
   private readonly cellDirectives = contentChildren(GenericTableCellDirective);
   private readonly cellContextCache = new WeakMap<object, GenericTableCellContext<T>>();
 
@@ -184,6 +192,52 @@ export class GenericTableComponent<T = unknown> {
       if (this.scrollEndTimer != null) {
         clearTimeout(this.scrollEndTimer);
       }
+
+      if (this.layoutSyncFrame != null) {
+        cancelAnimationFrame(this.layoutSyncFrame);
+      }
+
+      this.virtualResizeObserver?.disconnect();
+    });
+
+    this.virtualResizeObserver = new ResizeObserver(() => this.queueVirtualLayoutSync());
+
+    effect(() => {
+      if (!this.virtualized()) {
+        if (this.observedVirtualViewport) {
+          this.virtualResizeObserver?.unobserve(this.observedVirtualViewport);
+          this.observedVirtualViewport = null;
+        }
+
+        return;
+      }
+
+      this.displayedColumns();
+      this.columns();
+      this.columnColStyles();
+      this.data();
+      this.virtualShell();
+      this.virtualHeaderTrack();
+      this.virtualViewport();
+
+      const viewportEl = this.virtualViewport()?.elementRef.nativeElement;
+
+      if (viewportEl && viewportEl !== this.observedVirtualViewport) {
+        if (this.observedVirtualViewport) {
+          this.virtualResizeObserver?.unobserve(this.observedVirtualViewport);
+        }
+
+        this.virtualResizeObserver?.observe(viewportEl);
+        this.observedVirtualViewport = viewportEl;
+      }
+
+      this.queueVirtualLayoutSync();
+
+      // Virtual rows can render a frame after the shell; retry once layout settles.
+      untracked(() => {
+        setTimeout(() => this.queueVirtualLayoutSync(), 0);
+        setTimeout(() => this.queueVirtualLayoutSync(), 100);
+      });
     });
 
     this.dataSource.sortingDataAccessor = (row, columnKey) => {
@@ -267,6 +321,112 @@ export class GenericTableComponent<T = unknown> {
       this.isScrolling.set(false);
       this.scrollEndTimer = null;
     }, 150);
+  }
+
+  onVirtualScroll(event: Event): void {
+    this.onScroll();
+
+    const viewport = event.currentTarget as HTMLElement;
+    const headerTrack = this.virtualHeaderTrack()?.nativeElement;
+
+    if (headerTrack && headerTrack.scrollLeft !== viewport.scrollLeft) {
+      headerTrack.scrollLeft = viewport.scrollLeft;
+    }
+  }
+
+  private queueVirtualLayoutSync(): void {
+    if (this.layoutSyncFrame != null) {
+      cancelAnimationFrame(this.layoutSyncFrame);
+    }
+
+    // Two frames lets mat-table finish applying column widths before we measure.
+    this.layoutSyncFrame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.layoutSyncFrame = null;
+        this.syncVirtualTableLayout();
+      });
+    });
+  }
+
+  private syncVirtualTableLayout(): void {
+    const viewport = this.virtualViewport()?.elementRef.nativeElement;
+    const shell = this.virtualShell()?.nativeElement;
+    const headerTrack = this.virtualHeaderTrack()?.nativeElement;
+
+    if (!viewport || !shell || !headerTrack) {
+      return;
+    }
+
+    const headerTable = headerTrack.querySelector('table');
+    const bodyTable = viewport.querySelector('table');
+
+    if (!(headerTable instanceof HTMLElement) || !(bodyTable instanceof HTMLElement)) {
+      return;
+    }
+
+    const gutter = viewport.offsetWidth - viewport.clientWidth;
+    const contentWidth = viewport.clientWidth;
+
+    shell.style.setProperty('--gt-virtual-scrollbar-gutter', `${gutter}px`);
+    shell.style.setProperty('--gt-virtual-table-width', `${contentWidth}px`);
+
+    this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
+
+    const tableWidth = Math.max(
+      contentWidth,
+      bodyTable.scrollWidth,
+      headerTable.scrollWidth,
+    );
+
+    if (tableWidth > contentWidth) {
+      shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
+      this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
+    }
+  }
+
+  private syncVirtualColumnWidths(
+    headerTable: HTMLElement,
+    bodyTable: HTMLElement,
+    viewport: HTMLElement,
+    headerTrack: HTMLElement,
+  ): void {
+    const bodyRow = viewport.querySelector('.mat-mdc-row');
+
+    if (!bodyRow) {
+      return;
+    }
+
+    const bodyCells = bodyRow.querySelectorAll('.mat-mdc-cell');
+
+    if (!bodyCells.length) {
+      return;
+    }
+
+    const headerCols = headerTable.querySelectorAll('col');
+    const headerCells = headerTrack.querySelectorAll('.mat-mdc-header-cell');
+
+    bodyCells.forEach((bodyCell, index) => {
+      if (!(bodyCell instanceof HTMLElement)) {
+        return;
+      }
+
+      const widthPx = `${bodyCell.getBoundingClientRect().width}px`;
+      const headerCol = headerCols[index];
+      const headerCell = headerCells[index];
+
+      if (headerCol instanceof HTMLElement) {
+        headerCol.style.width = widthPx;
+      }
+
+      if (headerCell instanceof HTMLElement) {
+        const bodyStyle = getComputedStyle(bodyCell);
+        headerCell.style.width = widthPx;
+        headerCell.style.maxWidth = widthPx;
+        headerCell.style.paddingLeft = bodyStyle.paddingLeft;
+        headerCell.style.paddingRight = bodyStyle.paddingRight;
+        headerCell.style.textAlign = bodyStyle.textAlign;
+      }
+    });
   }
 
   rowStripeClass(index: number): 'generic-table__row--even' | 'generic-table__row--odd' {

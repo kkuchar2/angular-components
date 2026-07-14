@@ -80,6 +80,7 @@ table {
   width: max-content;
   min-width: 100%;
   table-layout: fixed;
+  border-collapse: collapse;
 }
 
 .mat-mdc-header-cell,
@@ -111,15 +112,66 @@ table {
   background: var(--gt-row-even-bg);
 }
 
-// Virtual scroll needs a fixed row height and stable scroll anchoring.
+// Virtual scroll: pin the header outside the transformed content wrapper.
+.generic-table__virtual-shell {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--gt-radius);
+}
+
+.generic-table__virtual-shell--fill {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.generic-table__virtual-header {
+  flex-shrink: 0;
+  overflow: hidden;
+  // Match the viewport content box so flexible columns distribute identically.
+  width: calc(100% - var(--gt-virtual-scrollbar-gutter, 0px));
+  box-sizing: border-box;
+}
+
 .generic-table__scroll--virtual {
+  flex: 1 1 0;
+  min-height: 0;
   overflow: auto;
   overflow-anchor: none;
+  scroll-behavior: auto;
+  scrollbar-gutter: stable;
 }
 
 .generic-table--virtualized {
-  .cdk-virtual-scroll-content-wrapper {
-    contain: content;
+  .generic-table__virtual-header table,
+  .generic-table__scroll--virtual table {
+    width: var(--gt-virtual-table-width, 100%);
+    min-width: 0;
+    max-width: none;
+  }
+
+  // Keep header/body text inset identical in the split-table layout.
+  .generic-table__virtual-header .mat-mdc-header-cell,
+  .generic-table__scroll--virtual .mat-mdc-cell {
+    padding-inline: 16px;
+    box-sizing: border-box;
+  }
+
+  .generic-table__virtual-header {
+    .mat-sort-header-container {
+      width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+
+    .mat-sort-header-container::before {
+      content: none;
+    }
+
+    .mat-sort-header-content {
+      padding: 0;
+      margin: 0;
+    }
   }
 
   .mat-mdc-row .mat-mdc-cell {
@@ -128,9 +180,11 @@ table {
   }
 }
 
-// Match the sort-arrow gutter (12px icon + 6px margin) on non-sortable headers.
-.generic-table__header--plain {
-  padding-inline-end: 18px;
+// Reserve sort-arrow space on non-sortable headers in single-table mode only.
+.generic-table:not(.generic-table--virtualized) {
+  .generic-table__header--plain {
+    padding-inline-end: 18px;
+  }
 }
 
 .mat-sort-header:not(.mat-sort-header-disabled) .mat-sort-header-container {
