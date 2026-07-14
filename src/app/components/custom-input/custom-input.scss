@@ -183,7 +183,7 @@
       max-width: calc(100% - 28px);
       overflow: hidden;
       font-size: var(--ci-font-size);
-      font-weight: 500;
+      font-weight: 400;
       line-height: 1;
       color: var(--ci-text-muted);
       letter-spacing: normal;
@@ -220,6 +220,10 @@
 
     &.disabled.label-floated .custom-input__label--floating {
       background-color: var(--ci-disabled-bg);
+    }
+
+    .custom-input__control::placeholder {
+      font-weight: 400;
     }
   }
 }

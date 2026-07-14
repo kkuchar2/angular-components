@@ -34,7 +34,7 @@
     </span>
 
     <div class="custom-select__actions">
-      @if (hasValue() && !isDisabled()) {
+      @if (clearable() && hasValue() && !isDisabled()) {
         <button
           class="custom-select__clear"
           type="button"

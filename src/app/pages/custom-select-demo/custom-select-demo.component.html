@@ -123,6 +123,23 @@
   </article>
 
   <article class="demo-section">
+    <h2 class="demo-section__title">Clearable Select</h2>
+    <p class="demo-section__desc">Set <code>clearable</code> to show a clear button when a value is selected.</p>
+
+    <div class="demo-section__body">
+      <app-custom-select
+        [options]="basicOptions"
+        placeholder="Choose a framework"
+        label="Framework"
+        [clearable]="true"
+        [ngModel]="basicValue()"
+        (ngModelChange)="basicValue.set($event)"
+        (selectionChange)="onSelectionChange('Clearable', $event)"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
     <h2 class="demo-section__title">Disabled Select</h2>
     <p class="demo-section__desc">The entire component can be disabled.</p>
 

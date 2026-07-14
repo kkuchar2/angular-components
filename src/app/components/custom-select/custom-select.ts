@@ -63,6 +63,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
   readonly label = input('');
   readonly appearance = input<CustomSelectAppearance>('default');
   readonly disabled = input(false);
+  readonly clearable = input(false);
   readonly searchable = input(false);
   readonly width = input('100%');
   readonly compareWith = input<(a: T, b: T) => boolean>((a, b) => a === b);
