@@ -57,6 +57,7 @@
                   mat-header-cell
                   *matHeaderCellDef
                   mat-sort-header
+                  [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                   [style.text-align]="col.align ?? 'left'"
                 >
                   {{ col.header }}
@@ -65,6 +66,7 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
+                  [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                   [style.text-align]="col.align ?? 'left'"
                 >
                   {{ col.header }}

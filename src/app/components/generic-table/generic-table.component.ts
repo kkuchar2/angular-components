@@ -368,6 +368,23 @@ export class GenericTableComponent<T = unknown> {
     const contentWidth = viewport.clientWidth;
 
     shell.style.setProperty('--gt-virtual-scrollbar-gutter', `${gutter}px`);
+
+    if (this.data().length === 0) {
+      shell.classList.add('generic-table__virtual-shell--empty');
+      shell.style.setProperty('--gt-virtual-table-width', 'max-content');
+      this.resetSyncedColumnWidths(headerTable, headerTrack);
+      this.syncVirtualColumnWidthsFromDefinitions(headerTable, headerTrack);
+
+      const tableWidth = Math.max(headerTable.scrollWidth, bodyTable.scrollWidth);
+
+      if (tableWidth > contentWidth) {
+        shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
+      }
+
+      return;
+    }
+
+    shell.classList.remove('generic-table__virtual-shell--empty');
     shell.style.setProperty('--gt-virtual-table-width', `${contentWidth}px`);
 
     this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
@@ -382,6 +399,59 @@ export class GenericTableComponent<T = unknown> {
       shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
       this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
     }
+  }
+
+  private resetSyncedColumnWidths(headerTable: HTMLElement, headerTrack: HTMLElement): void {
+    headerTable.querySelectorAll('col').forEach((col) => {
+      if (col instanceof HTMLElement) {
+        col.style.width = '';
+      }
+    });
+
+    headerTrack.querySelectorAll('.mat-mdc-header-cell').forEach((cell) => {
+      if (!(cell instanceof HTMLElement)) {
+        return;
+      }
+
+      cell.style.width = '';
+      cell.style.maxWidth = '';
+      cell.style.minWidth = '';
+      cell.style.paddingLeft = '';
+      cell.style.paddingRight = '';
+      cell.style.textAlign = '';
+    });
+  }
+
+  private syncVirtualColumnWidthsFromDefinitions(
+    headerTable: HTMLElement,
+    headerTrack: HTMLElement,
+  ): void {
+    const headerCols = headerTable.querySelectorAll('col');
+    const headerCells = headerTrack.querySelectorAll('.mat-mdc-header-cell');
+
+    this.displayedColumns().forEach((key, index) => {
+      const colStyles = this.columnColStyles().get(key);
+      const cellStyles = this.columnWidthStyles().get(key);
+      const headerCol = headerCols[index];
+      const headerCell = headerCells[index];
+
+      if (colStyles?.['width'] && headerCol instanceof HTMLElement) {
+        headerCol.style.width = colStyles['width'];
+      }
+
+      if (!(headerCell instanceof HTMLElement)) {
+        return;
+      }
+
+      if (cellStyles?.['width']) {
+        headerCell.style.width = cellStyles['width'];
+        headerCell.style.maxWidth = cellStyles['width'];
+      }
+
+      if (cellStyles?.['min-width']) {
+        headerCell.style.minWidth = cellStyles['min-width'];
+      }
+    });
   }
 
   private syncVirtualColumnWidths(
