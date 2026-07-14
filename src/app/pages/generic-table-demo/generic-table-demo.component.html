@@ -1,0 +1,127 @@
+<section class="home">
+  <header class="home__header">
+    <h1 class="home__title">Generic Table</h1>
+    <p class="home__subtitle">
+      Sortable, paginated table with custom cells, height modes, and column toggles.
+      Use the theme toggle in the sidebar to preview dark mode.
+    </p>
+  </header>
+
+  <article class="home__demo">
+    <h2 class="home__demo-title">1. Full featured</h2>
+    <p class="home__demo-hint">
+      Sorting, pagination, column toggle chips, a custom status badge cell, and clickable rows.
+    </p>
+
+    <app-generic-table
+      [columns]="columns"
+      [data]="rows()"
+      [paginated]="true"
+      [pageSize]="5"
+      [rowClickable]="true"
+      [trackBy]="trackById"
+      (rowClick)="onRowClick($event)"
+    >
+      <ng-template appGenericTableCell="status" [appGenericTableCellFor]="rows()" let-row>
+        <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>
+      </ng-template>
+    </app-generic-table>
+
+    @if (selectedRow(); as selected) {
+      <p class="home__selection">
+        Selected: <strong>{{ selected.name }}</strong> ({{ selected.email }})
+      </p>
+    }
+  </article>
+
+  <article class="home__demo home__demo--playground">
+    <h2 class="home__demo-title">2. Height constraints playground</h2>
+    <p class="home__demo-hint">
+      Drag a card by its header to move it. Drag the bottom-right corner of the dashed
+      container to resize it. Each card uses twelve rows with pagination off.
+    </p>
+
+    <div class="home__playground">
+      @for (demo of heightDemos; track demo.id) {
+        <article class="home__height-card" cdkDrag cdkDragBoundary=".home__playground">
+          <header class="home__height-card__header" cdkDragHandle>
+            <div class="home__height-card__meta">
+              <code class="home__height-code">{{ demo.code }}</code>
+              <p class="home__height-desc">{{ demo.description }}</p>
+            </div>
+            <span class="home__height-card__drag" aria-hidden="true" title="Drag to move">⠿</span>
+          </header>
+
+          <div
+            class="home__height-card__shell"
+            [class.home__height-card__shell--column]="demo.flexShell"
+            appResizeObserver
+            #shellObserver="appResizeObserver"
+          >
+            @if (demo.toolbar) {
+              <p class="home__height-card__toolbar">Toolbar / filters</p>
+            }
+
+            <app-generic-table
+              [columns]="scrollColumns"
+              [data]="rows()"
+              [showColumnToggle]="false"
+              [trackBy]="trackById"
+              [heightMode]="demo.heightMode ?? 'auto'"
+              [height]="demo.height ?? null"
+              [maxHeight]="demo.maxHeight ?? null"
+            />
+          </div>
+
+          <footer class="home__height-card__footer">
+            @if (shellObserver.size(); as size) {
+              <span class="home__height-card__size">{{ size.width }}×{{ size.height }}px</span>
+            }
+            <span class="home__height-card__hint">↘ resize</span>
+          </footer>
+        </article>
+      }
+    </div>
+  </article>
+
+  <article class="home__demo">
+    <h2 class="home__demo-title">3. Custom cell templates</h2>
+    <p class="home__demo-hint">
+      Multiple projected templates: an initials avatar, a mailto link, and a status badge.
+    </p>
+
+    <app-generic-table
+      [columns]="showcaseColumns"
+      [data]="showcaseRows()"
+      [showColumnToggle]="false"
+      [trackBy]="trackById"
+    >
+      <ng-template appGenericTableCell="name" [appGenericTableCellFor]="showcaseRows()" let-row>
+        <span class="home__user">
+          <span class="home__avatar">{{ initials(row) }}</span>
+          {{ row.name }}
+        </span>
+      </ng-template>
+
+      <ng-template appGenericTableCell="email" [appGenericTableCellFor]="showcaseRows()" let-row>
+        <a class="home__link" [href]="'mailto:' + row.email">{{ row.email }}</a>
+      </ng-template>
+
+      <ng-template appGenericTableCell="status" [appGenericTableCellFor]="showcaseRows()" let-row>
+        <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>
+      </ng-template>
+    </app-generic-table>
+  </article>
+
+  <article class="home__demo">
+    <h2 class="home__demo-title">4. Empty state</h2>
+    <p class="home__demo-hint">A centered message replaces the rows when there is no data.</p>
+
+    <app-generic-table
+      [columns]="columns"
+      [data]="emptyRows()"
+      [showColumnToggle]="false"
+      emptyMessage="No team members found."
+    />
+  </article>
+</section>

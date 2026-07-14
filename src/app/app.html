@@ -1,154 +1,42 @@
-<div class="page">
-  <!-- Header -->
-  <header class="header">
-    <h1 class="header__title">Angular Components</h1>
-    <p class="header__subtitle">Custom UI component library showcase</p>
-  </header>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <h1 class="sidebar__title">Angular Components</h1>
+      <p class="sidebar__subtitle">Component showcase</p>
+    </div>
 
-  <main class="content">
-    <!-- Section: Basic Select -->
-    <section class="demo-section">
-      <h2 class="demo-section__title">Basic Select</h2>
-      <p class="demo-section__desc">A simple dropdown with framework options.</p>
-
-      <div class="demo-section__body">
-        <app-custom-select
-          [options]="basicOptions"
-          placeholder="Choose a framework"
-          label="Framework"
-          [ngModel]="basicValue()"
-          (ngModelChange)="basicValue.set($event)"
-          (selectionChange)="onSelectionChange('Basic', $event)"
-        />
-      </div>
-
-      @if (basicValue()) {
-        <div class="demo-section__output">Selected value: <strong>{{ basicValue() }}</strong></div>
+    <nav class="sidebar__nav" aria-label="Components">
+      @for (item of navItems; track item.path) {
+        <a
+          class="sidebar__link"
+          [routerLink]="item.path"
+          routerLinkActive="sidebar__link--active"
+        >
+          <span class="sidebar__link-label">{{ item.label }}</span>
+          <span class="sidebar__link-desc">{{ item.description }}</span>
+        </a>
       }
-    </section>
+    </nav>
 
-    <!-- Section: Icons -->
-    <section class="demo-section">
-      <h2 class="demo-section__title">Select with Icons</h2>
-      <p class="demo-section__desc">Options can include emoji or icon prefixes.</p>
+    <div class="sidebar__footer">
+      <button
+        type="button"
+        class="sidebar__theme-toggle"
+        (click)="themeService.toggle()"
+        [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
+        @if (themeService.theme() === 'dark') {
+          <span aria-hidden="true">☀️</span>
+          <span>Light mode</span>
+        } @else {
+          <span aria-hidden="true">🌙</span>
+          <span>Dark mode</span>
+        }
+      </button>
+    </div>
+  </aside>
 
-      <div class="demo-section__body">
-        <app-custom-select
-          [options]="iconOptions"
-          placeholder="Pick a theme"
-          label="Theme"
-          [ngModel]="themeValue()"
-          (ngModelChange)="themeValue.set($event)"
-          (selectionChange)="onSelectionChange('Theme', $event)"
-        />
-      </div>
-    </section>
-
-    <!-- Section: Searchable -->
-    <section class="demo-section">
-      <h2 class="demo-section__title">Searchable Select</h2>
-      <p class="demo-section__desc">Enable search to filter through large option lists.</p>
-
-      <div class="demo-section__body">
-        <app-custom-select
-          [options]="countryOptions"
-          placeholder="Select a country"
-          label="Country"
-          [searchable]="true"
-          [ngModel]="countryValue()"
-          (ngModelChange)="countryValue.set($event)"
-          (selectionChange)="onSelectionChange('Country', $event)"
-        />
-      </div>
-    </section>
-
-    <!-- Section: Disabled options -->
-    <section class="demo-section">
-      <h2 class="demo-section__title">Disabled Options</h2>
-      <p class="demo-section__desc">Individual options can be marked as disabled.</p>
-
-      <div class="demo-section__body">
-        <app-custom-select
-          [options]="planOptions"
-          placeholder="Select plan"
-          label="Subscription Plan"
-          [ngModel]="planValue()"
-          (ngModelChange)="planValue.set($event)"
-          (selectionChange)="onSelectionChange('Plan', $event)"
-        />
-      </div>
-    </section>
-
-    <!-- Section: Disabled state -->
-    <section class="demo-section">
-      <h2 class="demo-section__title">Disabled Select</h2>
-      <p class="demo-section__desc">The entire component can be disabled.</p>
-
-      <div class="demo-section__body">
-        <app-custom-select
-          [options]="basicOptions"
-          placeholder="Can't select"
-          label="Disabled"
-          [disabled]="true"
-        />
-      </div>
-    </section>
-
-    <!-- ─── Dropdown Link Card Demos ─────────────────── -->
-
-    <section class="demo-section">
-      <h2 class="demo-section__title">Dropdown Link Card</h2>
-      <p class="demo-section__desc">A compact card that reveals a list of external links in a dropdown. Clicking a link opens it in a new tab.</p>
-
-      <div class="demo-section__body demo-section__body--cards">
-        <app-dropdown-link-card
-          title="Documentation"
-          icon="📚"
-          [links]="docsLinks"
-        />
-
-        <app-dropdown-link-card
-          title="Social Links"
-          icon="🔗"
-          [links]="socialLinks"
-        />
-
-        <app-dropdown-link-card
-          title="Dev Tools"
-          icon="⚙️"
-          [links]="toolLinks"
-        />
-      </div>
-    </section>
-
-    <section class="demo-section">
-      <h2 class="demo-section__title">Disabled Link Card</h2>
-      <p class="demo-section__desc">The card can be disabled to prevent interaction.</p>
-
-      <div class="demo-section__body">
-        <app-dropdown-link-card
-          title="Unavailable"
-          icon="🚫"
-          [links]="docsLinks"
-          [disabled]="true"
-        />
-      </div>
-    </section>
-
-    <!-- Event Log -->
-    @if (eventLog().length) {
-      <section class="demo-section event-log">
-        <h2 class="demo-section__title">Event Log</h2>
-        <div class="event-log__entries">
-          @for (entry of eventLog(); track $index) {
-            <div class="event-log__entry">{{ entry }}</div>
-          }
-        </div>
-      </section>
-    }
+  <main class="main">
+    <router-outlet />
   </main>
-
-  <footer class="footer">
-    <p>Built with Angular &amp; custom components</p>
-  </footer>
 </div>

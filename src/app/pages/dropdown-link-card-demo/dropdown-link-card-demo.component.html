@@ -1,0 +1,52 @@
+<section class="demo-page">
+  <header class="demo-page__header">
+    <h1 class="demo-page__title">Dropdown Link Card</h1>
+    <p class="demo-page__subtitle">
+      Compact cards that reveal external links in a dropdown menu.
+    </p>
+  </header>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Lucide Icons</h2>
+    <p class="demo-section__desc">
+      Pass Lucide icon components for the card and link icons.
+    </p>
+
+    <div class="demo-section__body demo-section__body--cards">
+      <app-dropdown-link-card
+        title="Documentation"
+        [icon]="lucideCardIcon"
+        [links]="lucideLinks"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Image Icons</h2>
+    <p class="demo-section__desc">
+      Pass image URLs for the card and link icons instead.
+    </p>
+
+    <div class="demo-section__body demo-section__body--cards">
+      <app-dropdown-link-card
+        title="Frameworks"
+        [icon]="imageCardIcon"
+        [links]="imageLinks"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Disabled Link Card</h2>
+    <p class="demo-section__desc">The card can be disabled to prevent interaction.</p>
+
+    <div class="demo-section__body">
+      <app-dropdown-link-card
+        title="Unavailable"
+        [icon]="lucideCardIcon"
+        [links]="lucideLinks"
+        [disabled]="true"
+      />
+    </div>
+  </article>
+</section>

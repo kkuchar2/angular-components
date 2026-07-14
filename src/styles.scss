@@ -1,22 +1,60 @@
-/* You can add global styles to this file, and also import other style files */
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+@use '@angular/material' as mat;
+@use 'styles/variables';
+@use 'styles/base';
 
 html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #f8fafc;
-  color: #0f172a;
-  line-height: 1.5;
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  @include mat.theme(
+    (
+      color: (
+        theme-type: dark,
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+
+  @include mat.theme-overrides(
+    (
+      primary: #e5e5e5,
+      on-primary: #171717,
+      primary-container: #404040,
+      on-primary-container: #f5f5f5,
+      secondary: #d4d4d4,
+      secondary-container: #404040,
+      on-secondary-container: #f5f5f5,
+      surface: #141414,
+      surface-container: #1f1f1f,
+      surface-container-high: #262626,
+      surface-container-highest: #2e2e2e,
+      surface-container-low: #1a1a1a,
+      surface-container-lowest: #0a0a0a,
+      background: #0a0a0a,
+      on-surface: #f5f5f5,
+      on-surface-variant: #a3a3a3,
+      outline: #525252,
+      outline-variant: #3a3a3a,
+      surface-tint: #e5e5e5,
+      inverse-primary: #525252,
+    )
+  );
 }

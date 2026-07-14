@@ -7,23 +7,29 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+import { DropdownLinkCardIconComponent } from './dropdown-link-card-icon.component';
+import type { DropdownLinkCardIcon } from './dropdown-link-card.types';
+
+export type { DropdownLinkCardIcon } from './dropdown-link-card.types';
+export type { DropdownLinkCardIconImage, DropdownLinkCardIconLucide } from './dropdown-link-card.types';
+
 export interface DropdownLink {
   label: string;
   url: string;
-  icon?: string;
+  icon?: DropdownLinkCardIcon;
   description?: string;
 }
 
 @Component({
   selector: 'app-dropdown-link-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DropdownLinkCardIconComponent],
   templateUrl: './dropdown-link-card.html',
   styleUrl: './dropdown-link-card.scss',
 })
 export class DropdownLinkCardComponent {
   @Input() title = '';
-  @Input() icon = '';
+  @Input() icon?: DropdownLinkCardIcon;
   @Input() links: DropdownLink[] = [];
   @Input() disabled = false;
 

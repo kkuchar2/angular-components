@@ -1,5 +1,4 @@
 <div class="link-card" [class.open]="isOpen()" [class.disabled]="disabled">
-  <!-- Card trigger -->
   <button
     class="link-card__trigger"
     type="button"
@@ -9,7 +8,9 @@
     (keydown)="onKeyDown($event)"
   >
     @if (icon) {
-      <span class="link-card__icon">{{ icon }}</span>
+      <span class="link-card__icon">
+        <app-dropdown-link-card-icon [icon]="icon" [size]="20" />
+      </span>
     }
 
     <span class="link-card__title">{{ title }}</span>
@@ -21,7 +22,6 @@
     </span>
   </button>
 
-  <!-- Dropdown -->
   @if (isOpen()) {
     <div class="link-card__dropdown">
       @for (link of links; track link.url; let i = $index) {
@@ -34,7 +34,9 @@
           (click)="$event.preventDefault(); openLink(link)"
         >
           @if (link.icon) {
-            <span class="link-card__link-icon">{{ link.icon }}</span>
+            <span class="link-card__link-icon">
+              <app-dropdown-link-card-icon [icon]="link.icon" [size]="18" />
+            </span>
           }
           <div class="link-card__link-content">
             <span class="link-card__link-label">{{ link.label }}</span>
