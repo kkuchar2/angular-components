@@ -213,11 +213,8 @@ export class GenericTableDemoComponent {
   /** Always empty — used to remount a fresh virtual table instance (cold start). */
   readonly virtualColdEmptyRows: DemoUser[] = [];
 
-  /** Toggles between populated and cleared on the same instance (hot empty). */
-  readonly virtualHotRows = signal<DemoUser[]>(this.buildVirtualRows(250));
-
-  /** Stable populated reference for column-width comparison. */
-  readonly virtualReferenceRows = signal<DemoUser[]>(this.buildVirtualRows(250));
+  /** Populated reference for column-width comparison. */
+  readonly virtualReferenceRows = this.buildVirtualRows(250);
 
   /** Increment to destroy and recreate the cold-start table. */
   readonly virtualColdMount = signal(0);
@@ -229,14 +226,6 @@ export class GenericTableDemoComponent {
 
   onRowClick(row: DemoUser): void {
     this.selectedRow.set(row);
-  }
-
-  loadVirtualHotRows(): void {
-    this.virtualHotRows.set(this.buildVirtualRows(250));
-  }
-
-  clearVirtualHotRows(): void {
-    this.virtualHotRows.set([]);
   }
 
   resetVirtualColdDemo(): void {

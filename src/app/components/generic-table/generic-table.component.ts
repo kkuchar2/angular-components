@@ -66,12 +66,6 @@ export class GenericTableComponent<T = unknown> {
   private layoutSyncFrame: number | null = null;
   private virtualResizeObserver: ResizeObserver | null = null;
   private observedVirtualViewport: HTMLElement | null = null;
-  private virtualColumnLayoutCache: {
-    contentWidth: number;
-    tableWidth: number;
-    layoutKey: string;
-    widths: number[];
-  } | null = null;
 
   /** True while the scroll body is moving; suppresses row hover styling. */
   readonly isScrolling = signal(false);
@@ -410,35 +404,13 @@ export class GenericTableComponent<T = unknown> {
     headerTrack: HTMLElement,
     contentWidth: number,
   ): void {
-    const layoutKey = this.getVirtualColumnLayoutKey();
-    const cache = this.virtualColumnLayoutCache;
-    let widths: number[];
-    let tableWidth = contentWidth;
+    this.resetSyncedColumnWidths(headerTable, headerTrack);
 
-    if (
-      cache &&
-      cache.layoutKey === layoutKey &&
-      cache.contentWidth === contentWidth
-    ) {
-      widths = cache.widths;
-      tableWidth = cache.tableWidth;
-    } else {
-      this.resetSyncedColumnWidths(headerTable, headerTrack);
-      widths = this.computeVirtualColumnWidths(contentWidth);
-      tableWidth = Math.max(contentWidth, widths.reduce((sum, width) => sum + width, 0));
-    }
+    const widths = this.computeVirtualColumnWidths(contentWidth);
+    const tableWidth = Math.max(contentWidth, widths.reduce((sum, width) => sum + width, 0));
 
     shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
     this.applyVirtualColumnWidths(widths, headerTable, headerTrack, bodyTable);
-  }
-
-  private getVirtualColumnLayoutKey(): string {
-    return this.displayedColumns()
-      .map((key) => {
-        const column = this.columnByKey().get(key);
-        return `${key}:${column?.width ?? ''}:${column?.minWidth ?? ''}`;
-      })
-      .join('|');
   }
 
   private computeVirtualColumnWidths(contentWidth: number): number[] {
@@ -531,19 +503,6 @@ export class GenericTableComponent<T = unknown> {
     const widths = Array.from(bodyCells)
       .filter((cell): cell is HTMLElement => cell instanceof HTMLElement)
       .map((cell) => cell.getBoundingClientRect().width);
-
-    const contentWidth = viewport.clientWidth;
-    const tableWidth = Math.max(
-      contentWidth,
-      widths.reduce((sum, width) => sum + width, 0),
-    );
-
-    this.virtualColumnLayoutCache = {
-      contentWidth,
-      tableWidth,
-      layoutKey: this.getVirtualColumnLayoutKey(),
-      widths,
-    };
 
     this.applyVirtualColumnWidths(widths, headerTable, headerTrack, bodyTable, bodyCells);
     return widths;

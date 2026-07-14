@@ -146,19 +146,18 @@
   </article>
 
   <article class="home__demo">
-    <h2 class="home__demo-title">6. Virtual scroll — empty states (cold / hot)</h2>
+    <h2 class="home__demo-title">6. Virtual scroll — empty vs populated</h2>
     <p class="home__demo-hint">
-      Compare column widths when a virtualized table opens empty (cold), clears after loading
-      data (hot), or shows rows. All three use the same columns and height so headers should
-      line up.
+      Compare column widths when a virtualized table opens empty (cold start) against one
+      with 250 rows. Both use the same columns and height — headers should line up.
     </p>
 
-    <div class="home__virtual-empty-grid">
+    <div class="home__virtual-empty-stack">
       <section class="home__virtual-empty-panel">
         <div class="home__virtual-empty-panel__head">
           <h3 class="home__virtual-empty-panel__title">Cold empty</h3>
           <p class="home__virtual-empty-panel__desc">
-            Mounts with no rows and never receives data on this instance.
+            Mounts with no rows. Reset recreates a fresh instance.
           </p>
           <button type="button" class="home__virtual-empty-btn" (click)="resetVirtualColdDemo()">
             Reset mount
@@ -181,51 +180,15 @@
 
       <section class="home__virtual-empty-panel">
         <div class="home__virtual-empty-panel__head">
-          <h3 class="home__virtual-empty-panel__title">Hot toggle</h3>
-          <p class="home__virtual-empty-panel__desc">
-            Same instance — load rows, then clear to exercise the width cache.
-          </p>
-          <div class="home__virtual-empty-actions">
-            <button type="button" class="home__virtual-empty-btn" (click)="loadVirtualHotRows()">
-              Load 250 rows
-            </button>
-            <button
-              type="button"
-              class="home__virtual-empty-btn home__virtual-empty-btn--secondary"
-              (click)="clearVirtualHotRows()"
-            >
-              Clear rows
-            </button>
-          </div>
-          <p class="home__virtual-empty-status">
-            {{ virtualHotRows().length ? virtualHotRows().length + ' rows' : 'Empty (hot)' }}
-          </p>
-        </div>
-
-        <app-generic-table
-          [columns]="scrollColumns"
-          [data]="virtualHotRows()"
-          [virtualized]="true"
-          [rowHeight]="48"
-          height="240px"
-          [showColumnToggle]="false"
-          emptyMessage="Hot empty — rows were cleared."
-          [trackBy]="trackById"
-        />
-      </section>
-
-      <section class="home__virtual-empty-panel">
-        <div class="home__virtual-empty-panel__head">
           <h3 class="home__virtual-empty-panel__title">With rows</h3>
           <p class="home__virtual-empty-panel__desc">
-            Populated reference — column widths come from measured body cells.
+            250 rows — column widths come from measured body cells.
           </p>
-          <p class="home__virtual-empty-status">250 rows</p>
         </div>
 
         <app-generic-table
           [columns]="scrollColumns"
-          [data]="virtualReferenceRows()"
+          [data]="virtualReferenceRows"
           [virtualized]="true"
           [rowHeight]="48"
           height="240px"
