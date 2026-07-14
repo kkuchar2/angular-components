@@ -1,12 +1,9 @@
-// Self-contained styling. Every look-and-feel value is exposed as a `--cs-*`
-// custom property (with a sensible fallback), so the component works when
-// pasted into any project and can be themed from the outside if desired.
 :host {
   display: block;
   position: relative;
 }
 
-.custom-select {
+@mixin custom-select-tokens {
   --cs-bg: var(--color-surface, #ffffff);
   --cs-border: var(--color-border, #e0e4ef);
   --cs-border-hover: var(--color-border-hover, #c8cdd9);
@@ -15,22 +12,25 @@
   --cs-hover: var(--color-row-hover, #e8ebf3);
   --cs-input-bg: var(--color-surface-elevated, #f5f5f5);
   --cs-disabled-bg: var(--color-surface-elevated, #f5f5f5);
-  --cs-selected-bg: #eef2ff;
-  --cs-selected-text: #4338ca;
-  --cs-accent: #6366f1;
-  --cs-clear-hover-bg: #fee2e2;
-  --cs-clear-hover-text: #dc2626;
+  --cs-selected-bg: color-mix(in srgb, var(--color-primary, #1565c0) 12%, var(--color-surface, #ffffff));
+  --cs-selected-text: var(--color-primary-dark, #0d47a1);
+  --cs-accent: var(--color-primary, #1565c0);
+  --cs-clear-hover-bg: color-mix(in srgb, var(--color-warning-bg, #fff3e0) 80%, transparent);
+  --cs-clear-hover-text: var(--color-warning-text, #e65100);
   --cs-shadow: var(--shadow-md, 0 4px 12px rgb(0 0 0 / 10%));
   --cs-search-divider: var(--color-row-divider, rgb(0 0 0 / 4%));
   --cs-scrollbar: var(--color-border, #e0e4ef);
   --cs-trigger-hover-bg: var(--color-surface, #ffffff);
   --cs-trigger-active-bg: var(--color-surface, #ffffff);
-  --cs-trigger-active-border: #6366f1;
-  --cs-input-border: var(--color-border, #e0e4ef);
+  --cs-trigger-active-border: var(--color-primary, #1565c0);
   --cs-border-radius: var(--radius-md, 0);
   --cs-font-size: 0.9375rem;
   --cs-option-height: 42px;
   --cs-transition: 0.2s;
+}
+
+.custom-select {
+  @include custom-select-tokens;
 
   font-family: var(--font-family-base, 'Segoe UI', system-ui, -apple-system, sans-serif);
   position: relative;
@@ -68,11 +68,9 @@
       background: var(--cs-trigger-hover-bg);
     }
 
-    &:focus,
     &:focus-visible {
       border-color: var(--cs-trigger-active-border);
       background: var(--cs-trigger-active-bg);
-      box-shadow: none;
       outline: none;
     }
   }
@@ -127,17 +125,12 @@
   }
 
   &__dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 1000;
     background: var(--cs-bg);
     border: 1px solid var(--cs-border);
     border-radius: var(--cs-border-radius);
     box-shadow: var(--cs-shadow);
     overflow: hidden;
-    animation: selectDropIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    overscroll-behavior: contain;
   }
 
   &__search {
@@ -171,19 +164,6 @@
     padding: 0;
     scrollbar-width: thin;
     scrollbar-color: var(--cs-scrollbar) transparent;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background-color: var(--cs-scrollbar);
-      border-radius: 3px;
-    }
   }
 
   &__option {
@@ -246,13 +226,7 @@
     .custom-select__trigger {
       border-color: var(--cs-trigger-active-border);
       background: var(--cs-trigger-active-bg);
-      box-shadow: none;
       outline: none;
-      border-bottom-color: var(--cs-trigger-active-bg);
-    }
-
-    .custom-select__dropdown {
-      border-top: none;
     }
 
     .custom-select__arrow {
@@ -298,9 +272,8 @@
       transform: translate3d(0, var(--cs-label-rest-y), 0) scale(1);
       transform-origin: left top;
       backface-visibility: hidden;
-      transition: transform var(--cs-transition) cubic-bezier(0.4, 0, 0.2, 1),
-        color var(--cs-transition) cubic-bezier(0.4, 0, 0.2, 1),
-        background-color var(--cs-transition) cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform var(--cs-transition) ease, color var(--cs-transition) ease,
+        background-color var(--cs-transition) ease;
     }
 
     &.label-floated .custom-select__label--floating {
@@ -324,13 +297,27 @@
   }
 }
 
-@keyframes selectDropIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.96);
+.custom-select__overlay-panel {
+  @include custom-select-tokens;
+
+  display: block;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-family-base, 'Segoe UI', system-ui, -apple-system, sans-serif);
+
+  :is(.custom-select__dropdown, .custom-select__options, .custom-select__option, .custom-select__search, .custom-select__search-input, .custom-select__empty) {
+    width: 100%;
+    box-sizing: border-box;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+}
+
+:host ::ng-deep .custom-select__backdrop {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-select__arrow {
+    transition: none;
   }
 }

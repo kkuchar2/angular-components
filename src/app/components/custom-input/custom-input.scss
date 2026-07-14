@@ -13,11 +13,11 @@
   --ci-text-muted: var(--color-text-muted, #5c5c7a);
   --ci-input-bg: var(--color-surface-elevated, #f5f5f5);
   --ci-disabled-bg: var(--color-surface-elevated, #f5f5f5);
-  --ci-accent: #6366f1;
-  --ci-clear-hover-bg: #fee2e2;
-  --ci-clear-hover-text: #dc2626;
-  --ci-error: #dc2626;
-  --ci-error-bg: #fef2f2;
+  --ci-accent: var(--color-primary, #1565c0);
+  --ci-clear-hover-bg: color-mix(in srgb, var(--color-warning-bg, #fff3e0) 80%, transparent);
+  --ci-clear-hover-text: var(--color-warning-text, #e65100);
+  --ci-error: var(--color-warning-text, #e65100);
+  --ci-error-bg: color-mix(in srgb, var(--color-warning-bg, #fff3e0) 70%, var(--color-surface, #ffffff));
   --ci-border-radius: var(--radius-md, 0);
   --ci-font-size: 0.9375rem;
   --ci-transition: 0.2s;
@@ -137,7 +137,14 @@
   &.focused .custom-input__field {
     border-color: var(--ci-accent);
     background: var(--ci-bg);
-    box-shadow: none;
+    outline: none;
+  }
+
+  .custom-input__control:focus-visible {
+    outline: none;
+  }
+
+  .custom-input__clear:focus-visible {
     outline: none;
   }
 
@@ -214,5 +221,13 @@
     &.disabled.label-floated .custom-input__label--floating {
       background-color: var(--ci-disabled-bg);
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-input__label--floating,
+  .custom-input__field,
+  .custom-input__clear {
+    transition: none;
   }
 }

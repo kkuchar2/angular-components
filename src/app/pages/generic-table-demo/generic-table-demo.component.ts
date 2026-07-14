@@ -211,7 +211,7 @@ export class GenericTableDemoComponent {
   readonly emptyRows = signal<DemoUser[]>([]);
 
   /** Large dataset for the virtual-scroll demo (2 500 rows). */
-  readonly virtualRows = signal<DemoUser[]>(this.buildVirtualRows(2500));
+  readonly virtualRows = signal<DemoUser[]>(this.buildVirtualRows(10_000));
 
   readonly selectedRow = signal<DemoUser | null>(null);
 

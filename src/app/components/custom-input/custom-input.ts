@@ -1,13 +1,12 @@
 import {
+  ChangeDetectionStrategy,
   Component,
-  Input,
-  Output,
-  EventEmitter,
+  computed,
   forwardRef,
-  HostBinding,
+  input,
+  output,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import {
   ControlValueAccessor,
   NG_VALUE_ACCESSOR,
@@ -18,10 +17,13 @@ export type CustomInputAppearance = 'default' | 'outlined';
 
 @Component({
   selector: 'app-custom-input',
-  standalone: true,
-  imports: [CommonModule, LucideDynamicIcon],
+  imports: [LucideDynamicIcon],
   templateUrl: './custom-input.html',
   styleUrl: './custom-input.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[style.width]': 'width()',
+  },
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -35,34 +37,46 @@ export class CustomInputComponent implements ControlValueAccessor {
 
   readonly controlId = `custom-input-${++CustomInputComponent.idCounter}`;
 
-  @Input() label = '';
-  @Input() placeholder = '';
-  @Input() appearance: CustomInputAppearance = 'default';
-  @Input() disabled = false;
-  @Input() type: 'text' | 'password' | 'email' | 'search' | 'number' = 'text';
-  @Input() clearable = false;
-  @Input() prefixIcon?: LucideIconInput;
-  @Input() hint = '';
-  @Input() error = '';
-  @Input() width = '100%';
+  readonly label = input('');
+  readonly placeholder = input('');
+  readonly appearance = input<CustomInputAppearance>('default');
+  readonly disabled = input(false);
+  readonly type = input<'text' | 'password' | 'email' | 'search' | 'number'>('text');
+  readonly clearable = input(false);
+  readonly prefixIcon = input<LucideIconInput | undefined>(undefined);
+  readonly hint = input('');
+  readonly error = input('');
+  readonly width = input('100%');
 
-  @Output() valueChange = new EventEmitter<string>();
+  readonly valueChange = output<string>();
 
-  @HostBinding('style.width')
-  get hostWidth(): string {
-    return this.width;
-  }
+  readonly isFocused = signal(false);
+  readonly value = signal('');
 
-  isFocused = signal(false);
+  readonly isDisabled = computed(() => this.disabled() || this.formDisabled());
 
-  private value = '';
+  readonly hintId = `${this.controlId}-hint`;
+  readonly errorId = `${this.controlId}-error`;
+
+  readonly describedBy = computed(() => {
+    if (this.error()) {
+      return this.errorId;
+    }
+
+    if (this.hint()) {
+      return this.hintId;
+    }
+
+    return null;
+  });
+
+  private readonly formDisabled = signal(false);
 
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 
-  /** ControlValueAccessor */
   writeValue(value: string | null): void {
-    this.value = value ?? '';
+    this.value.set(value ?? '');
   }
 
   registerOnChange(fn: (value: string) => void): void {
@@ -74,36 +88,34 @@ export class CustomInputComponent implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-  }
-
-  getValue(): string {
-    return this.value;
+    this.formDisabled.set(isDisabled);
   }
 
   hasValue(): boolean {
-    return this.value.length > 0;
+    return this.value().length > 0;
   }
 
   isLabelFloated(): boolean {
-    if (this.appearance !== 'outlined') {
+    if (this.appearance() !== 'outlined') {
       return false;
     }
+
     return this.isFocused() || this.hasValue();
   }
 
   effectivePlaceholder(): string {
-    if (this.appearance === 'outlined' && !this.isLabelFloated()) {
+    if (this.appearance() === 'outlined' && !this.isLabelFloated()) {
       return '';
     }
-    return this.placeholder;
+
+    return this.placeholder();
   }
 
   onInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.value = input.value;
-    this.onChange(this.value);
-    this.valueChange.emit(this.value);
+    const inputEl = event.target as HTMLInputElement;
+    this.value.set(inputEl.value);
+    this.onChange(inputEl.value);
+    this.valueChange.emit(inputEl.value);
   }
 
   onFocus(): void {
@@ -117,8 +129,8 @@ export class CustomInputComponent implements ControlValueAccessor {
 
   clearValue(event: MouseEvent): void {
     event.preventDefault();
-    this.value = '';
-    this.onChange(this.value);
-    this.valueChange.emit(this.value);
+    this.value.set('');
+    this.onChange('');
+    this.valueChange.emit('');
   }
 }

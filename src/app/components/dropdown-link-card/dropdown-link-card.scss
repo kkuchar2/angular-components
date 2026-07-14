@@ -1,9 +1,4 @@
-:host {
-  display: block;
-  font-family: var(--font-family-base, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif);
-  position: relative;
-
+@mixin link-card-tokens {
   --dlc-bg: var(--color-surface);
   --dlc-border: var(--color-border);
   --dlc-border-hover: color-mix(in srgb, var(--color-border) 70%, var(--color-text) 30%);
@@ -16,9 +11,17 @@
   --dlc-trigger-active-bg: var(--dlc-bg);
   --dlc-trigger-active-border: var(--color-primary);
   --dlc-external: var(--color-text-muted);
-
   --dlc-border-radius: 0;
   --dlc-transition: 0.2s;
+}
+
+:host {
+  display: block;
+  font-family: var(--font-family-base, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif);
+  position: relative;
+
+  @include link-card-tokens;
 }
 
 :host-context([data-theme='dark']) {
@@ -58,11 +61,10 @@
       background: var(--dlc-trigger-hover-bg);
     }
 
-    &:focus,
     &:focus-visible {
       border-color: var(--dlc-trigger-active-border);
       background: var(--dlc-trigger-active-bg);
-      box-shadow: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #1565c0) 28%, transparent);
       outline: none;
     }
   }
@@ -94,18 +96,13 @@
   }
 
   &__dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 1000;
     background: var(--dlc-bg);
     border: 1px solid var(--dlc-border);
     border-radius: var(--dlc-border-radius);
     box-shadow: var(--dlc-shadow);
     overflow: hidden;
     padding: 0;
-    animation: linkCardDropIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    overscroll-behavior: contain;
   }
 
   &__link {
@@ -120,8 +117,11 @@
     user-select: none;
 
     &:hover,
-    &.focused {
+    &.focused,
+    &:focus-visible {
       background: var(--dlc-hover);
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--color-primary, #1565c0);
     }
   }
 
@@ -183,13 +183,8 @@
     .link-card__trigger {
       border-color: var(--dlc-trigger-active-border);
       background: var(--dlc-trigger-active-bg);
-      box-shadow: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #1565c0) 20%, transparent);
       outline: none;
-      border-bottom-color: var(--dlc-trigger-active-bg);
-    }
-
-    .link-card__dropdown {
-      border-top: none;
     }
 
     .link-card__arrow {
@@ -211,13 +206,35 @@
   }
 }
 
-@keyframes linkCardDropIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.96);
+// CDK Overlay renders outside the host DOM tree — re-declare tokens on the panel root.
+.link-card__overlay-panel {
+  @include link-card-tokens;
+
+  display: block;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+
+  :is(.link-card__dropdown, .link-card__link, .link-card__empty) {
+    width: 100%;
+    box-sizing: border-box;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+}
+
+[data-theme='dark'] .link-card__overlay-panel {
+  --dlc-bg: var(--color-surface-elevated);
+  --dlc-border: transparent;
+  --dlc-border-hover: transparent;
+  --dlc-shadow: none;
+}
+
+:host ::ng-deep .link-card__backdrop {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-card__arrow {
+    transition: none;
   }
 }

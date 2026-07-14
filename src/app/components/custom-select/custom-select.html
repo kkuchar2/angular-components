@@ -1,29 +1,32 @@
 <div
   class="custom-select"
-  [class.disabled]="disabled"
+  [class.disabled]="isDisabled()"
   [class.open]="isOpen()"
   [class.focused]="isFocused() || isOpen()"
-  [class.appearance-outlined]="appearance === 'outlined'"
+  [class.appearance-outlined]="appearance() === 'outlined'"
   [class.label-floated]="isLabelFloated()"
 >
-  @if (label && appearance !== 'outlined') {
-    <label class="custom-select__label" [attr.for]="controlId">{{ label }}</label>
+  @if (label() && appearance() !== 'outlined') {
+    <label class="custom-select__label" [attr.for]="controlId">{{ label() }}</label>
   }
 
   <div
+    #trigger
     class="custom-select__trigger"
     [id]="controlId"
     tabindex="0"
     role="combobox"
     [attr.aria-expanded]="isOpen()"
+    [attr.aria-controls]="listboxId"
+    [attr.aria-activedescendant]="activeDescendantId()"
     aria-haspopup="listbox"
     (click)="toggle()"
     (keydown)="onKeyDown($event)"
     (focus)="onTriggerFocus()"
     (blur)="onTriggerBlur()"
   >
-    @if (label && appearance === 'outlined') {
-      <label class="custom-select__label custom-select__label--floating">{{ label }}</label>
+    @if (label() && appearance() === 'outlined') {
+      <label class="custom-select__label custom-select__label--floating">{{ label() }}</label>
     }
 
     <span class="custom-select__value" [class.placeholder]="isShowingPlaceholder()">
@@ -31,7 +34,7 @@
     </span>
 
     <div class="custom-select__actions">
-      @if (hasValue() && !disabled) {
+      @if (hasValue() && !isDisabled()) {
         <button
           class="custom-select__clear"
           type="button"
@@ -45,58 +48,61 @@
         </button>
       }
 
-      <span class="custom-select__arrow">
+      <span class="custom-select__arrow" aria-hidden="true">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </span>
     </div>
   </div>
-
-  @if (isOpen()) {
-    <div class="custom-select__dropdown" role="listbox">
-      @if (searchable) {
-        <div class="custom-select__search">
-          <input
-            type="text"
-            class="custom-select__search-input"
-            placeholder="Search..."
-            [value]="searchQuery()"
-            (input)="onSearchInput($event)"
-            (keydown)="onKeyDown($event)"
-            autofocus
-          />
-        </div>
-      }
-
-      <div class="custom-select__options">
-        @for (option of filteredOptions(); track option.value; let i = $index) {
-          <div
-            class="custom-select__option"
-            role="option"
-            [class.selected]="isSelected(option)"
-            [class.focused]="focusedIndex() === i"
-            [class.disabled]="option.disabled"
-            [attr.aria-selected]="isSelected(option)"
-            [attr.aria-disabled]="option.disabled"
-            (click)="selectOption(option)"
-          >
-            @if (option.icon) {
-              <span class="custom-select__option-icon">{{ option.icon }}</span>
-            }
-            <span class="custom-select__option-label">{{ option.label }}</span>
-            @if (isSelected(option)) {
-              <span class="custom-select__check">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </span>
-            }
-          </div>
-        } @empty {
-          <div class="custom-select__empty">No options found</div>
-        }
-      </div>
-    </div>
-  }
 </div>
+
+<ng-template #dropdownTemplate>
+  <div class="custom-select__overlay-panel">
+    <div class="custom-select__dropdown" [id]="listboxId" role="listbox">
+    @if (searchable()) {
+      <div class="custom-select__search">
+        <input
+          type="text"
+          class="custom-select__search-input"
+          placeholder="Search…"
+          aria-label="Search options"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          (keydown)="onKeyDown($event)"
+        />
+      </div>
+    }
+
+    <div class="custom-select__options">
+      @for (option of filteredOptions(); track option.value; let i = $index) {
+        <div
+          class="custom-select__option"
+          role="option"
+          [id]="optionId(i)"
+          [class.selected]="isSelected(option)"
+          [class.focused]="focusedIndex() === i"
+          [class.disabled]="option.disabled"
+          [attr.aria-selected]="isSelected(option)"
+          [attr.aria-disabled]="option.disabled"
+          (click)="selectOption(option)"
+        >
+          @if (option.icon) {
+            <span class="custom-select__option-icon">{{ option.icon }}</span>
+          }
+          <span class="custom-select__option-label">{{ option.label }}</span>
+          @if (isSelected(option)) {
+            <span class="custom-select__check" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+          }
+        </div>
+      } @empty {
+        <div class="custom-select__empty">No options found</div>
+      }
+    </div>
+    </div>
+  </div>
+</ng-template>

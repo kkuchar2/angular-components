@@ -85,46 +85,24 @@ export class GenericTableComponent<T = unknown> {
    * - `'auto'` (default): grows with content; pair with `maxHeight` to cap it.
    * - `'fill'`: fills the remaining space of a flex-column parent (`flex: 1`).
    * - `'parent'`: fills the parent's full height (`height: 100%`).
-   *
-   * In `'fill'`/`'parent'` the body scrolls once rows exceed the available height,
-   * and both require the parent to resolve a height (see the component README).
    */
   readonly heightMode = input<GenericTableHeightMode>('auto');
-  /**
-   * Exact, fixed height for the scroll body, e.g. `'320px'`. When set it wins over
-   * `heightMode`: the body is always this tall and scrolls when rows overflow.
-   */
+  /** Exact, fixed height for the scroll body, e.g. `'320px'`. */
   readonly height = input<string | null>(null);
-  /**
-   * Caps the scroll body height, e.g. `'320px'`. Composes with any `heightMode`
-   * (e.g. `'fill'` + `maxHeight` fills remaining space but never grows past the cap).
-   */
+  /** Caps the scroll body height, e.g. `'320px'`. */
   readonly maxHeight = input<string | null>(null);
 
-  /** A fixed `height` was provided, so the body is sized explicitly. */
   readonly isFixed = computed(() => this.height() != null);
-  /** The body uses a flex fill chain (`'fill'` or `'parent'`) instead of content height. */
   readonly isFilling = computed(() => !this.isFixed() && this.heightMode() !== 'auto');
-  /** Fill the remaining space of a flex-column parent. */
   readonly isFillMode = computed(() => this.isFilling() && this.heightMode() === 'fill');
-  /** Fill the parent's full height. */
   readonly isParentMode = computed(() => this.isFilling() && this.heightMode() === 'parent');
-  /** Paginator is shown only when pagination is on and virtualization is off. */
   readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
-  /** Buffer sizes for the virtual scroll viewport, derived from `rowHeight`. */
   readonly virtualMinBufferPx = computed(() => this.rowHeight() * 10);
   readonly virtualMaxBufferPx = computed(() => this.rowHeight() * 20);
-  /**
-   * `trackBy` for rows (improves rendering and preserves DOM state).
-   * Defaults to identity tracking, matching `mat-table`'s built-in behavior.
-   */
   readonly trackBy = input<TrackByFunction<T>>((_index, row) => row);
 
-  /** Emitted when a row is clicked (only when `rowClickable` is true). */
   readonly rowClick = output<T>();
-  /** Emitted when the sort state changes. */
   readonly sortChange = output<Sort>();
-  /** Emitted when the page changes. */
   readonly pageChange = output<PageEvent>();
 
   readonly dataSource = new MatTableDataSource<T>();
@@ -132,8 +110,9 @@ export class GenericTableComponent<T = unknown> {
   private readonly sort = viewChild(MatSort);
   private readonly paginator = viewChild(MatPaginator);
   private readonly cellDirectives = contentChildren(GenericTableCellDirective);
+  private readonly cellContextCache = new WeakMap<object, GenericTableCellContext<T>>();
 
-  private readonly cellTemplates = computed(() => {
+  readonly cellTemplates = computed(() => {
     const templates = new Map<string, TemplateRef<GenericTableCellContext<T>>>();
 
     for (const directive of this.cellDirectives()) {
@@ -143,12 +122,40 @@ export class GenericTableComponent<T = unknown> {
     return templates;
   });
 
-  /** Columns that appear in the visibility toggle. */
+  readonly columnByKey = computed(() => {
+    const map = new Map<string, ColumnDef<T>>();
+
+    for (const column of this.columns()) {
+      map.set(column.key, column);
+    }
+
+    return map;
+  });
+
+  readonly columnColStyles = computed(() => {
+    const styles = new Map<string, Record<string, string>>();
+
+    for (const column of this.columns()) {
+      styles.set(column.key, this.buildColumnColStyles(column));
+    }
+
+    return styles;
+  });
+
+  readonly columnWidthStyles = computed(() => {
+    const styles = new Map<string, Record<string, string>>();
+
+    for (const column of this.columns()) {
+      styles.set(column.key, this.buildColumnWidthStyles(column));
+    }
+
+    return styles;
+  });
+
   readonly hideableColumns = computed(() =>
     this.columns().filter((column) => column.hideable !== false),
   );
 
-  /** Set of currently visible column keys; reset whenever `columns` changes. */
   readonly visibleKeys = linkedSignal(() => {
     const keys = this.columns()
       .filter((column) => column.visible !== false)
@@ -157,7 +164,6 @@ export class GenericTableComponent<T = unknown> {
     return new Set(keys);
   });
 
-  /** Keys of the columns rendered right now, in order. */
   readonly displayedColumns = computed(() =>
     this.columns()
       .filter((column) => column.hideable === false || this.visibleKeys().has(column.key))
@@ -166,7 +172,7 @@ export class GenericTableComponent<T = unknown> {
 
   constructor() {
     this.dataSource.sortingDataAccessor = (row, columnKey) => {
-      const column = this.columns().find((item) => item.key === columnKey);
+      const column = this.columnByKey().get(columnKey);
 
       if (!column) {
         return '';
@@ -196,13 +202,50 @@ export class GenericTableComponent<T = unknown> {
     });
   }
 
-  /** Column definition for a displayed key, if it exists. */
-  getColumnByKey(key: string): ColumnDef<T> | undefined {
-    return this.columns().find((column) => column.key === key);
+  formatCell(column: ColumnDef<T>, row: T): string | number {
+    if (column.cell) {
+      return column.cell(row);
+    }
+
+    return this.getRowValue(row, column.key);
   }
 
-  /** Width hints for `<col>` elements (used with `table-layout: fixed`). */
-  columnColStyles(column: ColumnDef<T>): Record<string, string> {
+  cellContext(row: T): GenericTableCellContext<T> {
+    if (typeof row !== 'object' || row === null) {
+      return { $implicit: row, row };
+    }
+
+    let context = this.cellContextCache.get(row);
+
+    if (!context) {
+      context = { $implicit: row, row };
+      this.cellContextCache.set(row, context);
+    }
+
+    return context;
+  }
+
+  isColumnVisible(key: string): boolean {
+    return this.visibleKeys().has(key);
+  }
+
+  onToggleColumns(event: MatChipListboxChange): void {
+    if (Array.isArray(event.value)) {
+      this.visibleKeys.set(new Set(event.value));
+    }
+  }
+
+  onRowClick(row: T): void {
+    if (this.rowClickable()) {
+      this.rowClick.emit(row);
+    }
+  }
+
+  rowStripeClass(index: number): 'generic-table__row--even' | 'generic-table__row--odd' {
+    return index % 2 === 0 ? 'generic-table__row--even' : 'generic-table__row--odd';
+  }
+
+  private buildColumnColStyles(column: ColumnDef<T>): Record<string, string> {
     const styles: Record<string, string> = {};
 
     if (column.width) {
@@ -217,8 +260,7 @@ export class GenericTableComponent<T = unknown> {
     return styles;
   }
 
-  /** Inline width constraints applied to header and body cells. */
-  columnWidthStyles(column: ColumnDef<T>): Record<string, string> {
+  private buildColumnWidthStyles(column: ColumnDef<T>): Record<string, string> {
     const styles: Record<string, string> = {};
 
     if (column.width) {
@@ -238,46 +280,6 @@ export class GenericTableComponent<T = unknown> {
   private isPositiveLength(value: string): boolean {
     const parsed = Number.parseFloat(value);
     return !Number.isNaN(parsed) && parsed > 0;
-  }
-
-  /** Resolve the plain-text value for a cell without a custom template. */
-  formatCell(column: ColumnDef<T>, row: T): string | number {
-    if (column.cell) {
-      return column.cell(row);
-    }
-
-    return this.getRowValue(row, column.key);
-  }
-
-  /** The custom template for a column, or `null` to fall back to text. */
-  getCellTemplate(key: string): TemplateRef<GenericTableCellContext<T>> | null {
-    return this.cellTemplates().get(key) ?? null;
-  }
-
-  /** Build the context object handed to a custom cell template. */
-  cellContext(row: T): GenericTableCellContext<T> {
-    return { $implicit: row, row };
-  }
-
-  isColumnVisible(key: string): boolean {
-    return this.visibleKeys().has(key);
-  }
-
-  onToggleColumns(event: MatChipListboxChange): void {
-    if (Array.isArray(event.value)) {
-      this.visibleKeys.set(new Set(event.value));
-    }
-  }
-
-  onRowClick(row: T): void {
-    if (this.rowClickable()) {
-      this.rowClick.emit(row);
-    }
-  }
-
-  /** Zebra-striping class based on the row's data index (works with virtual scroll). */
-  rowStripeClass(index: number): 'generic-table__row--even' | 'generic-table__row--odd' {
-    return index % 2 === 0 ? 'generic-table__row--even' : 'generic-table__row--odd';
   }
 
   private getRowValue(row: T, key: string): string | number {

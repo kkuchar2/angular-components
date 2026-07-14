@@ -1,40 +1,42 @@
 <div
   class="custom-input"
-  [class.disabled]="disabled"
+  [class.disabled]="isDisabled()"
   [class.focused]="isFocused()"
-  [class.has-error]="error"
-  [class.appearance-outlined]="appearance === 'outlined'"
+  [class.has-error]="!!error()"
+  [class.appearance-outlined]="appearance() === 'outlined'"
   [class.label-floated]="isLabelFloated()"
 >
-  @if (label && appearance !== 'outlined') {
-    <label class="custom-input__label" [attr.for]="controlId">{{ label }}</label>
+  @if (label() && appearance() !== 'outlined') {
+    <label class="custom-input__label" [attr.for]="controlId">{{ label() }}</label>
   }
 
   <div class="custom-input__field">
-    @if (label && appearance === 'outlined') {
-      <label class="custom-input__label custom-input__label--floating" [attr.for]="controlId">{{ label }}</label>
+    @if (label() && appearance() === 'outlined') {
+      <label class="custom-input__label custom-input__label--floating" [attr.for]="controlId">{{ label() }}</label>
     }
 
-    @if (prefixIcon) {
+    @if (prefixIcon(); as icon) {
       <span class="custom-input__prefix" aria-hidden="true">
-        <svg [lucideIcon]="prefixIcon" [size]="18"></svg>
+        <svg [lucideIcon]="icon" [size]="18"></svg>
       </span>
     }
 
     <input
       class="custom-input__control"
-      [class.custom-input__control--has-clear]="clearable"
+      [class.custom-input__control--has-clear]="clearable()"
       [id]="controlId"
-      [type]="type"
+      [type]="type()"
       [placeholder]="effectivePlaceholder()"
-      [disabled]="disabled"
-      [value]="getValue()"
+      [disabled]="isDisabled()"
+      [value]="value()"
+      [attr.aria-invalid]="error() ? true : null"
+      [attr.aria-describedby]="describedBy()"
       (input)="onInput($event)"
       (focus)="onFocus()"
       (blur)="onBlur()"
     />
 
-    @if (clearable && hasValue() && !disabled) {
+    @if (clearable() && hasValue() && !isDisabled()) {
       <button
         class="custom-input__clear"
         type="button"
@@ -49,9 +51,9 @@
     }
   </div>
 
-  @if (error) {
-    <span class="custom-input__message custom-input__message--error">{{ error }}</span>
-  } @else if (hint) {
-    <span class="custom-input__message custom-input__message--hint">{{ hint }}</span>
+  @if (error()) {
+    <span [id]="errorId" class="custom-input__message custom-input__message--error" role="alert">{{ error() }}</span>
+  } @else if (hint()) {
+    <span [id]="hintId" class="custom-input__message custom-input__message--hint">{{ hint() }}</span>
   }
 </div>

@@ -34,7 +34,7 @@
   --gt-radius: var(--radius-md, 8px);
   --gt-header-bg: var(--color-surface-elevated, #f5f5f5);
   --gt-header-text: var(--color-text, rgb(0 0 0 / 87%));
-  --gt-header-accent: #ff7300;
+  --gt-header-accent: var(--color-primary, #1565c0);
   --gt-row-odd-bg: var(--color-surface, #ffffff);
   --gt-row-even-bg: var(--color-row-even, #fafbfc);
   --gt-row-hover-bg: var(--color-row-hover, #e8ebf3);
@@ -112,16 +112,20 @@ table {
 }
 
 // Virtual scroll needs a fixed row height and stable scroll anchoring.
+.generic-table__scroll--virtual {
+  overflow: auto;
+  overflow-anchor: none;
+}
+
 .generic-table--virtualized {
+  .cdk-virtual-scroll-content-wrapper {
+    contain: content;
+  }
+
   .mat-mdc-row .mat-mdc-cell {
     height: var(--gt-row-height, 48px);
     box-sizing: border-box;
   }
-}
-
-.generic-table__scroll--virtual {
-  overflow: auto;
-  overflow-anchor: none;
 }
 
 // Match the sort-arrow gutter (12px icon + 6px margin) on non-sortable headers.
