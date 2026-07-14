@@ -1,61 +1,38 @@
+// Self-contained styling. Every look-and-feel value is exposed as a `--cs-*`
+// custom property (with a sensible fallback), so the component works when
+// pasted into any project and can be themed from the outside if desired.
 :host {
   display: block;
-  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   position: relative;
-
-  // Self-contained defaults with optional overrides from :root or any ancestor.
-  // Set --cs-* in styles.scss to theme all selects app-wide.
-  --cs-bg: var(--cs-bg, #ffffff);
-  --cs-border: var(--cs-border, #e0e4ef);
-  --cs-border-hover: var(--cs-border-hover, color-mix(in srgb, #e0e4ef 70%, #1a1a2e 30%));
-  --cs-text: var(--cs-text, #1a1a2e);
-  --cs-text-muted: var(--cs-text-muted, #5c5c7a);
-  --cs-hover: var(--cs-hover, #e8ebf3);
-  --cs-input-bg: var(--cs-input-bg, #f5f5f5);
-  --cs-disabled-bg: var(--cs-disabled-bg, #f5f5f5);
-  --cs-selected-bg: var(--cs-selected-bg, #eef2ff);
-  --cs-selected-text: var(--cs-selected-text, #4338ca);
-  --cs-accent: var(--cs-accent, #6366f1);
-  --cs-clear-hover-bg: var(--cs-clear-hover-bg, #fee2e2);
-  --cs-clear-hover-text: var(--cs-clear-hover-text, #dc2626);
-  --cs-shadow: var(--cs-shadow, 0 4px 12px rgb(0 0 0 / 10%));
-  --cs-search-divider: var(--cs-search-divider, rgb(0 0 0 / 4%));
-  --cs-scrollbar: var(--cs-scrollbar, #e0e4ef);
-  --cs-trigger-hover-bg: var(--cs-trigger-hover-bg, var(--cs-bg));
-  --cs-trigger-active-bg: var(--cs-trigger-active-bg, var(--cs-bg));
-  --cs-trigger-active-border: var(--cs-trigger-active-border, var(--cs-accent));
-  --cs-input-border: var(--cs-input-border, var(--cs-border));
-
-  --cs-border-radius: var(--cs-border-radius, 0);
-  --cs-font-size: var(--cs-font-size, 0.9375rem);
-  --cs-option-height: var(--cs-option-height, 42px);
-  --cs-transition: var(--cs-transition, 0.2s);
-}
-
-:host-context([data-theme='dark']) {
-  --cs-bg: var(--cs-bg, #1f1f1f);
-  --cs-border: var(--cs-border, transparent);
-  --cs-border-hover: var(--cs-border-hover, transparent);
-  --cs-input-bg: var(--cs-input-bg, #0a0a0a);
-  --cs-input-border: var(--cs-input-border, transparent);
-  --cs-disabled-bg: var(--cs-disabled-bg, #0a0a0a);
-  --cs-text: var(--cs-text, #f5f5f5);
-  --cs-text-muted: var(--cs-text-muted, #a3a3a3);
-  --cs-hover: var(--cs-hover, #262626);
-  --cs-shadow: var(--cs-shadow, none);
-  --cs-search-divider: var(--cs-search-divider, rgb(255 255 255 / 6%));
-  --cs-scrollbar: var(--cs-scrollbar, #333333);
-  --cs-trigger-hover-bg: var(--cs-trigger-hover-bg, #262626);
-  --cs-trigger-active-bg: var(--cs-trigger-active-bg, #262626);
-  --cs-trigger-active-border: var(--cs-trigger-active-border, transparent);
-  --cs-selected-bg: var(--cs-selected-bg, #1e1b4b);
-  --cs-selected-text: var(--cs-selected-text, #a5b4fc);
-  --cs-accent: var(--cs-accent, #818cf8);
-  --cs-clear-hover-bg: var(--cs-clear-hover-bg, #450a0a);
-  --cs-clear-hover-text: var(--cs-clear-hover-text, #fca5a5);
 }
 
 .custom-select {
+  --cs-bg: var(--color-surface, #ffffff);
+  --cs-border: var(--color-border, #e0e4ef);
+  --cs-border-hover: var(--color-border-hover, #c8cdd9);
+  --cs-text: var(--color-text, #1a1a2e);
+  --cs-text-muted: var(--color-text-muted, #5c5c7a);
+  --cs-hover: var(--color-row-hover, #e8ebf3);
+  --cs-input-bg: var(--color-surface-elevated, #f5f5f5);
+  --cs-disabled-bg: var(--color-surface-elevated, #f5f5f5);
+  --cs-selected-bg: #eef2ff;
+  --cs-selected-text: #4338ca;
+  --cs-accent: #6366f1;
+  --cs-clear-hover-bg: #fee2e2;
+  --cs-clear-hover-text: #dc2626;
+  --cs-shadow: var(--shadow-md, 0 4px 12px rgb(0 0 0 / 10%));
+  --cs-search-divider: var(--color-row-divider, rgb(0 0 0 / 4%));
+  --cs-scrollbar: var(--color-border, #e0e4ef);
+  --cs-trigger-hover-bg: var(--color-surface, #ffffff);
+  --cs-trigger-active-bg: var(--color-surface, #ffffff);
+  --cs-trigger-active-border: #6366f1;
+  --cs-input-border: var(--color-border, #e0e4ef);
+  --cs-border-radius: var(--radius-md, 0);
+  --cs-font-size: 0.9375rem;
+  --cs-option-height: 42px;
+  --cs-transition: 0.2s;
+
+  font-family: var(--font-family-base, 'Segoe UI', system-ui, -apple-system, sans-serif);
   position: relative;
   width: 100%;
 
