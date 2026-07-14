@@ -16,8 +16,8 @@ import {
   FormsModule,
 } from '@angular/forms';
 
-export interface SelectOption {
-  value: string | number;
+export interface SelectOption<T = string | number> {
+  value: T;
   label: string;
   disabled?: boolean;
   icon?: string;
@@ -37,23 +37,24 @@ export interface SelectOption {
     },
   ],
 })
-export class CustomSelectComponent implements ControlValueAccessor {
-  @Input() options: SelectOption[] = [];
+export class CustomSelectComponent<T = string | number> implements ControlValueAccessor {
+  @Input() options: SelectOption<T>[] = [];
   @Input() placeholder = 'Select an option';
   @Input() label = '';
   @Input() disabled = false;
   @Input() searchable = false;
+  @Input() compareWith: (a: T, b: T) => boolean = (a, b) => a === b;
 
-  @Output() selectionChange = new EventEmitter<SelectOption | null>();
+  @Output() selectionChange = new EventEmitter<SelectOption<T> | null>();
 
   isOpen = signal(false);
   searchQuery = signal('');
   focusedIndex = signal(-1);
 
-  private selectedValue: string | number | null = null;
+  private selectedValue: T | null = null;
 
   selectedOption = computed(() => {
-    return this.options.find((o) => o.value === this.selectedValue) ?? null;
+    return this.options.find((o) => this.valuesEqual(o.value, this.selectedValue)) ?? null;
   });
 
   filteredOptions = computed(() => {
@@ -62,17 +63,17 @@ export class CustomSelectComponent implements ControlValueAccessor {
     return this.options.filter((o) => o.label.toLowerCase().includes(query));
   });
 
-  private onChange: (value: string | number | null) => void = () => {};
+  private onChange: (value: T | null) => void = () => {};
   private onTouched: () => void = () => {};
 
   constructor(private elementRef: ElementRef) {}
 
   /** ControlValueAccessor */
-  writeValue(value: string | number | null): void {
+  writeValue(value: T | null): void {
     this.selectedValue = value;
   }
 
-  registerOnChange(fn: (value: string | number | null) => void): void {
+  registerOnChange(fn: (value: T | null) => void): void {
     this.onChange = fn;
   }
 
@@ -115,7 +116,7 @@ export class CustomSelectComponent implements ControlValueAccessor {
     this.onTouched();
   }
 
-  selectOption(option: SelectOption): void {
+  selectOption(option: SelectOption<T>): void {
     if (option.disabled) return;
     this.selectedValue = option.value;
     this.onChange(option.value);
@@ -176,16 +177,23 @@ export class CustomSelectComponent implements ControlValueAccessor {
     }
   }
 
-  isSelected(option: SelectOption): boolean {
-    return this.selectedValue === option.value;
+  isSelected(option: SelectOption<T>): boolean {
+    return this.valuesEqual(option.value, this.selectedValue);
   }
 
   getSelectedLabel(): string {
-    const opt = this.options.find((o) => o.value === this.selectedValue);
+    const opt = this.options.find((o) => this.valuesEqual(o.value, this.selectedValue));
     return opt ? opt.label : '';
   }
 
   hasValue(): boolean {
     return this.selectedValue !== null && this.selectedValue !== undefined;
+  }
+
+  private valuesEqual(a: T | null, b: T | null): boolean {
+    if (a === null || b === null) {
+      return a === b;
+    }
+    return this.compareWith(a, b);
   }
 }
