@@ -25,6 +25,7 @@
   @if (virtualized()) {
     <cdk-virtual-scroll-viewport
       class="generic-table__scroll generic-table__scroll--virtual"
+      [class.generic-table__scroll--scrolling]="isScrolling()"
       [class.generic-table__scroll--fill]="isFilling()"
       [style.height]="height()"
       [style.max-height]="maxHeight()"
@@ -32,6 +33,7 @@
       [itemSize]="rowHeight()"
       [minBufferPx]="virtualMinBufferPx()"
       [maxBufferPx]="virtualMaxBufferPx()"
+      (scroll)="onScroll()"
     >
       <table
         mat-table
@@ -116,9 +118,11 @@
   } @else {
     <div
       class="generic-table__scroll"
+      [class.generic-table__scroll--scrolling]="isScrolling()"
       [class.generic-table__scroll--fill]="isFilling()"
       [style.height]="height()"
       [style.max-height]="maxHeight()"
+      (scroll)="onScroll()"
     >
       <table
         mat-table

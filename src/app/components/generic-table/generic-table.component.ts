@@ -4,10 +4,13 @@ import {
   Component,
   computed,
   contentChildren,
+  DestroyRef,
   effect,
+  inject,
   input,
   linkedSignal,
   output,
+  signal,
   TemplateRef,
   TrackByFunction,
   viewChild,
@@ -56,6 +59,12 @@ import { ColumnDef, GenericTableCellContext, GenericTableHeightMode } from './ge
   },
 })
 export class GenericTableComponent<T = unknown> {
+  private readonly destroyRef = inject(DestroyRef);
+  private scrollEndTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** True while the scroll body is moving; suppresses row hover styling. */
+  readonly isScrolling = signal(false);
+
   /** Column definitions in display order. */
   readonly columns = input.required<ColumnDef<T>[]>();
   /** Row data. Sorting and pagination are applied client-side. */
@@ -171,6 +180,12 @@ export class GenericTableComponent<T = unknown> {
   );
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.scrollEndTimer != null) {
+        clearTimeout(this.scrollEndTimer);
+      }
+    });
+
     this.dataSource.sortingDataAccessor = (row, columnKey) => {
       const column = this.columnByKey().get(columnKey);
 
@@ -239,6 +254,19 @@ export class GenericTableComponent<T = unknown> {
     if (this.rowClickable()) {
       this.rowClick.emit(row);
     }
+  }
+
+  onScroll(): void {
+    this.isScrolling.set(true);
+
+    if (this.scrollEndTimer != null) {
+      clearTimeout(this.scrollEndTimer);
+    }
+
+    this.scrollEndTimer = setTimeout(() => {
+      this.isScrolling.set(false);
+      this.scrollEndTimer = null;
+    }, 150);
   }
 
   rowStripeClass(index: number): 'generic-table__row--even' | 'generic-table__row--odd' {

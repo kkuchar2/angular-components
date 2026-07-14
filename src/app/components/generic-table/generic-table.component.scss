@@ -37,7 +37,7 @@
   --gt-header-accent: var(--color-primary, #1565c0);
   --gt-row-odd-bg: var(--color-surface, #ffffff);
   --gt-row-even-bg: var(--color-row-even, #fafbfc);
-  --gt-row-hover-bg: var(--color-row-hover, #e8ebf3);
+  --gt-row-hover-bg: var(--color-row-hover, #f2f2f2);
   --gt-row-divider: var(--color-row-divider, rgb(0 0 0 / 4%));
   --gt-empty-color: var(--color-text-muted, rgb(0 0 0 / 60%));
   --gt-empty-padding: var(--spacing-2xl, 3rem);
@@ -156,8 +156,12 @@ table {
 
 .generic-table__row--clickable {
   cursor: pointer;
+}
 
-  &:hover .mat-mdc-cell {
+// Suppress hover while scrolling so fast wheel/trackpad movement does not
+// flash highlight across rows under a stationary cursor.
+.generic-table__scroll:not(.generic-table__scroll--scrolling) {
+  .generic-table__row--clickable:hover .mat-mdc-cell {
     background: var(--gt-row-hover-bg);
   }
 }
