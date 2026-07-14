@@ -14,6 +14,8 @@ import {
 } from '@angular/forms';
 import { LucideDynamicIcon, type LucideIconInput } from '@lucide/angular';
 
+export type CustomInputAppearance = 'default' | 'outlined';
+
 @Component({
   selector: 'app-custom-input',
   standalone: true,
@@ -29,8 +31,13 @@ import { LucideDynamicIcon, type LucideIconInput } from '@lucide/angular';
   ],
 })
 export class CustomInputComponent implements ControlValueAccessor {
+  private static idCounter = 0;
+
+  readonly controlId = `custom-input-${++CustomInputComponent.idCounter}`;
+
   @Input() label = '';
   @Input() placeholder = '';
+  @Input() appearance: CustomInputAppearance = 'default';
   @Input() disabled = false;
   @Input() type: 'text' | 'password' | 'email' | 'search' | 'number' = 'text';
   @Input() clearable = false;
@@ -76,6 +83,20 @@ export class CustomInputComponent implements ControlValueAccessor {
 
   hasValue(): boolean {
     return this.value.length > 0;
+  }
+
+  isLabelFloated(): boolean {
+    if (this.appearance !== 'outlined') {
+      return false;
+    }
+    return this.isFocused() || this.hasValue();
+  }
+
+  effectivePlaceholder(): string {
+    if (this.appearance === 'outlined' && !this.isLabelFloated()) {
+      return '';
+    }
+    return this.placeholder;
   }
 
   onInput(event: Event): void {

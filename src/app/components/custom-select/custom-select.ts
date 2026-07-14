@@ -24,6 +24,8 @@ export interface SelectOption<T = string | number> {
   icon?: string;
 }
 
+export type CustomSelectAppearance = 'default' | 'outlined';
+
 @Component({
   selector: 'app-custom-select',
   standalone: true,
@@ -39,9 +41,14 @@ export interface SelectOption<T = string | number> {
   ],
 })
 export class CustomSelectComponent<T = string | number> implements ControlValueAccessor {
+  private static idCounter = 0;
+
+  readonly controlId = `custom-select-${++CustomSelectComponent.idCounter}`;
+
   @Input() options: SelectOption<T>[] = [];
   @Input() placeholder = 'Select an option';
   @Input() label = '';
+  @Input() appearance: CustomSelectAppearance = 'default';
   @Input() disabled = false;
   @Input() searchable = false;
   @Input() width = '100%';
@@ -55,6 +62,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
   }
 
   isOpen = signal(false);
+  isFocused = signal(false);
   searchQuery = signal('');
   focusedIndex = signal(-1);
 
@@ -195,6 +203,35 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
 
   hasValue(): boolean {
     return this.selectedValue !== null && this.selectedValue !== undefined;
+  }
+
+  isLabelFloated(): boolean {
+    if (this.appearance !== 'outlined') {
+      return false;
+    }
+    return this.isOpen() || this.isFocused() || this.hasValue();
+  }
+
+  getDisplayValue(): string {
+    if (this.hasValue()) {
+      return this.getSelectedLabel();
+    }
+    if (this.appearance === 'outlined' && !this.isLabelFloated()) {
+      return '';
+    }
+    return this.placeholder;
+  }
+
+  isShowingPlaceholder(): boolean {
+    return !this.hasValue() && (this.appearance !== 'outlined' || this.isLabelFloated());
+  }
+
+  onTriggerFocus(): void {
+    this.isFocused.set(true);
+  }
+
+  onTriggerBlur(): void {
+    this.isFocused.set(false);
   }
 
   private valuesEqual(a: T | null, b: T | null): boolean {

@@ -5,6 +5,31 @@
   </header>
 
   <article class="demo-section">
+    <h2 class="demo-section__title">Outlined Appearance</h2>
+    <p class="demo-section__desc">Material-style labels that float inside the field border on focus or when filled.</p>
+
+    <div class="demo-section__body demo-section__body--grid">
+      <app-custom-input
+        appearance="outlined"
+        label="Full name"
+        placeholder="Enter your name"
+        [ngModel]="nameValue()"
+        (ngModelChange)="nameValue.set($event)"
+      />
+      <app-custom-input
+        appearance="outlined"
+        label="Email address"
+        type="email"
+        placeholder="you@example.com"
+        [prefixIcon]="LucideMail"
+        hint="Label sits on the border when active."
+        [ngModel]="emailValue()"
+        (ngModelChange)="emailValue.set($event)"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
     <h2 class="demo-section__title">Basic Input</h2>
     <p class="demo-section__desc">A simple text field with label and placeholder.</p>
 

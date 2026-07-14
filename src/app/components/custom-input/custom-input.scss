@@ -155,4 +155,64 @@
     cursor: not-allowed;
     background: var(--ci-disabled-bg);
   }
+
+  &.appearance-outlined {
+    --ci-field-height: 44px;
+    --ci-label-scale-float: 0.733;
+    --ci-label-rest-y: calc((var(--ci-field-height) - 1em) / 2);
+    --ci-label-float-y: calc(-0.5em * var(--ci-label-scale-float));
+
+    .custom-input__field {
+      position: relative;
+    }
+
+    .custom-input__label--floating {
+      position: absolute;
+      top: 0;
+      left: 14px;
+      z-index: 1;
+      margin: 0;
+      padding: 0 4px;
+      max-width: calc(100% - 28px);
+      overflow: hidden;
+      font-size: var(--ci-font-size);
+      font-weight: 500;
+      line-height: 1;
+      color: var(--ci-text-muted);
+      letter-spacing: normal;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      pointer-events: none;
+      transform: translate3d(0, var(--ci-label-rest-y), 0) scale(1);
+      transform-origin: left top;
+      backface-visibility: hidden;
+      transition: transform var(--ci-transition) cubic-bezier(0.4, 0, 0.2, 1),
+        color var(--ci-transition) cubic-bezier(0.4, 0, 0.2, 1),
+        background-color var(--ci-transition) cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .custom-input__field:has(.custom-input__prefix) .custom-input__label--floating {
+      left: calc(14px + 18px + 8px);
+      max-width: calc(100% - 14px - 18px - 8px - 14px);
+    }
+
+    &.label-floated .custom-input__label--floating {
+      color: var(--ci-text-muted);
+      background-color: var(--ci-bg);
+      transform: translate3d(0, var(--ci-label-float-y), 0) scale(var(--ci-label-scale-float));
+    }
+
+    &.focused.label-floated .custom-input__label--floating {
+      color: var(--ci-accent);
+    }
+
+    &.has-error.label-floated .custom-input__label--floating {
+      color: var(--ci-error);
+      background-color: var(--ci-error-bg);
+    }
+
+    &.disabled.label-floated .custom-input__label--floating {
+      background-color: var(--ci-disabled-bg);
+    }
+  }
 }

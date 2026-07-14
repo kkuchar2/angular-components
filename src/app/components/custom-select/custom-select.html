@@ -1,21 +1,33 @@
-<!-- Label -->
-<div class="custom-select" [class.disabled]="disabled" [class.open]="isOpen()">
-  @if (label) {
-    <label class="custom-select__label">{{ label }}</label>
+<div
+  class="custom-select"
+  [class.disabled]="disabled"
+  [class.open]="isOpen()"
+  [class.focused]="isFocused() || isOpen()"
+  [class.appearance-outlined]="appearance === 'outlined'"
+  [class.label-floated]="isLabelFloated()"
+>
+  @if (label && appearance !== 'outlined') {
+    <label class="custom-select__label" [attr.for]="controlId">{{ label }}</label>
   }
 
-  <!-- Trigger -->
   <div
     class="custom-select__trigger"
+    [id]="controlId"
     tabindex="0"
     role="combobox"
     [attr.aria-expanded]="isOpen()"
     aria-haspopup="listbox"
     (click)="toggle()"
     (keydown)="onKeyDown($event)"
+    (focus)="onTriggerFocus()"
+    (blur)="onTriggerBlur()"
   >
-    <span class="custom-select__value" [class.placeholder]="!hasValue()">
-      {{ hasValue() ? getSelectedLabel() : placeholder }}
+    @if (label && appearance === 'outlined') {
+      <label class="custom-select__label custom-select__label--floating">{{ label }}</label>
+    }
+
+    <span class="custom-select__value" [class.placeholder]="isShowingPlaceholder()">
+      {{ getDisplayValue() }}
     </span>
 
     <div class="custom-select__actions">
@@ -41,7 +53,6 @@
     </div>
   </div>
 
-  <!-- Dropdown -->
   @if (isOpen()) {
     <div class="custom-select__dropdown" role="listbox">
       @if (searchable) {

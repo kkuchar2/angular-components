@@ -53,6 +53,13 @@
     flex-direction: column;
     gap: 0.75rem;
   }
+
+  &--grid {
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--spacing-md);
+  }
 }
 
 .demo-section__output {

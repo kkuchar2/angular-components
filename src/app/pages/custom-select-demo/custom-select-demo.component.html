@@ -5,6 +5,31 @@
   </header>
 
   <article class="demo-section">
+    <h2 class="demo-section__title">Outlined Appearance</h2>
+    <p class="demo-section__desc">Material-style labels that float inside the field border on focus or when a value is selected.</p>
+
+    <div class="demo-section__body demo-section__body--grid">
+      <app-custom-select
+        appearance="outlined"
+        [options]="basicOptions"
+        placeholder="Choose a framework"
+        label="Framework"
+        [ngModel]="basicValue()"
+        (ngModelChange)="basicValue.set($event)"
+      />
+      <app-custom-select
+        appearance="outlined"
+        [options]="countryOptions"
+        placeholder="Select a country"
+        label="Country"
+        [searchable]="true"
+        [ngModel]="countryValue()"
+        (ngModelChange)="countryValue.set($event)"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
     <h2 class="demo-section__title">Basic Select</h2>
     <p class="demo-section__desc">A simple dropdown with framework options.</p>
 
