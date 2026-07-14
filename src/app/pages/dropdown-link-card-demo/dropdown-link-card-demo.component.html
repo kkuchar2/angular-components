@@ -7,9 +7,10 @@
   </header>
 
   <article class="demo-section">
-    <h2 class="demo-section__title">Lucide Icons</h2>
+    <h2 class="demo-section__title">Nested Submenus</h2>
     <p class="demo-section__desc">
-      Pass Lucide icon components for the card and link icons.
+      Items with a <code>children</code> array reveal a flyout submenu on hover.
+      Use arrow keys to navigate: Right opens a submenu, Left closes it.
     </p>
 
     <div class="demo-section__body demo-section__body--cards">
@@ -32,6 +33,21 @@
         title="Frameworks"
         [icon]="imageCardIcon"
         [links]="imageLinks"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Flat Links (Lucide)</h2>
+    <p class="demo-section__desc">
+      Simple flat list without nested children.
+    </p>
+
+    <div class="demo-section__body demo-section__body--cards">
+      <app-dropdown-link-card
+        title="Quick Links"
+        [icon]="lucideCardIcon"
+        [links]="flatLucideLinks"
       />
     </div>
   </article>

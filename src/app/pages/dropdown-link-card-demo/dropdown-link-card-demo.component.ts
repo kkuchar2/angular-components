@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
 import {
   LucideBookOpen,
+  LucideCode,
   LucideFileText,
   LucideGlobe,
+  LucideLayers,
   LucideZap,
 } from '@lucide/angular';
 
@@ -31,6 +33,40 @@ export class DropdownLinkCardDemoComponent {
   };
 
   readonly lucideLinks: DropdownLink[] = [
+    {
+      label: 'Angular Docs',
+      url: 'https://angular.dev',
+      icon: { type: 'lucide', icon: LucideFileText },
+      description: 'Official Angular documentation',
+    },
+    {
+      label: 'Web Resources',
+      icon: { type: 'lucide', icon: LucideLayers },
+      description: 'Curated web development links',
+      children: [
+        {
+          label: 'MDN Web Docs',
+          url: 'https://developer.mozilla.org',
+          icon: { type: 'lucide', icon: LucideGlobe },
+          description: 'Web APIs & HTML/CSS/JS reference',
+        },
+        {
+          label: 'Can I Use',
+          url: 'https://caniuse.com',
+          icon: { type: 'lucide', icon: LucideCode },
+          description: 'Browser support tables',
+        },
+      ],
+    },
+    {
+      label: 'RxJS Guide',
+      url: 'https://rxjs.dev/guide/overview',
+      icon: { type: 'lucide', icon: LucideZap },
+      description: 'Reactive programming with RxJS',
+    },
+  ];
+
+  readonly flatLucideLinks: DropdownLink[] = [
     {
       label: 'Angular Docs',
       url: 'https://angular.dev',

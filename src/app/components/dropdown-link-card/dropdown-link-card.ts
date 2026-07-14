@@ -24,9 +24,10 @@ export type { DropdownLinkCardIconImage, DropdownLinkCardIconLucide } from './dr
 
 export interface DropdownLink {
   label: string;
-  url: string;
+  url?: string;
   icon?: DropdownLinkCardIcon;
   description?: string;
+  children?: DropdownLink[];
 }
 
 @Component({
@@ -55,6 +56,8 @@ export class DropdownLinkCardComponent {
 
   readonly isOpen = signal(false);
   readonly focusedIndex = signal(-1);
+  readonly openSubmenuIndex = signal(-1);
+  readonly focusedSubIndex = signal(-1);
 
   private overlayRef: OverlayRef | null = null;
   private overlaySubscriptions: Subscription[] = [];
@@ -71,8 +74,26 @@ export class DropdownLinkCardComponent {
     inject(DestroyRef).onDestroy(() => this.destroyOverlay());
   }
 
-  linkId(index: number): string {
-    return `${this.controlId}-link-${index}`;
+  linkId(index: number, subIndex?: number): string {
+    return subIndex === undefined
+      ? `${this.controlId}-link-${index}`
+      : `${this.controlId}-link-${index}-${subIndex}`;
+  }
+
+  hasChildren(link: DropdownLink): boolean {
+    return (link.children?.length ?? 0) > 0;
+  }
+
+  onItemMouseEnter(index: number): void {
+    if (this.hasChildren(this.links()[index])) {
+      this.openSubmenuIndex.set(index);
+    } else {
+      this.openSubmenuIndex.set(-1);
+    }
+  }
+
+  onSubmenuMouseLeave(): void {
+    this.openSubmenuIndex.set(-1);
   }
 
   toggle(): void {
@@ -90,6 +111,8 @@ export class DropdownLinkCardComponent {
 
     this.isOpen.set(true);
     this.focusedIndex.set(this.links().length > 0 ? 0 : -1);
+    this.openSubmenuIndex.set(-1);
+    this.focusedSubIndex.set(-1);
 
     const trigger = this.triggerRef().nativeElement;
     const positionStrategy = this.overlay
@@ -136,6 +159,8 @@ export class DropdownLinkCardComponent {
 
     this.isOpen.set(false);
     this.focusedIndex.set(-1);
+    this.openSubmenuIndex.set(-1);
+    this.focusedSubIndex.set(-1);
     this.destroyOverlay();
     // `preventScroll` avoids a jarring scroll jump when the menu is dismissed by
     // an outside scroll and focus returns to the trigger.
@@ -154,39 +179,81 @@ export class DropdownLinkCardComponent {
   }
 
   onKeyDown(event: KeyboardEvent): void {
-    const linkCount = this.links().length;
+    const links = this.links();
+    const linkCount = links.length;
+    const inSubmenu = this.focusedSubIndex() >= 0;
+    const submenuIndex = this.openSubmenuIndex();
+    const submenuCount = submenuIndex >= 0 ? (links[submenuIndex]?.children?.length ?? 0) : 0;
 
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
         if (!this.isOpen()) {
           this.open();
+        } else if (inSubmenu && submenuCount > 0) {
+          this.focusedSubIndex.update((index) => Math.min(index + 1, submenuCount - 1));
+          this.focusActiveLink();
         } else if (linkCount > 0) {
           this.focusedIndex.update((index) => Math.min(index + 1, linkCount - 1));
+          this.closeSubmenu();
           this.focusActiveLink();
         }
         break;
 
       case 'ArrowUp':
         event.preventDefault();
-        if (this.isOpen() && linkCount > 0) {
+        if (this.isOpen() && inSubmenu && submenuCount > 0) {
+          this.focusedSubIndex.update((index) => Math.max(index - 1, 0));
+          this.focusActiveLink();
+        } else if (this.isOpen() && linkCount > 0) {
           this.focusedIndex.update((index) => Math.max(index - 1, 0));
+          this.closeSubmenu();
+          this.focusActiveLink();
+        }
+        break;
+
+      case 'ArrowRight':
+        if (this.isOpen() && !inSubmenu) {
+          const index = this.focusedIndex();
+          if (index >= 0 && this.hasChildren(links[index])) {
+            event.preventDefault();
+            this.openSubmenuIndex.set(index);
+            this.focusedSubIndex.set(0);
+            this.focusActiveLink();
+          }
+        }
+        break;
+
+      case 'ArrowLeft':
+        if (this.isOpen() && inSubmenu) {
+          event.preventDefault();
+          this.closeSubmenu();
           this.focusActiveLink();
         }
         break;
 
       case 'Home':
-        if (this.isOpen() && linkCount > 0) {
+        if (this.isOpen()) {
           event.preventDefault();
-          this.focusedIndex.set(0);
+          if (inSubmenu && submenuCount > 0) {
+            this.focusedSubIndex.set(0);
+          } else if (linkCount > 0) {
+            this.focusedIndex.set(0);
+            this.closeSubmenu();
+          }
           this.focusActiveLink();
         }
         break;
 
       case 'End':
-        if (this.isOpen() && linkCount > 0) {
+        if (this.isOpen()) {
           event.preventDefault();
-          this.focusedIndex.set(linkCount - 1);
+          if (inSubmenu && submenuCount > 0) {
+            this.focusedSubIndex.set(submenuCount - 1);
+          } else if (linkCount > 0) {
+            this.focusedIndex.set(linkCount - 1);
+            this.closeSubmenu();
+          }
           this.focusActiveLink();
         }
         break;
@@ -196,15 +263,29 @@ export class DropdownLinkCardComponent {
         event.preventDefault();
         if (!this.isOpen()) {
           this.open();
-        } else {
+        } else if (inSubmenu) {
           this.activateFocusedLink();
+        } else {
+          const index = this.focusedIndex();
+          if (index >= 0 && this.hasChildren(links[index])) {
+            this.openSubmenuIndex.set(index);
+            this.focusedSubIndex.set(0);
+            this.focusActiveLink();
+          } else {
+            this.activateFocusedLink();
+          }
         }
         break;
 
       case 'Escape':
         if (this.isOpen()) {
           event.preventDefault();
-          this.close();
+          if (inSubmenu) {
+            this.closeSubmenu();
+            this.focusActiveLink();
+          } else {
+            this.close();
+          }
         }
         break;
 
@@ -214,23 +295,40 @@ export class DropdownLinkCardComponent {
     }
   }
 
+  private closeSubmenu(): void {
+    this.openSubmenuIndex.set(-1);
+    this.focusedSubIndex.set(-1);
+  }
+
   private focusActiveLink(): void {
-    const index = this.focusedIndex();
-    if (index < 0 || !this.overlayRef) {
+    if (!this.overlayRef) {
       return;
     }
 
-    const link = this.overlayRef.overlayElement.querySelector<HTMLElement>(`#${this.linkId(index)}`);
+    const subIndex = this.focusedSubIndex();
+    const parentIndex = subIndex >= 0 ? this.openSubmenuIndex() : this.focusedIndex();
+    if (parentIndex < 0) {
+      return;
+    }
+
+    const selector = `#${this.linkId(parentIndex, subIndex >= 0 ? subIndex : undefined)}`;
+    const link = this.overlayRef.overlayElement.querySelector<HTMLElement>(selector);
     link?.focus();
   }
 
   private activateFocusedLink(): void {
-    const index = this.focusedIndex();
-    if (index < 0 || !this.overlayRef) {
+    if (!this.overlayRef) {
       return;
     }
 
-    const link = this.overlayRef.overlayElement.querySelector<HTMLElement>(`#${this.linkId(index)}`);
+    const subIndex = this.focusedSubIndex();
+    const parentIndex = subIndex >= 0 ? this.openSubmenuIndex() : this.focusedIndex();
+    if (parentIndex < 0) {
+      return;
+    }
+
+    const selector = `#${this.linkId(parentIndex, subIndex >= 0 ? subIndex : undefined)}`;
+    const link = this.overlayRef.overlayElement.querySelector<HTMLElement>(selector);
     link?.click();
   }
 }
