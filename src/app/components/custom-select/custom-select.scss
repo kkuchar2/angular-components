@@ -1,6 +1,8 @@
 :host {
   display: block;
   position: relative;
+  align-self: flex-start;
+  min-width: 0;
 }
 
 @mixin custom-select-tokens {
@@ -95,6 +97,7 @@
   &__actions {
     display: flex;
     align-items: center;
+    align-self: center;
     gap: 4px;
     margin-left: 8px;
     flex-shrink: 0;
@@ -300,13 +303,13 @@
     }
 
     &.label-floated .custom-select__trigger {
-      align-items: flex-end;
+      align-items: center;
       padding-top: 14px;
       padding-bottom: 8px;
     }
 
     &.label-floated .custom-select__value {
-      align-self: stretch;
+      align-self: center;
     }
 
     &.disabled.label-floated .custom-select__label--floating {
