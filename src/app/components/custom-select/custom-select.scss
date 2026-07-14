@@ -69,7 +69,7 @@
     }
 
     &:focus-visible {
-      border-color: var(--cs-trigger-active-border);
+      border-color: var(--cs-border-hover);
       background: var(--cs-trigger-active-bg);
       outline: none;
     }
@@ -224,7 +224,7 @@
 
   &.open {
     .custom-select__trigger {
-      border-color: var(--cs-trigger-active-border);
+      border-color: var(--cs-border-hover);
       background: var(--cs-trigger-active-bg);
       outline: none;
     }

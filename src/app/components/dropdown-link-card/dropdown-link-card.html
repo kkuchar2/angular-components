@@ -30,113 +30,180 @@
 <ng-template #dropdownTemplate>
   <div class="link-card__overlay-panel">
     <div class="link-card__dropdown" [id]="menuId" role="menu">
-    @for (link of links(); track link.label; let i = $index) {
-      @if (hasChildren(link)) {
-        <div
-          class="link-card__link-group"
-          (mouseenter)="onItemMouseEnter(i)"
-          (mouseleave)="onSubmenuMouseLeave()"
+      @if (drilldownParent(); as parent) {
+        <button
+          class="link-card__back"
+          type="button"
+          role="menuitem"
+          tabindex="-1"
+          [id]="backButtonId()"
+          [class.focused]="focusedSubIndex() === -1"
+          (click)="goBack()"
         >
-          <div
-            class="link-card__link link-card__link--parent"
+          <span class="link-card__back-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </span>
+          <span class="link-card__back-label">{{ parent.label }}</span>
+        </button>
+
+        @for (child of parent.children; track child.label; let j = $index) {
+          <a
+            class="link-card__link"
             role="menuitem"
             tabindex="-1"
-            [id]="linkId(i)"
-            aria-haspopup="menu"
-            [class.focused]="focusedIndex() === i && focusedSubIndex() < 0"
-            [class.submenu-open]="openSubmenuIndex() === i"
+            [id]="linkId(openSubmenuIndex(), j)"
+            [class.focused]="focusedSubIndex() === j"
+            [href]="child.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            (click)="onLinkClick()"
           >
-            @if (link.icon) {
+            @if (child.icon) {
               <span class="link-card__link-icon">
-                <app-dropdown-link-card-icon [icon]="link.icon" [size]="18" />
+                <app-dropdown-link-card-icon [icon]="child.icon" [size]="18" />
               </span>
             }
             <div class="link-card__link-content">
-              <span class="link-card__link-label">{{ link.label }}</span>
-              @if (link.description) {
-                <span class="link-card__link-desc">{{ link.description }}</span>
+              <span class="link-card__link-label">{{ child.label }}</span>
+              @if (child.description) {
+                <span class="link-card__link-desc">{{ child.description }}</span>
               }
             </div>
-            <span class="link-card__chevron" aria-hidden="true">
+            <span class="link-card__external" aria-hidden="true">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6" />
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
             </span>
-          </div>
-
-          @if (openSubmenuIndex() === i) {
-            <div class="link-card__submenu" role="menu">
-              @for (child of link.children; track child.label; let j = $index) {
-                <a
-                  class="link-card__link"
-                  role="menuitem"
-                  tabindex="-1"
-                  [id]="linkId(i, j)"
-                  [class.focused]="focusedSubIndex() === j"
-                  [href]="child.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  (click)="onLinkClick()"
-                >
-                  @if (child.icon) {
-                    <span class="link-card__link-icon">
-                      <app-dropdown-link-card-icon [icon]="child.icon" [size]="18" />
-                    </span>
-                  }
-                  <div class="link-card__link-content">
-                    <span class="link-card__link-label">{{ child.label }}</span>
-                    @if (child.description) {
-                      <span class="link-card__link-desc">{{ child.description }}</span>
-                    }
-                  </div>
-                  <span class="link-card__external" aria-hidden="true">
+          </a>
+        }
+      } @else {
+        @for (link of links(); track link.label; let i = $index) {
+          @if (hasChildren(link)) {
+            <div
+              class="link-card__link-group"
+              (mouseenter)="onItemMouseEnter(i)"
+              (mouseleave)="onSubmenuMouseLeave()"
+            >
+              <div
+                class="link-card__link link-card__link--parent"
+                role="menuitem"
+                tabindex="-1"
+                [id]="linkId(i)"
+                aria-haspopup="menu"
+                [class.focused]="focusedIndex() === i && focusedSubIndex() < 0"
+                [class.submenu-open]="openSubmenuIndex() === i"
+                [class.link-card__link--submenu-start]="opensSubmenuOnLeft(i)"
+                (click)="onParentClick(i, $event)"
+              >
+                @if (opensSubmenuOnLeft(i)) {
+                  <span class="link-card__chevron link-card__chevron--leading link-card__chevron--start" aria-hidden="true">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
+                      <polyline points="15 18 9 12 15 6" />
                     </svg>
                   </span>
-                </a>
+                }
+                @if (link.icon) {
+                  <span class="link-card__link-icon">
+                    <app-dropdown-link-card-icon [icon]="link.icon" [size]="18" />
+                  </span>
+                }
+                <div class="link-card__link-content">
+                  <span class="link-card__link-label">{{ link.label }}</span>
+                  @if (link.description) {
+                    <span class="link-card__link-desc">{{ link.description }}</span>
+                  }
+                </div>
+                @if (!opensSubmenuOnLeft(i)) {
+                  <span class="link-card__chevron link-card__chevron--trailing" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </span>
+                }
+              </div>
+
+              @if (openSubmenuIndex() === i && submenuMode() === 'flyout') {
+                <div
+                  class="link-card__submenu"
+                  [class.link-card__submenu--start]="submenuPlacement() === 'start'"
+                  role="menu"
+                >
+                  @for (child of link.children; track child.label; let j = $index) {
+                    <a
+                      class="link-card__link"
+                      role="menuitem"
+                      tabindex="-1"
+                      [id]="linkId(i, j)"
+                      [class.focused]="focusedSubIndex() === j"
+                      [href]="child.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      (click)="onLinkClick()"
+                    >
+                      @if (child.icon) {
+                        <span class="link-card__link-icon">
+                          <app-dropdown-link-card-icon [icon]="child.icon" [size]="18" />
+                        </span>
+                      }
+                      <div class="link-card__link-content">
+                        <span class="link-card__link-label">{{ child.label }}</span>
+                        @if (child.description) {
+                          <span class="link-card__link-desc">{{ child.description }}</span>
+                        }
+                      </div>
+                      <span class="link-card__external" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                      </span>
+                    </a>
+                  }
+                </div>
               }
             </div>
+          } @else {
+            <a
+              class="link-card__link"
+              role="menuitem"
+              tabindex="-1"
+              [id]="linkId(i)"
+              [class.focused]="focusedIndex() === i"
+              [href]="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              (click)="onLinkClick()"
+              (mouseenter)="onItemMouseEnter(i)"
+            >
+              @if (link.icon) {
+                <span class="link-card__link-icon">
+                  <app-dropdown-link-card-icon [icon]="link.icon" [size]="18" />
+                </span>
+              }
+              <div class="link-card__link-content">
+                <span class="link-card__link-label">{{ link.label }}</span>
+                @if (link.description) {
+                  <span class="link-card__link-desc">{{ link.description }}</span>
+                }
+              </div>
+              <span class="link-card__external" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </span>
+            </a>
           }
-        </div>
-      } @else {
-        <a
-          class="link-card__link"
-          role="menuitem"
-          tabindex="-1"
-          [id]="linkId(i)"
-          [class.focused]="focusedIndex() === i"
-          [href]="link.url"
-          target="_blank"
-          rel="noopener noreferrer"
-          (click)="onLinkClick()"
-          (mouseenter)="onItemMouseEnter(i)"
-        >
-          @if (link.icon) {
-            <span class="link-card__link-icon">
-              <app-dropdown-link-card-icon [icon]="link.icon" [size]="18" />
-            </span>
-          }
-          <div class="link-card__link-content">
-            <span class="link-card__link-label">{{ link.label }}</span>
-            @if (link.description) {
-              <span class="link-card__link-desc">{{ link.description }}</span>
-            }
-          </div>
-          <span class="link-card__external" aria-hidden="true">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
-          </span>
-        </a>
+        } @empty {
+          <div class="link-card__empty">No links available</div>
+        }
       }
-    } @empty {
-      <div class="link-card__empty">No links available</div>
-    }
     </div>
   </div>
 </ng-template>

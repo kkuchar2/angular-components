@@ -106,6 +106,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
 
   private overlayRef: OverlayRef | null = null;
   private overlaySubscriptions: Subscription[] = [];
+  private triggerResizeObserver: ResizeObserver | null = null;
   private onChange: (value: T | null) => void = () => {};
   private onTouched: () => void = () => {};
 
@@ -160,7 +161,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
 
     this.isOpen.set(true);
     this.searchQuery.set('');
-    this.focusedIndex.set(this.getInitialFocusIndex());
+    this.focusedIndex.set(-1);
 
     const trigger = this.triggerRef().nativeElement;
     const positionStrategy = this.overlay
@@ -187,6 +188,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
     });
 
     this.overlayRef.attach(new TemplatePortal(this.dropdownTemplate(), this.viewContainerRef));
+    this.watchTriggerResize();
 
     this.overlaySubscriptions.push(
       this.overlayRef.backdropClick().subscribe(() => this.close()),
@@ -224,10 +226,42 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
   }
 
   private destroyOverlay(): void {
+    this.unwatchTriggerResize();
     this.overlaySubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.overlaySubscriptions = [];
     this.overlayRef?.dispose();
     this.overlayRef = null;
+  }
+
+  private watchTriggerResize(): void {
+    this.unwatchTriggerResize();
+
+    const trigger = this.triggerRef().nativeElement;
+    this.triggerResizeObserver = new ResizeObserver(() => {
+      if (this.isOpen()) {
+        this.syncOverlaySize();
+      }
+    });
+    this.triggerResizeObserver.observe(trigger);
+  }
+
+  private unwatchTriggerResize(): void {
+    this.triggerResizeObserver?.disconnect();
+    this.triggerResizeObserver = null;
+  }
+
+  private syncOverlaySize(): void {
+    if (!this.overlayRef) {
+      return;
+    }
+
+    const triggerWidth = this.triggerRef().nativeElement.getBoundingClientRect().width;
+    this.overlayRef.updateSize({
+      width: triggerWidth,
+      minWidth: triggerWidth,
+      maxWidth: triggerWidth,
+    });
+    this.overlayRef.updatePosition();
   }
 
   selectOption(option: SelectOption<T>): void {
@@ -251,7 +285,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
   onSearchInput(event: Event): void {
     const inputEl = event.target as HTMLInputElement;
     this.searchQuery.set(inputEl.value);
-    this.focusedIndex.set(this.filteredOptions().length > 0 ? 0 : -1);
+    this.focusedIndex.set(-1);
   }
 
   onKeyDown(event: KeyboardEvent): void {
@@ -262,8 +296,14 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
         event.preventDefault();
         if (!this.isOpen()) {
           this.open();
+          if (options.length > 0) {
+            this.focusedIndex.set(0);
+            queueMicrotask(() => this.scrollActiveOptionIntoView());
+          }
         } else {
-          this.focusedIndex.update((index) => Math.min(index + 1, options.length - 1));
+          this.focusedIndex.update((index) =>
+            index < 0 ? 0 : Math.min(index + 1, options.length - 1),
+          );
           this.scrollActiveOptionIntoView();
         }
         break;
@@ -272,8 +312,14 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
         event.preventDefault();
         if (!this.isOpen()) {
           this.open();
+          if (options.length > 0) {
+            this.focusedIndex.set(options.length - 1);
+            queueMicrotask(() => this.scrollActiveOptionIntoView());
+          }
         } else {
-          this.focusedIndex.update((index) => Math.max(index - 1, 0));
+          this.focusedIndex.update((index) =>
+            index < 0 ? options.length - 1 : Math.max(index - 1, 0),
+          );
           this.scrollActiveOptionIntoView();
         }
         break;
@@ -371,12 +417,6 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
     } else {
       this.open();
     }
-  }
-
-  private getInitialFocusIndex(): number {
-    const options = this.filteredOptions();
-    const selectedIndex = options.findIndex((option) => this.isSelected(option));
-    return selectedIndex >= 0 ? selectedIndex : options.length > 0 ? 0 : -1;
   }
 
   private scrollActiveOptionIntoView(): void {
