@@ -94,8 +94,11 @@ The row type `T` is inferred from the `data`/`columns` inputs, so `cell`,
 | Input             | Type                     | Default               | Description                                              |
 | ----------------- | ------------------------ | --------------------- | -------------------------------------------------------- |
 | `columns`         | `ColumnDef<T>[]`         | required              | Column definitions in display order.                     |
-| `data`            | `readonly T[]`           | required              | Row data (sorted/paginated client-side).                 |
+| `data`            | `readonly T[]`           | required              | Row data (client-side sort/paginate unless `serverSide`). |
 | `paginated`       | `boolean`                | `false`               | Show a paginator; otherwise the body scrolls. Ignored when `virtualized`. |
+| `serverSide`      | `boolean`                | `false`               | Server-side pagination — pass one page in `data`, set `totalCount`, fetch on `(pageChange)`. Requires `paginated`. |
+| `totalCount`      | `number`                 | `0`                   | Total rows on the server (when `serverSide` is true).     |
+| `pageIndex`       | `number`                 | `0`                   | Current page index, zero-based (when `serverSide` is true). |
 | `virtualized`     | `boolean`                | `false`               | Virtual scroll — only visible rows are rendered. Requires a bounded height and `rowHeight`. |
 | `rowHeight`       | `number`                 | `48`                  | Fixed row height in pixels (required for `virtualized`). |
 | `pageSize`        | `number`                 | `10`                  | Initial page size.                                       |
@@ -114,7 +117,67 @@ The row type `T` is inferred from the `data`/`columns` inputs, so `cell`,
 | ------------ | ----------- | -------------------------------------------------- |
 | `rowClick`   | `T`         | Emitted on row click when `rowClickable` is true.  |
 | `sortChange` | `Sort`      | Emitted when the sort state changes.               |
-| `pageChange` | `PageEvent` | Emitted when the page changes.                     |
+| `pageChange` | `PageEvent` | Emitted when the page changes. Fetch the next page when `serverSide` is true. |
+
+### Server-side pagination
+
+Use when the full dataset lives on the server and you only want one page in memory at a time.
+Enable `paginated` and `serverSide`, pass the current page rows in `data`, set `totalCount` to the
+server total, and update `pageIndex` after each fetch:
+
+```ts
+import { Component, inject, signal } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
+import { ColumnDef, GenericTableComponent } from './components/generic-table';
+import { UserService } from './user.service';
+
+@Component({
+  selector: 'app-users',
+  imports: [GenericTableComponent],
+  template: `
+    <app-generic-table
+      [columns]="columns"
+      [data]="rows()"
+      [paginated]="true"
+      [serverSide]="true"
+      [totalCount]="totalCount()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      (pageChange)="onPageChange($event)"
+    />
+  `,
+})
+export class UsersComponent {
+  private readonly users = inject(UserService);
+
+  readonly columns: ColumnDef<User>[] = [/* ... */];
+  readonly rows = signal<User[]>([]);
+  readonly totalCount = signal(0);
+  readonly pageIndex = signal(0);
+  readonly pageSize = signal(10);
+
+  constructor() {
+    this.loadPage(0, this.pageSize());
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.loadPage(event.pageIndex, event.pageSize);
+  }
+
+  private loadPage(pageIndex: number, pageSize: number): void {
+    this.users.fetchPage({ pageIndex, pageSize }).subscribe(({ items, total }) => {
+      this.rows.set(items);
+      this.totalCount.set(total);
+      this.pageIndex.set(pageIndex);
+      this.pageSize.set(pageSize);
+    });
+  }
+}
+```
+
+With `serverSide`, the paginator is **not** wired to `MatTableDataSource` — it uses `totalCount`
+for the page count and displays whatever you pass in `data` as-is. Sorting still runs client-side
+over the current page unless you handle `(sortChange)` and refetch from the server.
 
 ### Height & scrolling
 

@@ -1,5 +1,6 @@
 import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { Component, signal } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
 
 import {
   ColumnDef,
@@ -224,6 +225,23 @@ export class GenericTableDemoComponent {
 
   readonly selectedRow = signal<DemoUser | null>(null);
 
+  /** Simulated server-side dataset (87 rows); only one page is exposed at a time. */
+  private readonly serverSideDataset = this.buildVirtualRows(87);
+
+  readonly serverSideTotal = this.serverSideDataset.length;
+  readonly serverSideRows = signal<DemoUser[]>([]);
+  readonly serverSidePageIndex = signal(0);
+  readonly serverSidePageSize = signal(5);
+  readonly serverSideLoading = signal(false);
+
+  constructor() {
+    this.loadServerSidePage(0, this.serverSidePageSize());
+  }
+
+  onServerSidePageChange(event: PageEvent): void {
+    this.loadServerSidePage(event.pageIndex, event.pageSize);
+  }
+
   onRowClick(row: DemoUser): void {
     this.selectedRow.set(row);
   }
@@ -247,6 +265,19 @@ export class GenericTableDemoComponent {
 
   statusBadgeClass(status: string): string {
     return `home__status-badge home__status-badge--${status.toLowerCase()}`;
+  }
+
+  private loadServerSidePage(pageIndex: number, pageSize: number): void {
+    this.serverSideLoading.set(true);
+
+    // Simulate network latency.
+    setTimeout(() => {
+      const start = pageIndex * pageSize;
+      this.serverSideRows.set(this.serverSideDataset.slice(start, start + pageSize));
+      this.serverSidePageIndex.set(pageIndex);
+      this.serverSidePageSize.set(pageSize);
+      this.serverSideLoading.set(false);
+    }, 350);
   }
 
   private buildVirtualRows(count: number): DemoUser[] {

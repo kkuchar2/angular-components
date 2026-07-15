@@ -72,10 +72,20 @@ export class GenericTableComponent<T = unknown> {
 
   /** Column definitions in display order. */
   readonly columns = input.required<ColumnDef<T>[]>();
-  /** Row data. Sorting and pagination are applied client-side. */
+  /** Row data for the current view. Client-side when `serverSide` is false. */
   readonly data = input.required<readonly T[]>();
   /** Show a paginator. When `false` the table body scrolls instead. Ignored when `virtualized`. */
   readonly paginated = input(false);
+  /**
+   * Server-side pagination: pass only the current page in `data`, set `totalCount` to the
+   * full result size, and fetch new rows in `(pageChange)`. Requires `paginated`.
+   * Sorting remains client-side over the current page unless you handle `(sortChange)`.
+   */
+  readonly serverSide = input(false);
+  /** Total row count on the server (used when `serverSide` is true). */
+  readonly totalCount = input(0);
+  /** Current page index, zero-based (used when `serverSide` is true). */
+  readonly pageIndex = input(0);
   /**
    * Render rows with CDK virtual scroll (only visible rows in the DOM).
    * Requires a bounded scroll height (`height`, `maxHeight`, or `heightMode` `'fill'`/`'parent'`)
@@ -111,6 +121,7 @@ export class GenericTableComponent<T = unknown> {
   readonly isFillMode = computed(() => this.isFilling() && this.heightMode() === 'fill');
   readonly isParentMode = computed(() => this.isFilling() && this.heightMode() === 'parent');
   readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
+  readonly isServerSidePagination = computed(() => this.serverSide() && this.showPaginator());
   readonly virtualMinBufferPx = computed(() => this.rowHeight() * 10);
   readonly virtualMaxBufferPx = computed(() => this.rowHeight() * 20);
   readonly trackBy = input<TrackByFunction<T>>((_index, row) => row);
@@ -267,7 +278,10 @@ export class GenericTableComponent<T = unknown> {
     });
 
     effect(() => {
-      this.dataSource.paginator = this.showPaginator() ? (this.paginator() ?? null) : null;
+      const attachPaginator =
+        this.showPaginator() && !this.isServerSidePagination();
+
+      this.dataSource.paginator = attachPaginator ? (this.paginator() ?? null) : null;
     });
   }
 

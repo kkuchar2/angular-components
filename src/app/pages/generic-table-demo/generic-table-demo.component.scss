@@ -43,6 +43,12 @@
   font-size: 0.875rem;
 }
 
+.home__server-side-status {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
 .home__demo--playground {
   gap: var(--spacing-lg);
 }

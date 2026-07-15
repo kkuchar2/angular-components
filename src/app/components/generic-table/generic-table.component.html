@@ -240,6 +240,8 @@
 
   @if (showPaginator()) {
     <mat-paginator
+      [length]="isServerSidePagination() ? totalCount() : undefined"
+      [pageIndex]="isServerSidePagination() ? pageIndex() : undefined"
       [pageSize]="pageSize()"
       [pageSizeOptions]="pageSizeOptions()"
       (page)="pageChange.emit($event)"

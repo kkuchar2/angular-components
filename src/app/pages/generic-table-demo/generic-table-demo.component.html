@@ -34,8 +34,42 @@
     }
   </article>
 
+  <article class="home__demo">
+    <h2 class="home__demo-title">2. Server-side pagination</h2>
+    <p class="home__demo-hint">
+      87 rows on the “server”, five per page. Only the current page is passed to
+      <code>[data]</code>; each paginator click triggers a simulated fetch (~350&nbsp;ms).
+    </p>
+
+    @if (serverSideLoading()) {
+      <p class="home__server-side-status" aria-live="polite">Loading page…</p>
+    } @else {
+      <p class="home__server-side-status">
+        Showing page {{ serverSidePageIndex() + 1 }} —
+        {{ serverSideRows().length }} row(s) loaded of {{ serverSideTotal }} total.
+      </p>
+    }
+
+    <app-generic-table
+      [columns]="columns"
+      [data]="serverSideRows()"
+      [paginated]="true"
+      [serverSide]="true"
+      [totalCount]="serverSideTotal"
+      [pageIndex]="serverSidePageIndex()"
+      [pageSize]="serverSidePageSize()"
+      [showColumnToggle]="false"
+      [trackBy]="trackById"
+      (pageChange)="onServerSidePageChange($event)"
+    >
+      <ng-template appGenericTableCell="status" [appGenericTableCellFor]="serverSideRows()" let-row>
+        <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>
+      </ng-template>
+    </app-generic-table>
+  </article>
+
   <article class="home__demo home__demo--playground">
-    <h2 class="home__demo-title">2. Height constraints playground</h2>
+    <h2 class="home__demo-title">3. Height constraints playground</h2>
     <p class="home__demo-hint">
       Drag a card by its header to move it. Drag the bottom-right corner of the dashed
       container to resize it. Each card uses twelve rows with pagination off.
@@ -85,7 +119,7 @@
   </article>
 
   <article class="home__demo">
-    <h2 class="home__demo-title">3. Custom cell templates</h2>
+    <h2 class="home__demo-title">4. Custom cell templates</h2>
     <p class="home__demo-hint">
       Multiple projected templates: an initials avatar, a mailto link, and a status badge.
     </p>
@@ -114,7 +148,7 @@
   </article>
 
   <article class="home__demo">
-    <h2 class="home__demo-title">4. Virtual scroll</h2>
+    <h2 class="home__demo-title">5. Virtual scroll</h2>
     <p class="home__demo-hint">
       10 000 rows with only the visible slice in the DOM. Sorting still runs client-side over the
       full dataset. Requires a fixed scroll height and uniform row height.
@@ -132,7 +166,7 @@
   </article>
 
   <article class="home__demo">
-    <h2 class="home__demo-title">5. Empty state</h2>
+    <h2 class="home__demo-title">6. Empty state</h2>
     <p class="home__demo-hint">
       Non-virtualized table — a centered message replaces the rows when there is no data.
     </p>
@@ -146,7 +180,7 @@
   </article>
 
   <article class="home__demo">
-    <h2 class="home__demo-title">6. Virtual scroll — empty vs populated</h2>
+    <h2 class="home__demo-title">7. Virtual scroll — empty vs populated</h2>
     <p class="home__demo-hint">
       Compare column widths when a virtualized table opens empty (cold start) against one
       with 250 rows. Both use the same columns and height — headers should line up.
