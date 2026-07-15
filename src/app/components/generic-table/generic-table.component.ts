@@ -58,6 +58,7 @@ import { ColumnDef, GenericTableCellContext, GenericTableHeightMode } from './ge
     '[class.generic-table-host--fill]': 'isFillMode()',
     '[class.generic-table-host--parent]': 'isParentMode()',
     '[class.generic-table-host--virtualized]': 'virtualized()',
+    '[class.generic-table-host--disabled]': 'disabled()',
   },
 })
 export class GenericTableComponent<T = unknown> {
@@ -104,6 +105,8 @@ export class GenericTableComponent<T = unknown> {
   readonly emptyMessage = input('No data available');
   /** Emit `rowClick` and apply hover styling when true. */
   readonly rowClickable = input(false);
+  /** Fade the table and block all interaction (sort, pagination, column toggle, row click). */
+  readonly disabled = input(false);
   /**
    * How the table sizes vertically:
    * - `'auto'` (default): grows with content; pair with `maxHeight` to cap it.
@@ -313,15 +316,33 @@ export class GenericTableComponent<T = unknown> {
   }
 
   onToggleColumns(event: MatChipListboxChange): void {
+    if (this.disabled()) {
+      return;
+    }
+
     if (Array.isArray(event.value)) {
       this.visibleKeys.set(new Set(event.value));
     }
   }
 
-  onRowClick(row: T): void {
-    if (this.rowClickable()) {
-      this.rowClick.emit(row);
+  onSortChange(sort: Sort): void {
+    if (!this.disabled()) {
+      this.sortChange.emit(sort);
     }
+  }
+
+  onPageChange(event: PageEvent): void {
+    if (!this.disabled()) {
+      this.pageChange.emit(event);
+    }
+  }
+
+  onRowClick(row: T): void {
+    if (this.disabled() || !this.rowClickable()) {
+      return;
+    }
+
+    this.rowClick.emit(row);
   }
 
   onScroll(): void {

@@ -48,6 +48,13 @@
 
   // Consumed by Material for the built-in cell dividers.
   --mat-table-row-item-outline-color: var(--gt-row-divider);
+  --gt-disabled-opacity: 0.55;
+}
+
+.generic-table--disabled {
+  opacity: var(--gt-disabled-opacity);
+  pointer-events: none;
+  user-select: none;
 }
 
 .generic-table__column-toggle {
@@ -101,7 +108,10 @@ table {
   background: var(--gt-header-bg);
   font-weight: 600;
   color: var(--gt-header-text);
-  border-bottom: 1px solid var(--gt-header-accent);
+  // Collapsed table borders are shared with the first body row and scroll away
+  // when the header is sticky. An inset shadow stays pinned to the header.
+  border-bottom: none;
+  box-shadow: inset 0 -1px 0 var(--gt-header-accent);
 }
 
 .mat-mdc-row.generic-table__row--odd .mat-mdc-cell {
@@ -184,6 +194,11 @@ table {
 .generic-table:not(.generic-table--virtualized) {
   .generic-table__header--plain {
     padding-inline-end: 18px;
+  }
+
+  // Keep the accent line and header background above scrolling body rows.
+  .mat-mdc-header-row .mat-mdc-header-cell {
+    z-index: 2;
   }
 }
 

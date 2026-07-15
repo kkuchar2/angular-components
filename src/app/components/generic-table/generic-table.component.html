@@ -1,9 +1,16 @@
-<div class="generic-table" [class.generic-table--fill]="isFilling()" [class.generic-table--virtualized]="virtualized()">
+<div
+  class="generic-table"
+  [class.generic-table--fill]="isFilling()"
+  [class.generic-table--virtualized]="virtualized()"
+  [class.generic-table--disabled]="disabled()"
+  [attr.aria-disabled]="disabled() || null"
+>
   @if (showColumnToggle() && hideableColumns().length > 0) {
     <mat-chip-listbox
       class="generic-table__column-toggle"
       multiple
       aria-label="Toggle columns"
+      [disabled]="disabled()"
       (change)="onToggleColumns($event)"
     >
       @for (col of hideableColumns(); track col.key) {
@@ -40,7 +47,7 @@
           matSort
           [dataSource]="dataSource"
           [fixedLayout]="true"
-          (matSortChange)="sortChange.emit($event)"
+          (matSortChange)="onSortChange($event)"
         >
           <colgroup>
             @for (key of displayedColumns(); track key) {
@@ -57,6 +64,7 @@
                   mat-header-cell
                   *matHeaderCellDef
                   mat-sort-header
+                  [disabled]="disabled()"
                   [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                   [style.text-align]="col.align ?? 'left'"
                 >
@@ -132,9 +140,9 @@
             mat-row
             *matRowDef="let row; columns: displayedColumns(); let index = index"
             [class]="rowStripeClass(index)"
-            [class.generic-table__row--clickable]="rowClickable()"
-            [attr.role]="rowClickable() ? 'button' : null"
-            [attr.tabindex]="rowClickable() ? 0 : null"
+            [class.generic-table__row--clickable]="rowClickable() && !disabled()"
+            [attr.role]="rowClickable() && !disabled() ? 'button' : null"
+            [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
             (click)="onRowClick(row)"
             (keydown.enter)="onRowClick(row)"
             (keydown.space)="$event.preventDefault(); onRowClick(row)"
@@ -163,7 +171,7 @@
         [dataSource]="dataSource"
         [trackBy]="trackBy()"
         [fixedLayout]="false"
-        (matSortChange)="sortChange.emit($event)"
+        (matSortChange)="onSortChange($event)"
       >
         <colgroup>
           @for (key of displayedColumns(); track key) {
@@ -180,6 +188,7 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
+                [disabled]="disabled()"
                 [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                 [style.text-align]="col.align ?? 'left'"
               >
@@ -221,9 +230,9 @@
           mat-row
           *matRowDef="let row; columns: displayedColumns(); let index = index"
           [class]="rowStripeClass(index)"
-          [class.generic-table__row--clickable]="rowClickable()"
-          [attr.role]="rowClickable() ? 'button' : null"
-          [attr.tabindex]="rowClickable() ? 0 : null"
+          [class.generic-table__row--clickable]="rowClickable() && !disabled()"
+          [attr.role]="rowClickable() && !disabled() ? 'button' : null"
+          [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
           (click)="onRowClick(row)"
           (keydown.enter)="onRowClick(row)"
           (keydown.space)="$event.preventDefault(); onRowClick(row)"
@@ -240,11 +249,12 @@
 
   @if (showPaginator()) {
     <mat-paginator
+      [disabled]="disabled()"
       [length]="isServerSidePagination() ? totalCount() : undefined"
       [pageIndex]="isServerSidePagination() ? pageIndex() : undefined"
       [pageSize]="pageSize()"
       [pageSizeOptions]="pageSizeOptions()"
-      (page)="pageChange.emit($event)"
+      (page)="onPageChange($event)"
     />
   }
 </div>
