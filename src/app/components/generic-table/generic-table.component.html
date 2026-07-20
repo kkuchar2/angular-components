@@ -98,12 +98,20 @@
         [maxBufferPx]="virtualMaxBufferPx()"
         (scroll)="onVirtualScroll($event)"
       >
+        <!--
+          Do NOT enable `recycleRows` here. Its view-recycling strategy caches
+          detached row views and reuses them for other rows without re-rendering
+          cell content (Angular CDK issue #32253). With custom `ngTemplateOutlet`
+          cells (e.g. status spinner/checkmark) this makes recycled rows show
+          another row's stale content when scrolling or when the data set changes
+          (e.g. toggling filters). The virtual viewport already keeps only visible
+          rows in the DOM, so the default strategy is correct and cheap enough.
+        -->
         <table
           mat-table
           [dataSource]="dataSource"
           [trackBy]="trackBy()"
           [fixedLayout]="true"
-          [recycleRows]="true"
         >
           <colgroup>
             @for (key of displayedColumns(); track key) {
