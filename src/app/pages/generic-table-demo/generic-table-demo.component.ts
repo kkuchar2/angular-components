@@ -95,7 +95,7 @@ export class GenericTableDemoComponent {
     {
       id: 'parent',
       code: 'heightMode="parent"',
-      description: 'Fills the resizable container height.',
+      description: 'Shrinks to rows; caps at container height and scrolls when needed.',
       heightMode: 'parent',
       flexShell: true,
     },

@@ -1,10 +1,12 @@
 <div
   class="generic-table"
-  [class.generic-table--fill]="isFilling()"
+  [class.generic-table--fill]="isFillMode()"
+  [class.generic-table--parent]="isParentMode()"
   [class.generic-table--virtualized]="virtualized()"
   [class.generic-table--disabled]="disabled()"
   [attr.aria-disabled]="disabled() || null"
-  [style.--gt-max-height]="maxHeight()"
+  [style.--gt-max-height]="isParentMode() ? null : maxHeight()"
+  [style.--gt-min-height]="minHeight()"
 >
   @if (showColumnToggle() && hideableColumns().length > 0) {
     <mat-chip-listbox
@@ -38,8 +40,9 @@
     <div
       class="generic-table__virtual-shell"
       #virtualShell
-      [class.generic-table__virtual-shell--fill]="isFilling()"
-      [style.height]="height()"
+      [class.generic-table__virtual-shell--fill]="isFillMode()"
+      [class.generic-table__virtual-shell--parent]="isParentMode()"
+      [style.height]="scrollBodyHeight()"
     >
       <div class="generic-table__virtual-header" #virtualHeaderTrack>
         <table
@@ -91,7 +94,8 @@
       <cdk-virtual-scroll-viewport
         #virtualViewport
         class="generic-table__scroll generic-table__scroll--virtual"
-        [class.generic-table__scroll--virtual-fill]="isFilling() || isFixed()"
+        [class.generic-table__scroll--virtual-fill]="isFillMode() || isFixed()"
+        [class.generic-table__scroll--parent]="isParentMode()"
         [class.generic-table__scroll--scrolling]="isScrolling()"
         [style.--gt-row-height.px]="rowHeight()"
         [style.height.px]="virtualViewportHeightPx()"
@@ -170,8 +174,9 @@
     <div
       class="generic-table__scroll"
       [class.generic-table__scroll--scrolling]="isScrolling()"
-      [class.generic-table__scroll--fill]="isFilling()"
-      [style.height]="height()"
+      [class.generic-table__scroll--fill]="isFillMode()"
+      [class.generic-table__scroll--parent]="isParentMode()"
+      [style.height]="scrollBodyHeight()"
       (scroll)="onScroll()"
     >
       <table

@@ -17,12 +17,11 @@
   overflow: hidden;
 }
 
-// Fill the parent's full height. Also participates as a flex item when the
-// parent is a column, so this works inside `flex: 1; min-height: 0` wrappers.
+// Sizes to row content up to the parent height; scrolls when rows exceed that space.
 :host(.generic-table-host--parent) {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-height: 0;
-  height: 100%;
+  height: auto;
   max-height: 100%;
   overflow: hidden;
 }
@@ -73,10 +72,22 @@
   overflow: hidden;
 }
 
+// Parent mode: shrink to rows, cap at parent height, scroll when rows exceed it.
+.generic-table--parent {
+  flex: 0 1 auto;
+  min-height: 0;
+  height: auto;
+  max-height: 100%;
+  overflow: hidden;
+}
+
 .generic-table__scroll {
   overflow: auto;
   border-radius: var(--gt-radius);
   max-height: var(--gt-max-height);
+  // Reserve vertical scrollbar space up front so clientWidth stays stable when
+  // a horizontal scrollbar appears — prevents horizontal↔vertical scrollbar flicker.
+  scrollbar-gutter: stable;
 }
 
 .generic-table__scroll--fill {
@@ -84,11 +95,16 @@
   min-height: 0;
 }
 
+.generic-table__scroll--parent {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: var(--gt-min-height, 0);
+}
+
 table {
-  // Grow past the container when column min-widths require it; the scroll
-  // wrapper handles overflow.
-  width: max-content;
-  min-width: 100%;
+  // Fill the container when columns fit; grow only when min column widths require it.
+  width: 100%;
+  min-width: max-content;
   table-layout: fixed;
   border-collapse: collapse;
 }
@@ -137,6 +153,13 @@ table {
 .generic-table__virtual-shell--fill {
   flex: 1 1 0;
   min-height: 0;
+}
+
+.generic-table__virtual-shell--parent {
+  flex: 1 1 auto;
+  height: auto;
+  max-height: 100%;
+  min-height: var(--gt-min-height, 0);
 }
 
 .generic-table__virtual-header {

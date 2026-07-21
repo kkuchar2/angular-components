@@ -60,16 +60,21 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
     class: 'generic-table-host',
     '[class.generic-table-host--fill]': 'isFillMode()',
     '[class.generic-table-host--parent]': 'isParentMode()',
+    '[class.generic-table-host--bounded]': 'isBoundedHeightMode()',
     '[class.generic-table-host--virtualized]': 'virtualized()',
     '[class.generic-table-host--disabled]': 'disabled()',
+    '[style.--gt-bounded-max-height.px]': 'boundedMaxHeightPx()',
   },
 })
 export class GenericTableComponent<T = unknown> {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly hostEl = inject(ElementRef<HTMLElement>);
   private scrollEndTimer: ReturnType<typeof setTimeout> | null = null;
   private layoutSyncFrame: number | null = null;
   private virtualResizeObserver: ResizeObserver | null = null;
+  private boundedResizeObserver: ResizeObserver | null = null;
   private observedVirtualViewport: HTMLElement | null = null;
+  private observedBoundedTargets = new Set<HTMLElement>();
 
   /** True while the scroll body is moving; suppresses row hover styling. */
   readonly isScrolling = signal(false);
@@ -113,36 +118,70 @@ export class GenericTableComponent<T = unknown> {
   /**
    * How the table sizes vertically:
    * - `'auto'` (default): grows with content up to the default max height (480px), then scrolls.
-   * - `'fill'`: fills the remaining space of a flex-column parent (`flex: 1`).
-   * - `'parent'`: fills the parent's full height (`height: 100%`).
+   * - `'fill'`: sizes to row content up to the remaining flex-column space; scrolls
+   *   when rows exceed that space. Honors `minHeight` when the allocation is shorter.
+   * - `'parent'`: sizes to row content up to the parent's height; scrolls when rows
+   *   exceed that space. Ignores `height` and `maxHeight`. Honors `minHeight` when
+   *   the parent is shorter than that floor.
    */
   readonly heightMode = input<GenericTableHeightMode>('auto');
-  /** Exact, fixed height for the scroll body, e.g. `'320px'`. */
+  /** Exact, fixed height for the scroll body, e.g. `'320px'`. Ignored when `heightMode` is `'parent'`. */
   readonly height = input<string | null>(null);
-  /** Caps the scroll body height, e.g. `'320px'`. Defaults to `480px` via `--gt-max-height`. */
+  /** Caps the scroll body height, e.g. `'320px'`. Defaults to `480px` via `--gt-max-height`. Ignored in `'fill'` / `'parent'` modes. */
   readonly maxHeight = input<string | null>(null);
+  /** Minimum scroll body height, e.g. `'200px'`. In `'fill'` / `'parent'` modes, never shrinks below this when the available space is shorter. */
+  readonly minHeight = input<string | null>(null);
 
-  readonly isFixed = computed(() => this.height() != null);
-  readonly isFilling = computed(() => !this.isFixed() && this.heightMode() !== 'auto');
-  readonly isFillMode = computed(() => this.isFilling() && this.heightMode() === 'fill');
-  readonly isParentMode = computed(() => this.isFilling() && this.heightMode() === 'parent');
+  readonly isParentMode = computed(() => this.heightMode() === 'parent');
+  readonly isFillMode = computed(() => !this.isFixed() && this.heightMode() === 'fill');
+  readonly isBoundedHeightMode = computed(() => this.isParentMode() || this.isFillMode());
+  readonly isFixed = computed(() => !this.isParentMode() && this.height() != null);
+  /** Fixed scroll-body height; suppressed in `'parent'` mode. */
+  readonly scrollBodyHeight = computed(() => (this.isParentMode() ? null : this.height()));
   readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
   readonly isServerSidePagination = computed(() => this.serverSide() && this.showPaginator());
   readonly virtualMinBufferPx = computed(() => this.rowHeight() * 10);
   readonly virtualMaxBufferPx = computed(() => this.rowHeight() * 20);
   /** Measured header track height for virtual viewport sizing. */
   readonly virtualHeaderHeightPx = signal(56);
+  /** Available vertical space for `'fill'` / `'parent'` modes. */
+  readonly boundedAvailableHeightPx = signal<number | null>(null);
+  /** Non-scroll chrome (toggle, paginator, gaps) for bounded height modes. */
+  readonly boundedChromeHeightPx = signal(0);
+  readonly boundedMaxHeightPx = computed(() => {
+    if (!this.isBoundedHeightMode()) {
+      return null;
+    }
+
+    return this.boundedAvailableHeightPx();
+  });
   /**
-   * Virtual viewport height when not in fill/fixed mode: content height capped by
-   * max height minus the header. `null` lets CSS flex sizing take over.
+   * Virtual viewport height when not fixed: content height capped by max height (auto)
+   * or bounded space (`fill` / `parent`). `null` lets CSS flex sizing take over.
    */
   readonly virtualViewportHeightPx = computed(() => {
-    if (this.isFilling() || this.isFixed()) {
+    if (this.isFixed()) {
       return null;
     }
 
     const rowCount = Math.max(this.data().length, 1);
     const bodyContent = rowCount * this.rowHeight();
+
+    if (this.isBoundedHeightMode()) {
+      const available = this.boundedAvailableHeightPx();
+
+      if (available == null) {
+        return bodyContent;
+      }
+
+      const fillHeight = Math.max(
+        0,
+        available - this.boundedChromeHeightPx() - this.virtualHeaderHeightPx(),
+      );
+
+      return this.resolveBoundedScrollBodyHeightPx(bodyContent, fillHeight);
+    }
+
     const maxBody = Math.max(
       this.rowHeight(),
       this.resolveMaxScrollHeightPx() - this.virtualHeaderHeightPx(),
@@ -235,9 +274,59 @@ export class GenericTableComponent<T = unknown> {
       }
 
       this.virtualResizeObserver?.disconnect();
+      this.boundedResizeObserver?.disconnect();
     });
 
     this.virtualResizeObserver = new ResizeObserver(() => this.queueVirtualLayoutSync());
+    this.boundedResizeObserver = new ResizeObserver(() => this.measureBoundedLayout());
+
+    effect(() => {
+      if (!this.isBoundedHeightMode()) {
+        for (const target of this.observedBoundedTargets) {
+          this.boundedResizeObserver?.unobserve(target);
+        }
+
+        this.observedBoundedTargets.clear();
+        this.boundedAvailableHeightPx.set(null);
+        this.boundedChromeHeightPx.set(0);
+        return;
+      }
+
+      this.showPaginator();
+      this.showColumnToggle();
+      this.hideableColumns();
+      this.data();
+
+      const host = this.hostEl.nativeElement;
+      const parent = host.parentElement;
+      const targets = new Set<HTMLElement>();
+
+      if (parent) {
+        targets.add(parent);
+      }
+
+      if (this.isFillMode()) {
+        targets.add(host);
+      }
+
+      for (const target of this.observedBoundedTargets) {
+        if (!targets.has(target)) {
+          this.boundedResizeObserver?.unobserve(target);
+          this.observedBoundedTargets.delete(target);
+        }
+      }
+
+      for (const target of targets) {
+        if (!this.observedBoundedTargets.has(target)) {
+          this.boundedResizeObserver?.observe(target);
+          this.observedBoundedTargets.add(target);
+        }
+      }
+
+      untracked(() => {
+        requestAnimationFrame(() => this.measureBoundedLayout());
+      });
+    });
 
     effect(() => {
       if (!this.virtualized()) {
@@ -431,7 +520,7 @@ export class GenericTableComponent<T = unknown> {
     const gutter = viewport.offsetWidth - viewport.clientWidth;
     const contentWidth = viewport.clientWidth;
 
-    shell.style.setProperty('--gt-virtual-scrollbar-gutter', `${gutter}px`);
+    this.setShellStyle(shell, '--gt-virtual-scrollbar-gutter', `${gutter}px`);
 
     if (this.data().length === 0) {
       this.syncEmptyVirtualTableLayout(
@@ -441,26 +530,39 @@ export class GenericTableComponent<T = unknown> {
         headerTrack,
         contentWidth,
       );
+      this.measureBoundedLayout();
       return;
     }
 
     this.resetSyncedColumnWidths(headerTable, headerTrack, bodyTable);
-    shell.style.setProperty('--gt-virtual-table-width', `${contentWidth}px`);
+    this.setShellStyle(shell, '--gt-virtual-table-width', `${contentWidth}px`);
     // Flush layout so body cells reflect the cleared widths before we measure.
     void bodyTable.offsetWidth;
 
     const widths = this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
+    const summedWidths = widths?.reduce((sum, width) => sum + width, 0) ?? 0;
+    const tableWidth = this.resolveVirtualTableWidth(contentWidth, summedWidths);
 
-    const tableWidth = Math.max(
-      contentWidth,
-      bodyTable.scrollWidth,
-      headerTable.scrollWidth,
-      widths?.reduce((sum, width) => sum + width, 0) ?? 0,
-    );
-
-    if (tableWidth > contentWidth) {
-      shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
+    if (tableWidth > contentWidth + 1) {
+      this.setShellStyle(shell, '--gt-virtual-table-width', `${tableWidth}px`);
       this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
+    }
+
+    this.measureBoundedLayout();
+  }
+
+  /** Avoid sub-pixel false positives from scrollWidth / padding when columns still fit. */
+  private resolveVirtualTableWidth(contentWidth: number, summedWidths: number): number {
+    if (summedWidths <= contentWidth + 1) {
+      return contentWidth;
+    }
+
+    return Math.ceil(summedWidths);
+  }
+
+  private setShellStyle(shell: HTMLElement, property: string, value: string): void {
+    if (shell.style.getPropertyValue(property) !== value) {
+      shell.style.setProperty(property, value);
     }
   }
 
@@ -474,9 +576,10 @@ export class GenericTableComponent<T = unknown> {
     this.resetSyncedColumnWidths(headerTable, headerTrack, bodyTable);
 
     const widths = this.computeVirtualColumnWidths(contentWidth);
-    const tableWidth = Math.max(contentWidth, widths.reduce((sum, width) => sum + width, 0));
+    const summedWidths = widths.reduce((sum, width) => sum + width, 0);
+    const tableWidth = this.resolveVirtualTableWidth(contentWidth, summedWidths);
 
-    shell.style.setProperty('--gt-virtual-table-width', `${tableWidth}px`);
+    this.setShellStyle(shell, '--gt-virtual-table-width', `${tableWidth}px`);
     this.applyVirtualColumnWidths(widths, headerTable, headerTrack, bodyTable);
   }
 
@@ -553,6 +656,52 @@ export class GenericTableComponent<T = unknown> {
     const parsed = this.parseLengthToPx(maxHeight, referenceWidth);
 
     return parsed > 0 ? parsed : DEFAULT_MAX_HEIGHT_PX;
+  }
+
+  private resolveMinScrollHeightPx(): number {
+    const minHeight = this.minHeight();
+
+    if (!minHeight) {
+      return 0;
+    }
+
+    const referenceWidth = this.hostEl.nativeElement.clientWidth || globalThis.innerWidth;
+    const parsed = this.parseLengthToPx(minHeight, referenceWidth);
+
+    return parsed > 0 ? parsed : 0;
+  }
+
+  /** Shrinks to row content, caps at parent space, floors at minHeight when parent is short. */
+  private resolveParentScrollBodyHeightPx(contentHeight: number, fillHeight: number): number {
+    const minHeight = this.resolveMinScrollHeightPx();
+
+    if (fillHeight < minHeight) {
+      return Math.max(contentHeight, minHeight);
+    }
+
+    return Math.min(contentHeight, fillHeight);
+  }
+
+  private measureParentLayout(): void {
+    if (!this.isParentMode()) {
+      return;
+    }
+
+    const host = this.hostEl.nativeElement;
+    const parent = host.parentElement;
+
+    if (!parent) {
+      return;
+    }
+
+    this.parentAvailableHeightPx.set(parent.clientHeight);
+
+    const tableRoot = host.querySelector('.generic-table');
+    const scrollBody = host.querySelector('.generic-table__scroll, .generic-table__virtual-shell');
+
+    if (tableRoot instanceof HTMLElement && scrollBody instanceof HTMLElement) {
+      this.parentChromeHeightPx.set(Math.max(0, tableRoot.clientHeight - scrollBody.clientHeight));
+    }
   }
 
   private resetSyncedColumnWidths(
