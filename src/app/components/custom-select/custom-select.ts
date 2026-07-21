@@ -21,20 +21,24 @@ import {
   ControlValueAccessor,
   NG_VALUE_ACCESSOR,
 } from '@angular/forms';
+import { LucideDynamicIcon, type LucideIconInput } from '@lucide/angular';
 import { filter, Subscription } from 'rxjs';
 
 export interface SelectOption<T = string | number> {
   value: T;
   label: string;
   disabled?: boolean;
+  /** Emoji or short text prefix shown beside the option label. */
   icon?: string;
+  /** Lucide icon shown beside the option label (takes precedence over `icon`). */
+  lucideIcon?: LucideIconInput;
 }
 
 export type CustomSelectAppearance = 'default' | 'outlined';
 
 @Component({
   selector: 'app-custom-select',
-  imports: [],
+  imports: [LucideDynamicIcon],
   templateUrl: './custom-select.html',
   styleUrl: './custom-select.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

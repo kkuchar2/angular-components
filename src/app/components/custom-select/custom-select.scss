@@ -209,6 +209,17 @@
     font-size: 1.125rem;
     line-height: 1;
     flex-shrink: 0;
+    color: var(--cs-text-muted);
+
+    &--lucide {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        display: block;
+      }
+    }
   }
 
   &__option-label {

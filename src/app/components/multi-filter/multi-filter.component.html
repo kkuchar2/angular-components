@@ -1,0 +1,109 @@
+<div
+  class="multi-filter"
+  role="group"
+  [attr.aria-label]="ariaLabel()"
+  [class.disabled]="isDisabled()"
+  [class.appearance-outlined]="appearance() === 'outlined'"
+>
+  @if (rules().length === 0) {
+    <div class="multi-filter__empty">
+      <p class="multi-filter__empty-message">{{ emptyMessage() }}</p>
+      <button
+        type="button"
+        class="multi-filter__btn multi-filter__btn--primary"
+        [disabled]="isDisabled()"
+        (click)="addRule()"
+      >
+        <svg [lucideIcon]="LucidePlus" [size]="16" aria-hidden="true"></svg>
+        {{ addLabel() }}
+      </button>
+    </div>
+  } @else {
+    <div class="multi-filter__actions">
+      <button
+        type="button"
+        class="multi-filter__btn multi-filter__btn--primary"
+        [disabled]="isDisabled()"
+        (click)="addRule()"
+      >
+        <svg [lucideIcon]="LucidePlus" [size]="16" aria-hidden="true"></svg>
+        {{ addLabel() }}
+      </button>
+
+      <button
+        type="button"
+        class="multi-filter__btn multi-filter__btn--ghost"
+        [disabled]="isDisabled()"
+        (click)="clearAll()"
+      >
+        <svg [lucideIcon]="LucideX" [size]="16" aria-hidden="true"></svg>
+        {{ clearLabel() }}
+      </button>
+    </div>
+
+    <ul
+      #rulesList
+      class="multi-filter__rules"
+      aria-label="Filter rules"
+      [style.max-height]="maxHeight()"
+    >
+      @for (rule of rules(); track rule.id; let i = $index) {
+        <li
+          class="multi-filter__row"
+          [class.multi-filter__row--active]="isActiveRule(rule.id)"
+          [attr.aria-current]="isActiveRule(rule.id) ? 'true' : null"
+        >
+          <span class="multi-filter__index" aria-hidden="true">{{ i + 1 }}</span>
+
+          <div class="multi-filter__field">
+            <app-custom-select
+              [options]="fieldOptions()"
+              [appearance]="appearance()"
+              [label]="fieldPlaceholder()"
+              [placeholder]="fieldPlaceholder()"
+              [disabled]="isDisabled()"
+              [ngModel]="rule.field"
+              (ngModelChange)="updateField(rule.id, $event)"
+            />
+          </div>
+
+          <div class="multi-filter__operator">
+            <app-custom-select
+              [options]="operatorOptions"
+              [appearance]="appearance()"
+              [label]="operatorPlaceholder()"
+              [placeholder]="operatorPlaceholder()"
+              [disabled]="isDisabled()"
+              [ngModel]="rule.operator"
+              (ngModelChange)="updateOperator(rule.id, $event)"
+            />
+          </div>
+
+          <div class="multi-filter__value">
+            <app-custom-input
+              [appearance]="appearance()"
+              label="Value"
+              [placeholder]="valuePlaceholder()"
+              [disabled]="isDisabled()"
+              [clearable]="true"
+              autocomplete="off"
+              [spellcheck]="false"
+              [ngModel]="rule.value"
+              (ngModelChange)="updateValue(rule.id, $event)"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="multi-filter__icon-btn"
+            [disabled]="isDisabled()"
+            [attr.aria-label]="'Remove filter ' + (i + 1)"
+            (click)="removeRule(rule.id)"
+          >
+            <svg [lucideIcon]="LucideTrash2" [size]="16" aria-hidden="true"></svg>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>

@@ -29,6 +29,8 @@
       [placeholder]="effectivePlaceholder()"
       [disabled]="isDisabled()"
       [value]="value()"
+      [attr.autocomplete]="autocomplete()"
+      [attr.spellcheck]="spellcheck()"
       [attr.aria-invalid]="error() ? true : null"
       [attr.aria-describedby]="describedBy()"
       (input)="onInput($event)"

@@ -1,0 +1,17 @@
+@use '../demo-page';
+
+.demo-page--wide {
+  max-width: 56rem;
+}
+
+.demo-section__body--wide {
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.demo-section__output--block {
+  display: block;
+  word-break: break-word;
+}

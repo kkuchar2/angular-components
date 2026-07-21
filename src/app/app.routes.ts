@@ -4,6 +4,7 @@ import { CustomSelectDemoComponent } from './pages/custom-select-demo/custom-sel
 import { CustomInputDemoComponent } from './pages/custom-input-demo/custom-input-demo.component';
 import { DropdownLinkCardDemoComponent } from './pages/dropdown-link-card-demo/dropdown-link-card-demo.component';
 import { GenericTableDemoComponent } from './pages/generic-table-demo/generic-table-demo.component';
+import { MultiFilterDemoComponent } from './pages/multi-filter-demo/multi-filter-demo.component';
 
 export const routes: Routes = [
   {
@@ -25,6 +26,11 @@ export const routes: Routes = [
     path: 'custom-input',
     component: CustomInputDemoComponent,
     title: 'Custom Input',
+  },
+  {
+    path: 'multi-filter',
+    component: MultiFilterDemoComponent,
+    title: 'Multi Filter',
   },
   {
     path: 'dropdown-link-card',

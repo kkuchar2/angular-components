@@ -1,0 +1,90 @@
+<section class="demo-page demo-page--wide">
+  <header class="demo-page__header">
+    <h1 class="demo-page__title">Multi Filter</h1>
+    <p class="demo-page__subtitle">
+      Compose field, operator, and value rows. Add, remove, or clear the whole set.
+    </p>
+  </header>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Interactive Builder</h2>
+    <p class="demo-section__desc">
+      Start empty, then add rules. Operators use Lucide icons in the dropdown.
+    </p>
+
+    <div class="demo-section__body demo-section__body--wide">
+      <app-multi-filter
+        [fields]="employeeFields"
+        [ngModel]="interactiveFilters()"
+        (ngModelChange)="interactiveFilters.set($event)"
+        (filtersChange)="onFiltersChange('Interactive', $event)"
+      />
+
+      <div class="demo-section__output">
+        Active rules: <strong>{{ activeRuleCount() }}</strong>
+      </div>
+      <div class="demo-section__output demo-section__output--block">
+        Query preview: <strong>{{ interactiveSummary() }}</strong>
+      </div>
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Seeded Rules</h2>
+    <p class="demo-section__desc">
+      Rules list scrolls past <code>maxHeight</code> (default <code>16rem</code>). Actions stay pinned above.
+    </p>
+
+    <div class="demo-section__body demo-section__body--wide">
+      <app-multi-filter
+        [fields]="employeeFields"
+        maxHeight="12rem"
+        [ngModel]="seededFilters()"
+        (ngModelChange)="seededFilters.set($event)"
+        (filtersChange)="onFiltersChange('Seeded', $event)"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Default Appearance</h2>
+    <p class="demo-section__desc">
+      Same builder with stacked labels above each control instead of floating outlines.
+    </p>
+
+    <div class="demo-section__body demo-section__body--wide">
+      <app-multi-filter
+        appearance="default"
+        [fields]="productFields"
+        [ngModel]="productFilters()"
+        (ngModelChange)="productFilters.set($event)"
+        (filtersChange)="onFiltersChange('Default', $event)"
+      />
+    </div>
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Disabled</h2>
+    <p class="demo-section__desc">The whole filter group can be locked while data loads.</p>
+
+    <div class="demo-section__body demo-section__body--wide">
+      <app-multi-filter
+        [fields]="employeeFields"
+        [disabled]="true"
+        [ngModel]="disabledFilters()"
+        (ngModelChange)="disabledFilters.set($event)"
+      />
+    </div>
+  </article>
+
+  @if (eventLog().length > 0) {
+    <article class="demo-section event-log">
+      <h2 class="demo-section__title">Event Log</h2>
+      <div class="event-log__entries">
+        @for (entry of eventLog(); track $index) {
+          <div class="event-log__entry">{{ entry }}</div>
+        }
+      </div>
+    </article>
+  }
+</section>

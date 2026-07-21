@@ -21,6 +21,11 @@ export const COMPONENT_NAV_ITEMS: ComponentNavItem[] = [
     description: 'Styled text fields with labels and validation',
   },
   {
+    path: 'multi-filter',
+    label: 'Multi Filter',
+    description: 'Composable field, operator, and value filter rows',
+  },
+  {
     path: 'dropdown-link-card',
     label: 'Dropdown Link Card',
     description: 'Card with expandable external links',

@@ -87,8 +87,12 @@
           [attr.aria-disabled]="option.disabled"
           (click)="selectOption(option)"
         >
-          @if (option.icon) {
-            <span class="custom-select__option-icon">{{ option.icon }}</span>
+          @if (option.lucideIcon; as lucideIcon) {
+            <span class="custom-select__option-icon custom-select__option-icon--lucide" aria-hidden="true">
+              <svg [lucideIcon]="lucideIcon" [size]="16"></svg>
+            </span>
+          } @else if (option.icon) {
+            <span class="custom-select__option-icon" aria-hidden="true">{{ option.icon }}</span>
           }
           <span class="custom-select__option-label">{{ option.label }}</span>
           @if (isSelected(option)) {
