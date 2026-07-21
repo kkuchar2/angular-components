@@ -28,7 +28,9 @@ import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { GenericTableCellDirective } from './generic-table-cell.directive';
+import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
 import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
+import { resolveSortValue } from './generic-table-cell-format';
 import { ColumnDef, GenericTableCellContext, GenericTableExportRequest, GenericTableHeightMode } from './generic-table.types';
 
 /** Default scroll-body cap; mirrored by `--gt-max-height` in the component stylesheet. */
@@ -55,6 +57,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
     MatPaginatorModule,
     MatChipsModule,
     GenericTableHeaderInfoComponent,
+    GenericTableCellValueComponent,
   ],
   templateUrl: './generic-table.component.html',
   styleUrl: './generic-table.component.scss',
@@ -411,20 +414,7 @@ export class GenericTableComponent<T = unknown> {
 
     this.dataSource.sortingDataAccessor = (row, columnKey) => {
       const column = this.columnByKey().get(columnKey);
-
-      if (!column) {
-        return '';
-      }
-
-      if (column.sortAccessor) {
-        return column.sortAccessor(row);
-      }
-
-      if (column.cell) {
-        return column.cell(row);
-      }
-
-      return this.getRowValue(row, columnKey);
+      return column ? resolveSortValue(column, row) : '';
     };
 
     effect(() => {
@@ -441,14 +431,6 @@ export class GenericTableComponent<T = unknown> {
 
       this.dataSource.paginator = attachPaginator ? (this.paginator() ?? null) : null;
     });
-  }
-
-  formatCell(column: ColumnDef<T>, row: T): string | number {
-    if (column.cell) {
-      return column.cell(row);
-    }
-
-    return this.getRowValue(row, column.key);
   }
 
   cellContext(row: T): GenericTableCellContext<T> {
@@ -1053,15 +1035,6 @@ export class GenericTableComponent<T = unknown> {
   private isPositiveLength(value: string): boolean {
     const parsed = Number.parseFloat(value);
     return !Number.isNaN(parsed) && parsed > 0;
-  }
-
-  private getRowValue(row: T, key: string): string | number {
-    if (typeof row !== 'object' || row === null || !(key in row)) {
-      return '';
-    }
-
-    const value = (row as Record<string, unknown>)[key];
-    return typeof value === 'string' || typeof value === 'number' ? value : '';
   }
 
   private getRawExportValue(row: T, key: string): string {

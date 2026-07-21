@@ -1,7 +1,7 @@
 <div class="app-shell">
   <aside class="sidebar">
     <div class="sidebar__brand">
-      <h1 class="sidebar__title">Angular Components</h1>
+      <a class="sidebar__home" routerLink="/">Angular Components</a>
       <p class="sidebar__subtitle">Component showcase</p>
     </div>
 
@@ -9,7 +9,7 @@
       @for (item of navItems; track item.path) {
         <a
           class="sidebar__link"
-          [routerLink]="item.path"
+          [routerLink]="['/components', item.path]"
           routerLinkActive="sidebar__link--active"
         >
           <span class="sidebar__link-label">{{ item.label }}</span>
@@ -17,6 +17,18 @@
         </a>
       }
     </nav>
+
+    <div class="sidebar__media">
+      <img
+        class="sidebar__gif"
+        src="https://i.giphy.com/KvES8uAj11XeyhurG2.webp"
+        alt=""
+        width="240"
+        height="240"
+        decoding="async"
+        fetchpriority="low"
+      />
+    </div>
   </aside>
 
   <div class="content">
@@ -32,7 +44,9 @@
         type="button"
         class="topbar__theme-toggle"
         (click)="themeService.toggle()"
-        [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+        [attr.aria-label]="
+          themeService.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+        "
       >
         @if (themeService.theme() === 'dark') {
           <svg [lucideIcon]="LucideSun" [size]="18" aria-hidden="true"></svg>

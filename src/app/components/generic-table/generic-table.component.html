@@ -89,28 +89,33 @@
                   [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                   [style.text-align]="col.align ?? 'left'"
                 >
-                  <span class="generic-table__header-text">{{ col.header }}</span>
-                  @if (col.description) {
-                    <app-generic-table-header-info
-                      [description]="col.description"
-                      [label]="col.header"
-                    />
-                  }
+                  <span class="generic-table__header-inner">
+                    <span class="generic-table__header-text">{{ col.header }}</span>
+                    @if (col.description) {
+                      <app-generic-table-header-info
+                        [description]="col.description"
+                        [label]="col.header"
+                      />
+                    }
+                  </span>
                 </th>
               } @else {
                 <th
                   mat-header-cell
                   *matHeaderCellDef
+                  class="generic-table__header--plain"
                   [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                   [style.text-align]="col.align ?? 'left'"
                 >
-                  <span class="generic-table__header-text">{{ col.header }}</span>
-                  @if (col.description) {
-                    <app-generic-table-header-info
-                      [description]="col.description"
-                      [label]="col.header"
-                    />
-                  }
+                  <span class="generic-table__header-inner">
+                    <span class="generic-table__header-text">{{ col.header }}</span>
+                    @if (col.description) {
+                      <app-generic-table-header-info
+                        [description]="col.description"
+                        [label]="col.header"
+                      />
+                    }
+                  </span>
                 </th>
               }
               <td mat-cell *matCellDef="let row"></td>
@@ -175,7 +180,7 @@
                     />
                   </div>
                 } @else {
-                  {{ formatCell(col, row) }}
+                  <app-generic-table-cell-value [column]="col" [row]="row" />
                 }
               </td>
             </ng-container>
@@ -237,13 +242,15 @@
                 [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                 [style.text-align]="col.align ?? 'left'"
               >
-                <span class="generic-table__header-text">{{ col.header }}</span>
-                @if (col.description) {
-                  <app-generic-table-header-info
-                    [description]="col.description"
-                    [label]="col.header"
-                  />
-                }
+                <span class="generic-table__header-inner">
+                  <span class="generic-table__header-text">{{ col.header }}</span>
+                  @if (col.description) {
+                    <app-generic-table-header-info
+                      [description]="col.description"
+                      [label]="col.header"
+                    />
+                  }
+                </span>
               </th>
             } @else {
               <th
@@ -253,13 +260,15 @@
                 [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                 [style.text-align]="col.align ?? 'left'"
               >
-                <span class="generic-table__header-text">{{ col.header }}</span>
-                @if (col.description) {
-                  <app-generic-table-header-info
-                    [description]="col.description"
-                    [label]="col.header"
-                  />
-                }
+                <span class="generic-table__header-inner">
+                  <span class="generic-table__header-text">{{ col.header }}</span>
+                  @if (col.description) {
+                    <app-generic-table-header-info
+                      [description]="col.description"
+                      [label]="col.header"
+                    />
+                  }
+                </span>
               </th>
             }
             <td
@@ -276,7 +285,7 @@
                   />
                 </div>
               } @else {
-                {{ formatCell(col, row) }}
+                <app-generic-table-cell-value [column]="col" [row]="row" />
               }
             </td>
           </ng-container>

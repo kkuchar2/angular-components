@@ -8,6 +8,7 @@ import {
   type MultiFilterRule,
 } from '../../components/multi-filter';
 import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
+import { code } from '../../shared/demo-code-block/demo-code.util';
 
 @Component({
   selector: 'app-multi-filter-demo',
@@ -87,50 +88,100 @@ export class MultiFilterDemoComponent {
   readonly eventLog = signal<string[]>([]);
 
   readonly snippets = {
-    interactive: `import {
-  MultiFilterComponent,
-  type MultiFilterField,
-  type MultiFilterRule,
-} from './components/multi-filter';
+    interactive: {
+      html: code`
+        <app-multi-filter
+          [fields]="fields"
+          [(ngModel)]="filters"
+          (filtersChange)="onFiltersChange($event)"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { FormsModule } from '@angular/forms';
+        import {
+          MultiFilterComponent,
+          type MultiFilterField,
+          type MultiFilterRule,
+        } from './components/multi-filter';
 
-readonly fields: MultiFilterField[] = [
-  { value: 'name', label: 'Name' },
-  { value: 'department', label: 'Department' },
-  { value: 'status', label: 'Status' },
-];
+        readonly fields: MultiFilterField[] = [
+          { value: 'name', label: 'Name' },
+          { value: 'department', label: 'Department' },
+          { value: 'status', label: 'Status' },
+        ];
 
-readonly filters = signal<MultiFilterRule[]>([]);
+        readonly filters = signal<MultiFilterRule[]>([]);
 
-<app-multi-filter
-  [fields]="fields"
-  [(ngModel)]="filters"
-  (filtersChange)="onFiltersChange($event)"
-/>`,
-    seeded: `import { createEmptyFilterRule } from './components/multi-filter';
+        onFiltersChange(rules: MultiFilterRule[]): void {
+          console.log('filtersChange', rules);
+        }
+      `,
+    },
+    seeded: {
+      html: code`
+        <app-multi-filter
+          [fields]="fields"
+          maxHeight="12rem"
+          [(ngModel)]="filters"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import {
+          createEmptyFilterRule,
+          type MultiFilterField,
+        } from './components/multi-filter';
 
-readonly filters = signal([
-  createEmptyFilterRule({
-    field: 'department',
-    operator: 'equals',
-    value: 'Engineering',
-  }),
-]);
+        readonly fields: MultiFilterField[] = [/* ... */];
 
-<app-multi-filter
-  [fields]="fields"
-  maxHeight="12rem"
-  [(ngModel)]="filters"
-/>`,
-    defaultAppearance: `<app-multi-filter
-  appearance="default"
-  [fields]="fields"
-  [(ngModel)]="filters"
-/>`,
-    disabled: `<app-multi-filter
-  [fields]="fields"
-  [disabled]="true"
-  [(ngModel)]="filters"
-/>`,
+        readonly filters = signal([
+          createEmptyFilterRule({
+            field: 'department',
+            operator: 'equals',
+            value: 'Engineering',
+          }),
+        ]);
+      `,
+    },
+    defaultAppearance: {
+      html: code`
+        <app-multi-filter
+          appearance="default"
+          [fields]="fields"
+          [(ngModel)]="filters"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import {
+          type MultiFilterField,
+          type MultiFilterRule,
+        } from './components/multi-filter';
+
+        readonly fields: MultiFilterField[] = [/* ... */];
+        readonly filters = signal<MultiFilterRule[]>([]);
+      `,
+    },
+    disabled: {
+      html: code`
+        <app-multi-filter
+          [fields]="fields"
+          [disabled]="true"
+          [(ngModel)]="filters"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import {
+          type MultiFilterField,
+          type MultiFilterRule,
+        } from './components/multi-filter';
+
+        readonly fields: MultiFilterField[] = [/* ... */];
+        readonly filters = signal<MultiFilterRule[]>([]);
+      `,
+    },
   };
 
   readonly activeRuleCount = computed(

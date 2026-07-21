@@ -160,7 +160,10 @@
                           />
                         </div>
                       } @else {
-                        {{ formatCell(col, rowModel.original) }}
+                        <app-generic-table-cell-value
+                          [column]="col"
+                          [row]="rowModel.original"
+                        />
                       }
                     </div>
                   }
@@ -233,49 +236,62 @@
       </div>
 
       @if (bodyRows().length === 0) {
-        <div class="generic-table-tanstack__empty">{{ emptyMessage() }}</div>
+        <div
+          class="generic-table-tanstack__empty"
+          [style.min-height.px]="paginatedBodyMinHeightPx()"
+        >
+          {{ emptyMessage() }}
+        </div>
       } @else {
-        @for (rowModel of bodyRows(); track trackBodyRow($index, rowModel)) {
-          <div
-            class="generic-table-tanstack__row generic-table-tanstack__row--static"
-            [class.generic-table-tanstack__row--even]="$index % 2 === 0"
-            [class.generic-table-tanstack__row--odd]="$index % 2 === 1"
-            [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
-            [style.width.px]="gridLayoutWidthPx()"
-            [style.min-width.px]="gridLayoutWidthPx()"
-            [attr.role]="rowClickable() && !disabled() ? 'button' : null"
-            [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
-            (click)="onRowClick(rowModel.original)"
-            (keydown.enter)="onRowClick(rowModel.original)"
-            (keydown.space)="$event.preventDefault(); onRowClick(rowModel.original)"
-          >
-            @for (col of displayedColumns(); track col.key) {
-              <div
-                class="generic-table-tanstack__cell"
-                [style.min-width]="columnMinWidth(col)"
-                [style.text-align]="col.align ?? 'left'"
-                [style.justify-content]="
-                  col.align === 'center'
-                    ? 'center'
-                    : col.align === 'right'
-                      ? 'flex-end'
-                      : 'flex-start'
-                "
-              >
-                @if (cellTemplates().get(col.key); as template) {
-                  <div class="generic-table-tanstack__cell-content">
-                    <ng-container
-                      [ngTemplateOutlet]="template"
-                      [ngTemplateOutletContext]="cellContext(rowModel.original)"
+        <div
+          class="generic-table-tanstack__body"
+          [style.min-height.px]="paginatedBodyMinHeightPx()"
+        >
+          @for (rowModel of bodyRows(); track trackBodyRow($index, rowModel)) {
+            <div
+              class="generic-table-tanstack__row generic-table-tanstack__row--static"
+              [class.generic-table-tanstack__row--even]="$index % 2 === 0"
+              [class.generic-table-tanstack__row--odd]="$index % 2 === 1"
+              [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
+              [style.width.px]="gridLayoutWidthPx()"
+              [style.min-width.px]="gridLayoutWidthPx()"
+              [attr.role]="rowClickable() && !disabled() ? 'button' : null"
+              [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
+              (click)="onRowClick(rowModel.original)"
+              (keydown.enter)="onRowClick(rowModel.original)"
+              (keydown.space)="$event.preventDefault(); onRowClick(rowModel.original)"
+            >
+              @for (col of displayedColumns(); track col.key) {
+                <div
+                  class="generic-table-tanstack__cell"
+                  [style.min-width]="columnMinWidth(col)"
+                  [style.text-align]="col.align ?? 'left'"
+                  [style.justify-content]="
+                    col.align === 'center'
+                      ? 'center'
+                      : col.align === 'right'
+                        ? 'flex-end'
+                        : 'flex-start'
+                  "
+                >
+                  @if (cellTemplates().get(col.key); as template) {
+                    <div class="generic-table-tanstack__cell-content">
+                      <ng-container
+                        [ngTemplateOutlet]="template"
+                        [ngTemplateOutletContext]="cellContext(rowModel.original)"
+                      />
+                    </div>
+                  } @else {
+                    <app-generic-table-cell-value
+                      [column]="col"
+                      [row]="rowModel.original"
                     />
-                  </div>
-                } @else {
-                  {{ formatCell(col, rowModel.original) }}
-                }
-              </div>
-            }
-          </div>
-        }
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
       }
     </div>
   }

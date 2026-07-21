@@ -1,3 +1,5 @@
+import type { GenericTableCellType, GenericTableDateDisplay } from './generic-table-cell.types';
+
 /**
  * Definition of a single table column.
  *
@@ -15,6 +17,22 @@ export interface ColumnDef<T = unknown> {
   description?: string;
   /** When true the header becomes sortable. Defaults to `false`. */
   sortable?: boolean;
+  /**
+   * Built-in cell presentation when no custom `appGenericTableCell` template is
+   * projected: `'text'` (default), `'uuid'` (monospace), or `'date'`
+   * (`Date`, `YYYY-MM-DD`, or ISO datetimes like `2026-07-21T18:30:00.123456Z`).
+   */
+  cellType?: GenericTableCellType;
+  /**
+   * When `cellType` is `'date'`, controls date vs date+time formatting.
+   * Defaults to `'auto'`.
+   */
+  dateDisplay?: GenericTableDateDisplay;
+  /**
+   * Show a small Lucide copy control that copies the cell value to the clipboard.
+   * Works with built-in cell types and plain text (not custom templates).
+   */
+  copyable?: boolean;
   /** Custom text formatter for the cell. Defaults to `row[key]`. */
   cell?: (row: T) => string | number;
   /** Custom value used when sorting. Defaults to `cell`, then `row[key]`. */

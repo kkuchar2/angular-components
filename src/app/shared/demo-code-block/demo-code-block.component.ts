@@ -4,15 +4,26 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   resource,
   signal,
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
+import type { DemoCodeSnippet } from './demo-code.util';
 import {
   DemoCodeLanguage,
   StarryNightService,
 } from './starry-night.service';
+
+type DemoCodeTabId = 'html' | 'ts' | 'code';
+
+interface DemoCodeTab {
+  id: DemoCodeTabId;
+  label: string;
+  code: string;
+  language: DemoCodeLanguage;
+}
 
 @Component({
   selector: 'app-demo-code-block',
@@ -24,7 +35,14 @@ export class DemoCodeBlockComponent {
   private readonly starryNight = inject(StarryNightService);
   private readonly sanitizer = inject(DomSanitizer);
 
-  readonly code = input.required<string>();
+  /**
+   * Preferred API: HTML + TypeScript panes for a usage example.
+   * When both are set, the toolbar shows HTML / TypeScript tabs.
+   */
+  readonly snippet = input<DemoCodeSnippet | null>(null);
+
+  /** Legacy single-pane code (no tabs). Prefer `snippet` when possible. */
+  readonly code = input<string>('');
   readonly label = input('Usage');
   readonly language = input<DemoCodeLanguage>('auto');
   /** When false, the block starts collapsed (click header to expand). */
@@ -33,16 +51,65 @@ export class DemoCodeBlockComponent {
   private readonly expandedOverride = signal<boolean | null>(null);
   readonly copied = signal(false);
 
+  readonly tabs = computed((): DemoCodeTab[] => {
+    const snippet = this.snippet();
+    const html = snippet?.html?.trim() ?? '';
+    const ts = snippet?.ts?.trim() ?? '';
+
+    if (html || ts) {
+      const panes: DemoCodeTab[] = [];
+
+      if (html) {
+        panes.push({ id: 'html', label: 'HTML', code: html + '\n', language: 'html' });
+      }
+
+      if (ts) {
+        panes.push({ id: 'ts', label: 'TypeScript', code: ts + '\n', language: 'ts' });
+      }
+
+      return panes;
+    }
+
+    const legacy = this.code().trim();
+
+    if (!legacy) {
+      return [];
+    }
+
+    return [
+      {
+        id: 'code',
+        label: this.label(),
+        code: legacy + '\n',
+        language: this.language(),
+      },
+    ];
+  });
+
+  readonly showTabs = computed(() => this.tabs().length > 1);
+
+  readonly activeTabId = linkedSignal<DemoCodeTabId>(() => this.tabs()[0]?.id ?? 'html');
+
+  readonly activeTab = computed(() => {
+    const tabs = this.tabs();
+    const activeId = this.activeTabId();
+    return tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? null;
+  });
+
   readonly expanded = computed(
     () => this.expandedOverride() ?? this.initiallyExpanded(),
   );
 
   private readonly highlightedResource = resource({
-    params: () => ({
-      code: this.code(),
-      language: this.language(),
-    }),
-    loader: async ({ params }): Promise<SafeHtml> => {
+    params: () => {
+      const tab = this.activeTab();
+      return tab ? { code: tab.code, language: tab.language } : null;
+    },
+    loader: async ({ params }): Promise<SafeHtml | null> => {
+      if (!params) {
+        return null;
+      }
+
       const html = await this.starryNight.highlight(params.code, params.language);
       return this.sanitizer.bypassSecurityTrustHtml(html);
     },
@@ -51,17 +118,47 @@ export class DemoCodeBlockComponent {
   readonly highlightedHtml = computed(() => this.highlightedResource.value() ?? null);
   readonly highlightPending = computed(() => this.highlightedResource.isLoading());
 
+  /** Always SafeHtml so `<pre><code>` can stay whitespace-free. */
+  readonly displayHtml = computed((): SafeHtml => {
+    const highlighted = this.highlightedHtml();
+
+    if (highlighted) {
+      return highlighted;
+    }
+
+    const raw = this.activeTab()?.code.trim() ?? '';
+    return this.sanitizer.bypassSecurityTrustHtml(escapeHtml(raw));
+  });
+
+  selectTab(id: DemoCodeTabId): void {
+    this.activeTabId.set(id);
+    this.copied.set(false);
+  }
+
   toggle(): void {
     this.expandedOverride.set(!this.expanded());
   }
 
   async copy(): Promise<void> {
+    const value = this.activeTab()?.code.trim();
+
+    if (!value) {
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(this.code().trim() + '\n');
+      await navigator.clipboard.writeText(value + '\n');
       this.copied.set(true);
       window.setTimeout(() => this.copied.set(false), 1600);
     } catch {
       // Clipboard may be unavailable in insecure contexts.
     }
   }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
 }

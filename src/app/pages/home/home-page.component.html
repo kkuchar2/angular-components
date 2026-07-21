@@ -1,0 +1,55 @@
+<div class="home">
+  <header class="home__bar">
+    <button
+      type="button"
+      class="home__theme-toggle"
+      (click)="themeService.toggle()"
+      [attr.aria-label]="
+        themeService.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+      "
+    >
+      @if (themeService.theme() === 'dark') {
+        <svg [lucideIcon]="LucideSun" [size]="18" aria-hidden="true"></svg>
+        <span>Light mode</span>
+      } @else {
+        <svg [lucideIcon]="LucideMoon" [size]="18" aria-hidden="true"></svg>
+        <span>Dark mode</span>
+      }
+    </button>
+  </header>
+
+  <main class="home__main">
+    <div class="home__copy">
+      <img
+        class="home__logo"
+        src="/demo-icons/angular.svg"
+        alt="Angular"
+        width="48"
+        height="48"
+        decoding="async"
+      />
+      <p class="home__eyebrow">Angular Components</p>
+      <h1 class="home__title">Reusable UI building blocks</h1>
+      <p class="home__lede">
+        Browse interactive demos for tables, inputs, filters, and more — ready to drop into your
+        Angular apps.
+      </p>
+      <a class="home__cta" routerLink="/components">
+        <span>Show components</span>
+        <svg [lucideIcon]="LucideArrowRight" [size]="18" aria-hidden="true"></svg>
+      </a>
+    </div>
+
+    <figure class="home__media">
+      <img
+        class="home__gif"
+        src="https://i.giphy.com/KvES8uAj11XeyhurG2.webp"
+        alt=""
+        width="480"
+        height="480"
+        decoding="async"
+        fetchpriority="low"
+      />
+    </figure>
+  </main>
+</div>

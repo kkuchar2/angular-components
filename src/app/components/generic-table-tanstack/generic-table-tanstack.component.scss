@@ -177,6 +177,19 @@
   position: sticky;
   top: 0;
   z-index: 2;
+
+  // Full-row accent above cell hover backgrounds. Keep pointer-events so the
+  // 1px seam does not fall through to the first body row (that caused flicker).
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    height: 1px;
+    background: var(--gtt-header-accent);
+  }
 }
 
 .generic-table-tanstack__header--virtual {
@@ -199,6 +212,7 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  min-width: 0;
   height: var(--gtt-row-height);
   padding-inline: 16px;
   box-sizing: border-box;
@@ -207,11 +221,7 @@
   color: var(--gtt-header-text);
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-// Non-virtual sticky header: accent on each cell so hover bg cannot cover it.
-.generic-table-tanstack__header--sticky .generic-table-tanstack__header-cell {
-  box-shadow: inset 0 -1px 0 var(--gtt-header-accent);
+  line-height: 1.25;
 }
 
 .generic-table-tanstack__header-cell--sortable {
@@ -275,6 +285,13 @@
   position: relative;
 }
 
+.generic-table-tanstack__body {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--gtt-row-bg);
+}
+
 .generic-table-tanstack__row {
   display: grid;
   grid-template-columns: var(--gtt-cols);
@@ -290,6 +307,7 @@
 
 .generic-table-tanstack__row--static {
   position: relative;
+  height: var(--gtt-row-height);
   min-height: var(--gtt-row-height);
 }
 
@@ -335,6 +353,10 @@
 }
 
 .generic-table-tanstack__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   padding: var(--gtt-empty-padding);
   text-align: center;
   color: var(--gtt-empty-color);

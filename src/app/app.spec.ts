@@ -2,12 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { App } from './app';
+import { routes } from './app.routes';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([])],
+      providers: [provideRouter(routes)],
     }).compileComponents();
   });
 
@@ -17,17 +18,21 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render sidebar title', async () => {
+  it('should render the home page title', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.sidebar__title')?.textContent).toContain('Angular Components');
+    expect(compiled.querySelector('.home__title')?.textContent).toContain(
+      'Reusable UI building blocks',
+    );
   });
 
-  it('should render topbar theme toggle', async () => {
+  it('should render a link to the component showcase', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.topbar__theme-toggle')).toBeTruthy();
+    const cta = compiled.querySelector('.home__cta') as HTMLAnchorElement | null;
+    expect(cta?.textContent).toContain('Show components');
+    expect(cta?.getAttribute('href')).toBe('/components');
   });
 });

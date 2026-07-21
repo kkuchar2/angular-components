@@ -6,6 +6,7 @@ import {
   SelectOption,
 } from '../../components/custom-select/custom-select';
 import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
+import { code } from '../../shared/demo-code-block/demo-code.util';
 
 @Component({
   selector: 'app-custom-select-demo',
@@ -62,69 +63,190 @@ export class CustomSelectDemoComponent {
   readonly eventLog = signal<string[]>([]);
 
   readonly snippets = {
-    outlined: `<app-custom-select
-  appearance="outlined"
-  [options]="options"
-  placeholder="Choose a framework"
-  label="Framework"
-  [(ngModel)]="value"
-/>`,
-    basic: `<app-custom-select
-  [options]="options"
-  placeholder="Choose a framework"
-  label="Framework"
-  [(ngModel)]="value"
-  (selectionChange)="onSelectionChange($event)"
-/>`,
-    icons: `// options: { value, label, icon?: string }[]
-<app-custom-select
-  [options]="iconOptions"
-  placeholder="Pick a theme"
-  label="Theme"
-  [(ngModel)]="value"
-/>`,
-    searchable: `<app-custom-select
-  [options]="countryOptions"
-  placeholder="Select a country"
-  label="Country"
-  [searchable]="true"
-  [(ngModel)]="value"
-/>`,
-    disabledOptions: `// Mark an option with disabled: true
-const options = [
-  { value: 'free', label: 'Free Plan' },
-  { value: 'pro', label: 'Pro Plan' },
-  { value: 'enterprise', label: 'Enterprise', disabled: true },
-];
+    outlined: {
+      html: code`
+        <app-custom-select
+          appearance="outlined"
+          [options]="options"
+          placeholder="Choose a framework"
+          label="Framework"
+          [(ngModel)]="value"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { FormsModule } from '@angular/forms';
+        import {
+          CustomSelectComponent,
+          SelectOption,
+        } from './components/custom-select/custom-select';
 
-<app-custom-select
-  [options]="options"
-  label="Subscription Plan"
-  [(ngModel)]="value"
-/>`,
-    width: `<app-custom-select
-  [options]="options"
-  label="Size preset"
-  width="14rem"
-  [(ngModel)]="value"
-/>`,
-    height: `<app-custom-select
-  [options]="options"
-  label="Compact"
-  height="36px"
-  [(ngModel)]="value"
-/>`,
-    clearable: `<app-custom-select
-  [options]="options"
-  label="Framework"
-  [clearable]="true"
-  [(ngModel)]="value"
-/>`,
-    disabled: `<app-custom-select
-  [options]="options"
-  label="Disabled"
-  [disabled]="true"
-/>`,
+        readonly options: SelectOption[] = [
+          { value: 'angular', label: 'Angular' },
+          { value: 'react', label: 'React' },
+          { value: 'vue', label: 'Vue' },
+        ];
+
+        readonly value = signal<string | number | null>(null);
+      `,
+    },
+    basic: {
+      html: code`
+        <app-custom-select
+          [options]="options"
+          placeholder="Choose a framework"
+          label="Framework"
+          [(ngModel)]="value"
+          (selectionChange)="onSelectionChange($event)"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { FormsModule } from '@angular/forms';
+        import {
+          CustomSelectComponent,
+          SelectOption,
+        } from './components/custom-select/custom-select';
+
+        readonly options: SelectOption[] = [/* ... */];
+        readonly value = signal<string | number | null>(null);
+
+        onSelectionChange(option: SelectOption | null): void {
+          console.log('selectionChange', option);
+        }
+      `,
+    },
+    icons: {
+      html: code`
+        <app-custom-select
+          [options]="iconOptions"
+          placeholder="Pick a theme"
+          label="Theme"
+          [(ngModel)]="value"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { SelectOption } from './components/custom-select/custom-select';
+
+        readonly iconOptions: SelectOption[] = [
+          { value: 'sun', label: 'Light Mode', icon: '☀️' },
+          { value: 'moon', label: 'Dark Mode', icon: '🌙' },
+          { value: 'system', label: 'System Default', icon: '💻' },
+        ];
+
+        readonly value = signal<string | number | null>('system');
+      `,
+    },
+    searchable: {
+      html: code`
+        <app-custom-select
+          [options]="countryOptions"
+          placeholder="Select a country"
+          label="Country"
+          [searchable]="true"
+          [(ngModel)]="value"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { SelectOption } from './components/custom-select/custom-select';
+
+        readonly countryOptions: SelectOption[] = [
+          { value: 'us', label: 'United States' },
+          { value: 'uk', label: 'United Kingdom' },
+          { value: 'de', label: 'Germany' },
+        ];
+
+        readonly value = signal<string | number | null>(null);
+      `,
+    },
+    disabledOptions: {
+      html: code`
+        <app-custom-select
+          [options]="options"
+          label="Subscription Plan"
+          [(ngModel)]="value"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { SelectOption } from './components/custom-select/custom-select';
+
+        readonly options: SelectOption[] = [
+          { value: 'free', label: 'Free Plan' },
+          { value: 'pro', label: 'Pro Plan' },
+          { value: 'enterprise', label: 'Enterprise', disabled: true },
+        ];
+
+        readonly value = signal<string | number | null>('free');
+      `,
+    },
+    width: {
+      html: code`
+        <app-custom-select
+          [options]="options"
+          label="Size preset"
+          width="14rem"
+          [(ngModel)]="value"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { SelectOption } from './components/custom-select/custom-select';
+
+        readonly options: SelectOption[] = [/* ... */];
+        readonly value = signal<string | number | null>(null);
+      `,
+    },
+    height: {
+      html: code`
+        <app-custom-select
+          [options]="options"
+          label="Compact"
+          height="36px"
+          [(ngModel)]="value"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { SelectOption } from './components/custom-select/custom-select';
+
+        readonly options: SelectOption[] = [/* ... */];
+        readonly value = signal<string | number | null>(null);
+      `,
+    },
+    clearable: {
+      html: code`
+        <app-custom-select
+          [options]="options"
+          label="Framework"
+          [clearable]="true"
+          [(ngModel)]="value"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { SelectOption } from './components/custom-select/custom-select';
+
+        readonly options: SelectOption[] = [/* ... */];
+        readonly value = signal<string | number | null>(null);
+      `,
+    },
+    disabled: {
+      html: code`
+        <app-custom-select
+          [options]="options"
+          label="Disabled"
+          [disabled]="true"
+        />
+      `,
+      ts: code`
+        import { SelectOption } from './components/custom-select/custom-select';
+
+        readonly options: SelectOption[] = [/* ... */];
+      `,
+    },
   };
 
   onSelectionChange(label: string, option: SelectOption | null): void {

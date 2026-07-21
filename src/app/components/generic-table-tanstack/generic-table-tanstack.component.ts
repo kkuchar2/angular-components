@@ -33,6 +33,8 @@ import {
 import { injectVirtualizer } from '@tanstack/angular-virtual';
 
 import { GenericTableCellDirective } from '../generic-table/generic-table-cell.directive';
+import { resolveSortValue } from '../generic-table/generic-table-cell-format';
+import { GenericTableCellValueComponent } from '../generic-table/generic-table-cell-value.component';
 import { GenericTableHeaderInfoComponent } from '../generic-table/generic-table-header-info.component';
 import {
   ColumnDef,
@@ -55,7 +57,13 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
  */
 @Component({
   selector: 'app-generic-table-tanstack',
-  imports: [NgTemplateOutlet, MatChipsModule, MatPaginatorModule, GenericTableHeaderInfoComponent],
+  imports: [
+    NgTemplateOutlet,
+    MatChipsModule,
+    MatPaginatorModule,
+    GenericTableHeaderInfoComponent,
+    GenericTableCellValueComponent,
+  ],
   templateUrl: './generic-table-tanstack.component.html',
   styleUrl: './generic-table-tanstack.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -357,6 +365,18 @@ export class GenericTableTanstackComponent<T = unknown> {
     return this.table.getRowModel().rows;
   });
 
+  /**
+   * When paginated, keep the body tall enough for a full page even if the last
+   * page has fewer rows — only real rows are rendered; the rest is empty space.
+   */
+  readonly paginatedBodyMinHeightPx = computed(() => {
+    if (!this.showPaginator()) {
+      return null;
+    }
+
+    return this.pageSize() * this.rowHeight();
+  });
+
   readonly virtualizer = injectVirtualizer(() => ({
     scrollElement: this.scrollElement(),
     count: this.virtualized() ? this.sortedRows().length : 0,
@@ -491,14 +511,6 @@ export class GenericTableTanstackComponent<T = unknown> {
         this.scrollContentWidthPx.set(viewportEl.clientWidth);
       });
     });
-  }
-
-  formatCell(column: ColumnDef<T>, row: T): string | number {
-    if (column.cell) {
-      return column.cell(row);
-    }
-
-    return this.getRowValue(row, column.key);
   }
 
   cellContext(row: T): GenericTableCellContext<T> {
@@ -679,24 +691,7 @@ export class GenericTableTanstackComponent<T = unknown> {
   }
 
   private sortValue(column: ColumnDef<T>, row: T): string | number {
-    if (column.sortAccessor) {
-      return column.sortAccessor(row);
-    }
-
-    if (column.cell) {
-      return column.cell(row);
-    }
-
-    return this.getRowValue(row, column.key);
-  }
-
-  private getRowValue(row: T, key: string): string | number {
-    if (typeof row !== 'object' || row === null || !(key in row)) {
-      return '';
-    }
-
-    const value = (row as Record<string, unknown>)[key];
-    return typeof value === 'string' || typeof value === 'number' ? value : '';
+    return resolveSortValue(column, row);
   }
 
   private downloadCsv(rows: readonly T[], fileName: string): void {

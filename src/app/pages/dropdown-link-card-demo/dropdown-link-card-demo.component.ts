@@ -14,6 +14,7 @@ import {
   DropdownLinkCardIcon,
 } from '../../components/dropdown-link-card/dropdown-link-card';
 import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
+import { code } from '../../shared/demo-code-block/demo-code.util';
 
 @Component({
   selector: 'app-dropdown-link-card-demo',
@@ -114,60 +115,115 @@ export class DropdownLinkCardDemoComponent {
   ];
 
   readonly snippets = {
-    nested: `import { LucideBookOpen, LucideFileText, LucideLayers } from '@lucide/angular';
+    nested: {
+      html: code`
+        <app-dropdown-link-card
+          title="Documentation"
+          [icon]="cardIcon"
+          [links]="links"
+        />
+      `,
+      ts: code`
+        import {
+          LucideBookOpen,
+          LucideFileText,
+          LucideLayers,
+        } from '@lucide/angular';
+        import {
+          DropdownLink,
+          DropdownLinkCardIcon,
+        } from './components/dropdown-link-card/dropdown-link-card';
 
-readonly cardIcon = { type: 'lucide', icon: LucideBookOpen };
+        readonly cardIcon: DropdownLinkCardIcon = {
+          type: 'lucide',
+          icon: LucideBookOpen,
+        };
 
-readonly links = [
-  {
-    label: 'Angular Docs',
-    url: 'https://angular.dev',
-    icon: { type: 'lucide', icon: LucideFileText },
-  },
-  {
-    label: 'Web Resources',
-    icon: { type: 'lucide', icon: LucideLayers },
-    children: [
-      { label: 'MDN', url: 'https://developer.mozilla.org' },
-      { label: 'Can I Use', url: 'https://caniuse.com' },
-    ],
-  },
-];
+        readonly links: DropdownLink[] = [
+          {
+            label: 'Angular Docs',
+            url: 'https://angular.dev',
+            icon: { type: 'lucide', icon: LucideFileText },
+          },
+          {
+            label: 'Web Resources',
+            icon: { type: 'lucide', icon: LucideLayers },
+            children: [
+              { label: 'MDN', url: 'https://developer.mozilla.org' },
+              { label: 'Can I Use', url: 'https://caniuse.com' },
+            ],
+          },
+        ];
+      `,
+    },
+    imageIcons: {
+      html: code`
+        <app-dropdown-link-card
+          title="Frameworks"
+          [icon]="cardIcon"
+          [links]="links"
+        />
+      `,
+      ts: code`
+        import {
+          DropdownLink,
+          DropdownLinkCardIcon,
+        } from './components/dropdown-link-card/dropdown-link-card';
 
-<app-dropdown-link-card
-  title="Documentation"
-  [icon]="cardIcon"
-  [links]="links"
-/>`,
-    imageIcons: `readonly cardIcon = {
-  type: 'image',
-  src: '/icons/angular.svg',
-  alt: 'Angular',
-};
+        readonly cardIcon: DropdownLinkCardIcon = {
+          type: 'image',
+          src: '/icons/angular.svg',
+          alt: 'Angular',
+        };
 
-readonly links = [
-  {
-    label: 'Angular',
-    url: 'https://angular.dev',
-    icon: { type: 'image', src: '/icons/angular.svg', alt: 'Angular' },
-  },
-];
+        readonly links: DropdownLink[] = [
+          {
+            label: 'Angular',
+            url: 'https://angular.dev',
+            icon: { type: 'image', src: '/icons/angular.svg', alt: 'Angular' },
+          },
+        ];
+      `,
+    },
+    flat: {
+      html: code`
+        <app-dropdown-link-card
+          title="Quick Links"
+          [icon]="cardIcon"
+          [links]="flatLinks"
+        />
+      `,
+      ts: code`
+        import {
+          DropdownLink,
+          DropdownLinkCardIcon,
+        } from './components/dropdown-link-card/dropdown-link-card';
 
-<app-dropdown-link-card
-  title="Frameworks"
-  [icon]="cardIcon"
-  [links]="links"
-/>`,
-    flat: `<app-dropdown-link-card
-  title="Quick Links"
-  [icon]="cardIcon"
-  [links]="flatLinks"
-/>`,
-    disabled: `<app-dropdown-link-card
-  title="Unavailable"
-  [icon]="cardIcon"
-  [links]="links"
-  [disabled]="true"
-/>`,
+        readonly cardIcon: DropdownLinkCardIcon = { /* ... */ };
+        readonly flatLinks: DropdownLink[] = [
+          { label: 'Angular', url: 'https://angular.dev' },
+          { label: 'GitHub', url: 'https://github.com' },
+        ];
+      `,
+    },
+    disabled: {
+      html: code`
+        <app-dropdown-link-card
+          title="Unavailable"
+          [icon]="cardIcon"
+          [links]="links"
+          [disabled]="true"
+        />
+      `,
+      ts: code`
+        import {
+          DropdownLink,
+          DropdownLinkCardIcon,
+        } from './components/dropdown-link-card/dropdown-link-card';
+
+        readonly cardIcon: DropdownLinkCardIcon = { /* ... */ };
+        readonly links: DropdownLink[] = [/* ... */];
+      `,
+    },
   };
 }

@@ -10,7 +10,8 @@
   <article class="home__demo">
     <h2 class="home__demo-title">1. Full featured</h2>
     <p class="home__demo-hint">
-      Sorting, pagination, column toggle chips, CSV export of all rows, a custom
+      Sorting, pagination, column toggle chips, CSV export, built-in
+      <code>uuid</code>/<code>date</code> cells with optional copy buttons, a custom
       status badge cell, and clickable rows.
     </p>
 
@@ -36,7 +37,7 @@
       </p>
     }
 
-    <app-demo-code-block [code]="snippets.fullFeatured" />
+    <app-demo-code-block [snippet]="snippets.fullFeatured" />
   </article>
 
   <article class="home__demo">
@@ -76,7 +77,7 @@
       </ng-template>
     </app-generic-table>
 
-    <app-demo-code-block [code]="snippets.serverSide" />
+    <app-demo-code-block [snippet]="snippets.serverSide" />
   </article>
 
   <article class="home__demo home__demo--playground">
@@ -128,7 +129,7 @@
       }
     </div>
 
-    <app-demo-code-block [code]="snippets.heightModes" />
+    <app-demo-code-block [snippet]="snippets.heightModes" />
   </article>
 
   <article class="home__demo">
@@ -159,7 +160,7 @@
       </ng-template>
     </app-generic-table>
 
-    <app-demo-code-block [code]="snippets.customCells" />
+    <app-demo-code-block [snippet]="snippets.customCells" />
   </article>
 
   <article class="home__demo">
@@ -179,7 +180,7 @@
       [trackBy]="trackById"
     />
 
-    <app-demo-code-block [code]="snippets.virtualScroll" />
+    <app-demo-code-block [snippet]="snippets.virtualScroll" />
   </article>
 
   <article class="home__demo">
@@ -195,7 +196,7 @@
       emptyMessage="No team members found."
     />
 
-    <app-demo-code-block [code]="snippets.empty" />
+    <app-demo-code-block [snippet]="snippets.empty" />
   </article>
 
   <article class="home__demo">
@@ -251,6 +252,6 @@
       </section>
     </div>
 
-    <app-demo-code-block [code]="snippets.virtualEmpty" />
+    <app-demo-code-block [snippet]="snippets.virtualEmpty" />
   </article>
 </section>

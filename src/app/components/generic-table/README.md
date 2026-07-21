@@ -7,6 +7,8 @@ A configurable, signal-based table built on Angular Material's `mat-table`. Drop
 
 - Column-driven configuration (`ColumnDef<T>`)
 - Optional per-column sorting
+- Built-in cell styles: `text`, `uuid` (monospace), `date` (`Date`, `YYYY-MM-DD`, or ISO datetimes)
+- Optional Lucide copy button per column (`copyable: true`)
 - Optional pagination, or a scrollable body with a sticky header
 - Optional virtual scroll for large datasets (CDK viewport + fixed row height)
 - CSV export of all rows/columns (raw values; works with pagination and virtualization)
@@ -21,6 +23,7 @@ A configurable, signal-based table built on Angular Material's `mat-table`. Drop
 
 - `@angular/core`, `@angular/common`
 - `@angular/material` + `@angular/cdk` (provides `mat-table`, `mat-sort`, `mat-paginator`, `mat-chips`)
+- `@lucide/angular` (copy icon on `copyable` cells; header info icon)
 
 ## Setup
 
@@ -319,13 +322,41 @@ Typical app-shell layout:
 | `header`       | `string`                        | Header label.                                                     |
 | `description`  | `string`                        | Optional help text; shows a small info icon + tooltip by the header. |
 | `sortable`     | `boolean`                       | Enable sorting for this column (default `false`).                 |
+| `cellType`     | `'text' \| 'uuid' \| 'date'`    | Built-in cell presentation when no custom template is projected (default `'text'`). |
+| `dateDisplay`  | `'auto' \| 'date' \| 'datetime'`| How `date` cells format values (default `'auto'`).                |
+| `copyable`     | `boolean`                       | Show a small Lucide copy button for the cell value (default `false`). |
 | `cell`         | `(row: T) => string \| number`  | Custom text formatter (default `row[key]`).                       |
-| `sortAccessor` | `(row: T) => string \| number`  | Value used for sorting (default `cell`, then `row[key]`).         |
+| `sortAccessor` | `(row: T) => string \| number`  | Value used for sorting (default `cell`, then `row[key]` / date timestamp). |
 | `hideable`     | `boolean`                       | If `false`, always visible and not shown in the toggle (default `true`). |
 | `visible`      | `boolean`                       | Initial visibility (default `true`).                             |
 | `width`        | `string`                        | Fixed width, e.g. `'120px'` or `'20%'`.                          |
 | `minWidth`     | `string`                        | Minimum width, e.g. `'120px'`; the column never shrinks below it. |
 | `align`        | `'left' \| 'center' \| 'right'` | Text alignment (default `'left'`).                               |
+
+### Built-in cell types
+
+Use `cellType` instead of a custom template for common formats:
+
+```ts
+const columns: ColumnDef<User>[] = [
+  { key: 'id', header: 'ID', cellType: 'uuid', copyable: true },
+  { key: 'email', header: 'Email', copyable: true },
+  {
+    key: 'createdAt',
+    header: 'Created',
+    sortable: true,
+    cellType: 'date',
+    dateDisplay: 'date', // Date | 'YYYY-MM-DD' | ISO datetime string
+  },
+];
+```
+
+- **`uuid`**: monospace text.
+- **`date`**: accepts `Date`, date-only strings (`2026-07-21`), or ISO datetimes
+  (`2026-07-21T18:30:00.123456Z`). With `dateDisplay: 'auto'` (default), date-only /
+  midnight values render as a locale date; otherwise date + time.
+- **`copyable`**: copies the **raw** cell value (ISO for `Date`s), not only the pretty label.
+  Custom `appGenericTableCell` templates still win over built-in styles.
 
 ## Custom cell templates
 
@@ -410,5 +441,9 @@ in a zoneless app (`provideZonelessChangeDetection()`). No manual
 | `generic-table.component.html`   | Template                                |
 | `generic-table.component.scss`   | Self-contained styling                  |
 | `generic-table-cell.directive.ts`| Custom cell template directive          |
+| `generic-table-cell-value.component.ts` | Built-in text/uuid/date + copy UI |
+| `generic-table-cell-format.ts`   | Shared format / parse / copy helpers    |
+| `generic-table-cell.types.ts`    | `GenericTableCellType`, `GenericTableDateDisplay` |
+| `generic-table-header-info.component.ts` | Header description tooltip icon |
 | `generic-table.types.ts`         | `ColumnDef<T>`, `GenericTableCellContext<T>` |
 | `index.ts`                       | Public barrel export                    |

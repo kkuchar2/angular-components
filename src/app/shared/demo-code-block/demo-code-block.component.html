@@ -1,14 +1,35 @@
 <div class="demo-code" [class.demo-code--collapsed]="!expanded()">
   <div class="demo-code__toolbar">
-    <button
-      type="button"
-      class="demo-code__toggle"
-      (click)="toggle()"
-      [attr.aria-expanded]="expanded()"
-    >
-      <span class="demo-code__chevron" aria-hidden="true">{{ expanded() ? '▾' : '▸' }}</span>
-      <span class="demo-code__label">{{ label() }}</span>
-    </button>
+    <div class="demo-code__toolbar-start">
+      <button
+        type="button"
+        class="demo-code__toggle"
+        (click)="toggle()"
+        [attr.aria-expanded]="expanded()"
+      >
+        <span class="demo-code__chevron" aria-hidden="true">{{ expanded() ? '▾' : '▸' }}</span>
+        @if (!showTabs()) {
+          <span class="demo-code__label">{{ activeTab()?.label ?? label() }}</span>
+        }
+      </button>
+
+      @if (showTabs()) {
+        <div class="demo-code__tabs" role="tablist" aria-label="Code language">
+          @for (tab of tabs(); track tab.id) {
+            <button
+              type="button"
+              role="tab"
+              class="demo-code__tab"
+              [class.demo-code__tab--active]="activeTabId() === tab.id"
+              [attr.aria-selected]="activeTabId() === tab.id"
+              (click)="selectTab(tab.id)"
+            >
+              {{ tab.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
 
     <button
       type="button"
@@ -20,13 +41,11 @@
     </button>
   </div>
 
-  @if (expanded()) {
-    <pre class="demo-code__pre" [class.demo-code__pre--pending]="highlightPending() && !highlightedHtml()">
-      @if (highlightedHtml(); as html) {
-        <code class="demo-code__code" [innerHTML]="html"></code>
-      } @else {
-        <code class="demo-code__code">{{ code().trim() }}</code>
-      }
-    </pre>
+  @if (expanded() && activeTab()) {
+    <!-- Keep <pre><code> flush — whitespace inside <pre> becomes leading indent. -->
+    <pre
+      class="demo-code__pre"
+      [class.demo-code__pre--pending]="highlightPending() && !highlightedHtml()"
+    ><code class="demo-code__code" [innerHTML]="displayHtml()"></code></pre>
   }
 </div>

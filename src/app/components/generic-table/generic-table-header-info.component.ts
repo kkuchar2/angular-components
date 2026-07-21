@@ -40,6 +40,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       display: inline-flex;
       flex-shrink: 0;
       align-items: center;
+      vertical-align: middle;
+      line-height: 0;
     }
 
     .gt-header-info {

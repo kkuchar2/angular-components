@@ -3,7 +3,8 @@
     <h2 class="demo__title">1. Paginated + column chips + custom cells</h2>
     <p class="demo__hint">
       Same features as Material <code>app-generic-table</code>: chip column toggle,
-      client-side pagination, sorting, export, and custom cell templates.
+      client-side pagination, sorting, export, built-in <code>uuid</code>/<code>date</code>
+      cells with optional copy, and custom cell templates.
     </p>
 
     <app-generic-table-tanstack
@@ -30,7 +31,7 @@
       <p class="demo__selection">Selected: {{ row.name }} ({{ row.email }})</p>
     }
 
-    <app-demo-code-block [code]="snippets.paginated" />
+    <app-demo-code-block [snippet]="snippets.paginated" />
   </article>
 
   <article class="demo__card">
@@ -55,7 +56,7 @@
       (exportRequest)="onServerSideExport($event)"
     />
 
-    <app-demo-code-block [code]="snippets.serverSide" />
+    <app-demo-code-block [snippet]="snippets.serverSide" />
   </article>
 
   <article class="demo__card">
@@ -75,7 +76,7 @@
       [trackBy]="trackById"
     />
 
-    <app-demo-code-block [code]="snippets.virtual" />
+    <app-demo-code-block [snippet]="snippets.virtual" />
   </article>
 
   <article class="demo__card">
