@@ -186,6 +186,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       const available = this.boundedAvailableHeightPx();
 
       if (available == null) {
+        // Let CSS flex size the viewport until the parent has been measured.
         return null;
       }
 
@@ -193,6 +194,12 @@ export class GenericTableTanstackComponent<T = unknown> {
         0,
         available - this.boundedChromeHeightPx() - this.headerHeightPx(),
       );
+
+      // Never force height: 0 — that leaves only the header visible and TanStack
+      // Virtual reports zero visible items. Fall back to flex sizing instead.
+      if (fillHeight < this.rowHeight()) {
+        return null;
+      }
 
       return this.resolveBoundedScrollBodyHeightPx(bodyContent, fillHeight);
     }
@@ -828,6 +835,10 @@ export class GenericTableTanstackComponent<T = unknown> {
 
     this.scrollbarGutterPx.set(viewport.offsetWidth - viewport.clientWidth);
     this.measureBoundedLayout();
+
+    // Flex sizing may have just given the viewport a real height — remeasure so
+    // getVirtualItems() is not stuck on an empty range from a 0px first paint.
+    this.virtualizer.measure();
   }
 
   private measureBoundedLayout(): void {
@@ -849,9 +860,11 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.boundedAvailableHeightPx.set(available);
 
     const tableRoot = host.querySelector('.generic-table-tanstack');
-    const scrollBody = host.querySelector(
-      '.generic-table-tanstack__scroll, .generic-table-tanstack__virtual-shell',
-    );
+    // Virtual: measure chrome outside the shell (toolbar/gaps). Header lives inside
+    // the shell and is subtracted separately via headerHeightPx.
+    const scrollBody = this.virtualized()
+      ? host.querySelector('.generic-table-tanstack__virtual-shell')
+      : host.querySelector('.generic-table-tanstack__scroll');
 
     if (tableRoot instanceof HTMLElement && scrollBody instanceof HTMLElement) {
       this.boundedChromeHeightPx.set(

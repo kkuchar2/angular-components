@@ -98,7 +98,8 @@
         #scrollElement
         class="generic-table-tanstack__scroll generic-table-tanstack__scroll--virtual"
         [class.generic-table-tanstack__scroll--scrolling]="isScrolling()"
-        [class.generic-table-tanstack__scroll--fill]="isFixed() || isBoundedHeightMode()"
+        [class.generic-table-tanstack__scroll--fill]="isFixed()"
+        [class.generic-table-tanstack__scroll--bounded]="isBoundedHeightMode()"
         [style.height.px]="virtualViewportHeightPx()"
         (scroll)="onScroll($event)"
       >

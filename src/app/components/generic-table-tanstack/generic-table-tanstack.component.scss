@@ -13,6 +13,15 @@
   overflow: hidden;
 }
 
+// Virtual + parent/fill: fill the parent so the viewport gets a real height.
+// Without this the shell collapses to the header and TanStack renders no rows.
+:host(.generic-table-tanstack-host--virtualized.generic-table-tanstack-host--fill),
+:host(.generic-table-tanstack-host--virtualized.generic-table-tanstack-host--parent) {
+  flex: 1 1 0;
+  height: 100%;
+  min-height: 0;
+}
+
 .generic-table-tanstack {
   --gtt-max-height: 480px;
   --gtt-gap: var(--spacing-md, 1rem);
@@ -88,6 +97,14 @@
   overflow: hidden;
 }
 
+.generic-table-tanstack--virtualized.generic-table-tanstack--fill,
+.generic-table-tanstack--virtualized.generic-table-tanstack--parent,
+.generic-table-tanstack--virtualized.generic-table-tanstack--bounded {
+  flex: 1 1 0;
+  height: 100%;
+  min-height: 0;
+}
+
 .generic-table-tanstack__virtual-shell {
   display: flex;
   flex-direction: column;
@@ -99,7 +116,7 @@
 }
 
 .generic-table-tanstack__virtual-shell--bounded {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   height: auto;
   max-height: 100%;
   min-height: var(--gtt-min-height, 0);
@@ -124,6 +141,7 @@
 }
 
 .generic-table-tanstack__scroll--bounded {
+  flex: 1 1 auto;
   max-height: none;
   min-height: var(--gtt-min-height, 0);
 }
@@ -134,7 +152,7 @@
   max-height: none;
 }
 
-.generic-table-tanstack__scroll--virtual.generic-table-tanstack__scroll--fill {
+.generic-table-tanstack__scroll--virtual.generic-table-tanstack__scroll--bounded {
   flex: 1 1 0;
   min-height: 0;
 }
