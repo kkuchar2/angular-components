@@ -10,7 +10,8 @@
   <article class="home__demo">
     <h2 class="home__demo-title">1. Full featured</h2>
     <p class="home__demo-hint">
-      Sorting, pagination, column toggle chips, a custom status badge cell, and clickable rows.
+      Sorting, pagination, column toggle chips, CSV export of all rows, a custom
+      status badge cell, and clickable rows.
     </p>
 
     <app-generic-table
@@ -19,6 +20,8 @@
       [paginated]="true"
       [pageSize]="5"
       [rowClickable]="true"
+      [showExport]="true"
+      exportFileName="team-members.csv"
       [trackBy]="trackById"
       (rowClick)="onRowClick($event)"
     >
@@ -39,6 +42,7 @@
     <p class="home__demo-hint">
       87 rows on the “server”, five per page. Only the current page is passed to
       <code>[data]</code>; each paginator click triggers a simulated fetch (~350&nbsp;ms).
+      Export CSV uses <code>(exportRequest)</code> so the parent can load all rows first.
     </p>
 
     @if (serverSideLoading()) {
@@ -59,8 +63,11 @@
       [pageIndex]="serverSidePageIndex()"
       [pageSize]="serverSidePageSize()"
       [showColumnToggle]="false"
+      [showExport]="true"
+      exportFileName="server-side-team.csv"
       [trackBy]="trackById"
       (pageChange)="onServerSidePageChange($event)"
+      (exportRequest)="onServerSideExport($event)"
     >
       <ng-template appGenericTableCell="status" [appGenericTableCellFor]="serverSideRows()" let-row>
         <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>

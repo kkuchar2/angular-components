@@ -9,6 +9,7 @@ A configurable, signal-based table built on Angular Material's `mat-table`. Drop
 - Optional per-column sorting
 - Optional pagination, or a scrollable body with a sticky header
 - Optional virtual scroll for large datasets (CDK viewport + fixed row height)
+- CSV export of all rows/columns (raw values; works with pagination and virtualization)
 - Chip-based column visibility toggle
 - Custom cell templates (badges, links, avatars, anything)
 - Optional row click (mouse + keyboard) with hover styling
@@ -104,6 +105,9 @@ The row type `T` is inferred from the `data`/`columns` inputs, so `cell`,
 | `pageSize`        | `number`                 | `10`                  | Initial page size.                                       |
 | `pageSizeOptions` | `number[]`               | `[5, 10, 25, 50]`     | Page size choices.                                       |
 | `showColumnToggle`| `boolean`                | `true`                | Show the column visibility chips.                        |
+| `showExport`      | `boolean`                | `false`               | Show an Export CSV button (all rows/columns, raw values). |
+| `exportFileName`  | `string`                 | `'table-export.csv'`  | Download filename for CSV export.                        |
+| `exportData`      | `readonly T[] \| null`   | `null`                | Full dataset for CSV when `data` is only one page.       |
 | `emptyMessage`    | `string`                 | `'No data available'` | Message shown when there are no rows.                    |
 | `rowClickable`    | `boolean`                | `false`               | Enable row click + hover styling.                        |
 | `heightMode`      | `'auto' \| 'fill' \| 'parent'` | `'auto'`        | Vertical sizing strategy — see [Height & scrolling](#height--scrolling). |
@@ -117,7 +121,40 @@ The row type `T` is inferred from the `data`/`columns` inputs, so `cell`,
 | ------------ | ----------- | -------------------------------------------------- |
 | `rowClick`   | `T`         | Emitted on row click when `rowClickable` is true.  |
 | `sortChange` | `Sort`      | Emitted when the sort state changes.               |
-| `pageChange` | `PageEvent` | Emitted when the page changes. Fetch the next page when `serverSide` is true. |
+| `pageChange`    | `PageEvent` | Emitted when the page changes. Fetch the next page when `serverSide` is true. |
+| `exportRequest` | `GenericTableExportRequest<T>` | Emitted on CSV export. Call `complete(rows)` after loading the full dataset (server-side). |
+
+### CSV export
+
+Export every column definition and every row as a UTF-8 CSV download (Excel-friendly BOM).
+Values are raw `row[key]` properties — custom `cell` formatters and projected templates are
+ignored. Pagination and virtualization do not limit the export.
+
+**Client-side / virtualized:** downloads from `data` (or `exportData`) immediately.
+
+**Server-side pagination:** the table does not fetch pages itself. Handle `(exportRequest)`,
+load the full set, then call `complete(rows)`:
+
+```ts
+onExport(request: GenericTableExportRequest<User>): void {
+  this.users.fetchAll().subscribe((rows) => request.complete(rows));
+}
+```
+
+```html
+<app-generic-table
+  [columns]="columns"
+  [data]="pageRows()"
+  [paginated]="true"
+  [serverSide]="true"
+  [totalCount]="total()"
+  [showExport]="true"
+  (exportRequest)="onExport($event)"
+/>
+```
+
+Alternatively pass `[exportData]` with a full list you already have, and the table will
+download without waiting on `(exportRequest)`.
 
 ### Server-side pagination
 

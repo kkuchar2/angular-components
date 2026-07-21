@@ -57,10 +57,40 @@
   user-select: none;
 }
 
+.generic-table__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gt-toggle-gap);
+}
+
 .generic-table__column-toggle {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gt-toggle-gap);
+}
+
+.generic-table__export {
+  margin-inline-start: auto;
+  padding: 0.375rem 0.75rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gt-header-text);
+  cursor: pointer;
+  background: var(--gt-header-bg);
+  border: 1px solid var(--gt-border);
+  border-radius: var(--gt-radius);
+}
+
+.generic-table__export:hover:not(:disabled) {
+  background: var(--gt-row-hover-bg);
+}
+
+.generic-table__export:disabled {
+  cursor: not-allowed;
+  opacity: var(--gt-disabled-opacity);
 }
 
 // When filling, cap at the measured flex/parent allocation and shrink to rows.

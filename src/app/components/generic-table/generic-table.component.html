@@ -9,20 +9,38 @@
   [style.--gt-max-height]="isBoundedHeightMode() ? null : maxHeight()"
   [style.--gt-min-height]="minHeight()"
 >
-  @if (showColumnToggle() && hideableColumns().length > 0) {
-    <mat-chip-listbox
-      class="generic-table__column-toggle"
-      multiple
-      aria-label="Toggle columns"
-      [disabled]="disabled()"
-      (change)="onToggleColumns($event)"
-    >
-      @for (col of hideableColumns(); track col.key) {
-        <mat-chip-option [value]="col.key" [selected]="isColumnVisible(col.key)">
-          {{ col.header }}
-        </mat-chip-option>
+  @if (
+    (showColumnToggle() && hideableColumns().length > 0) ||
+    showExport()
+  ) {
+    <div class="generic-table__toolbar">
+      @if (showColumnToggle() && hideableColumns().length > 0) {
+        <mat-chip-listbox
+          class="generic-table__column-toggle"
+          multiple
+          aria-label="Toggle columns"
+          [disabled]="disabled()"
+          (change)="onToggleColumns($event)"
+        >
+          @for (col of hideableColumns(); track col.key) {
+            <mat-chip-option [value]="col.key" [selected]="isColumnVisible(col.key)">
+              {{ col.header }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
       }
-    </mat-chip-listbox>
+
+      @if (showExport()) {
+        <button
+          type="button"
+          class="generic-table__export"
+          [disabled]="disabled()"
+          (click)="onExportClick()"
+        >
+          Export CSV
+        </button>
+      }
+    </div>
   }
 
   <!--

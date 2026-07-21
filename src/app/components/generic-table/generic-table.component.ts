@@ -27,7 +27,7 @@ import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { GenericTableCellDirective } from './generic-table-cell.directive';
-import { ColumnDef, GenericTableCellContext, GenericTableHeightMode } from './generic-table.types';
+import { ColumnDef, GenericTableCellContext, GenericTableExportRequest, GenericTableHeightMode } from './generic-table.types';
 
 /** Default scroll-body cap; mirrored by `--gt-max-height` in the component stylesheet. */
 const DEFAULT_MAX_HEIGHT_PX = 480;
@@ -115,6 +115,18 @@ export class GenericTableComponent<T = unknown> {
   readonly rowClickable = input(false);
   /** Fade the table and block all interaction (sort, pagination, column toggle, row click). */
   readonly disabled = input(false);
+  /**
+   * Show an "Export CSV" control. Exports every column and every row in `data`
+   * (or `exportData` when provided) — not just the current page / virtual window.
+   */
+  readonly showExport = input(false);
+  /** Download filename for CSV export. Defaults to `'table-export.csv'`. */
+  readonly exportFileName = input('table-export.csv');
+  /**
+   * Optional full dataset used only for CSV export. Use with server-side pagination
+   * when `data` holds a single page but you still want to export every row.
+   */
+  readonly exportData = input<readonly T[] | null>(null);
   /**
    * How the table sizes vertically:
    * - `'auto'` (default): grows with content up to the default max height (480px), then scrolls.
@@ -214,6 +226,13 @@ export class GenericTableComponent<T = unknown> {
   readonly rowClick = output<T>();
   readonly sortChange = output<Sort>();
   readonly pageChange = output<PageEvent>();
+  /**
+   * Emitted when the user starts a CSV export and the parent should supply rows
+   * (typical for server-side pagination). Call `complete(rows)` after fetching.
+   * For client-side data the table also downloads immediately from `data` /
+   * `exportData`; for server-side without `exportData`, only this event runs.
+   */
+  readonly exportRequest = output<GenericTableExportRequest<T>>();
 
   readonly dataSource = new MatTableDataSource<T>();
 
@@ -475,6 +494,76 @@ export class GenericTableComponent<T = unknown> {
     }
 
     this.rowClick.emit(row);
+  }
+
+  /**
+   * Download a CSV of the given rows (or `exportData` / `data` when omitted).
+   * Includes every column definition and raw `row[key]` values — ignores
+   * pagination, virtualization, cell formatters, and templates.
+   */
+  exportToCsv(fileName = this.exportFileName(), rows?: readonly T[]): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    this.downloadCsv(rows ?? this.exportData() ?? this.data(), fileName);
+  }
+
+  /** Start an export from the toolbar button (may emit `exportRequest`). */
+  onExportClick(): void {
+    this.requestCsvExport();
+  }
+
+  /**
+   * Start a CSV export. Always emits `(exportRequest)` with a `complete` callback.
+   * When data is already local (`!serverSide` or `exportData` is set), also downloads
+   * immediately. With server-side pagination and no `exportData`, the parent must
+   * fetch all rows and call `complete(rows)`.
+   */
+  requestCsvExport(fileName = this.exportFileName()): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    const resolvedName = this.resolveCsvFileName(fileName);
+    const complete = (rows: readonly T[]) => this.downloadCsv(rows, resolvedName);
+
+    this.exportRequest.emit({ fileName: resolvedName, complete });
+
+    if (!this.isServerSidePagination() || this.exportData() != null) {
+      complete(this.exportData() ?? this.data());
+    }
+  }
+
+  private downloadCsv(rows: readonly T[], fileName: string): void {
+    const columns = this.columns();
+    const lines = [
+      columns.map((column) => this.escapeCsvField(column.header)).join(','),
+      ...rows.map((row) =>
+        columns
+          .map((column) => this.escapeCsvField(this.getRawExportValue(row, column.key)))
+          .join(','),
+      ),
+    ];
+
+    // BOM helps Excel open UTF-8 correctly.
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], {
+      type: 'text/csv;charset=utf-8;',
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+
+    anchor.href = url;
+    anchor.download = this.resolveCsvFileName(fileName);
+    anchor.rel = 'noopener';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  private resolveCsvFileName(fileName: string): string {
+    return fileName.toLowerCase().endsWith('.csv') ? fileName : `${fileName}.csv`;
   }
 
   onScroll(): void {
@@ -950,5 +1039,43 @@ export class GenericTableComponent<T = unknown> {
 
     const value = (row as Record<string, unknown>)[key];
     return typeof value === 'string' || typeof value === 'number' ? value : '';
+  }
+
+  private getRawExportValue(row: T, key: string): string {
+    if (typeof row !== 'object' || row === null || !(key in row)) {
+      return '';
+    }
+
+    const value = (row as Record<string, unknown>)[key];
+
+    if (value == null) {
+      return '';
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  private escapeCsvField(value: string): string {
+    if (/[",\n\r]/.test(value)) {
+      return `"${value.replaceAll('"', '""')}"`;
+    }
+
+    return value;
   }
 }

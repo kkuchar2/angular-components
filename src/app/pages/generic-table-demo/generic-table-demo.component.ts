@@ -6,6 +6,7 @@ import {
   ColumnDef,
   GenericTableCellDirective,
   GenericTableComponent,
+  GenericTableExportRequest,
   GenericTableHeightMode,
 } from '../../components/generic-table';
 import { ResizeObserverDirective } from './resize-observer.directive';
@@ -240,6 +241,11 @@ export class GenericTableDemoComponent {
 
   onServerSidePageChange(event: PageEvent): void {
     this.loadServerSidePage(event.pageIndex, event.pageSize);
+  }
+
+  onServerSideExport(request: GenericTableExportRequest<DemoUser>): void {
+    // Simulate fetching every page, then finish the download.
+    setTimeout(() => request.complete(this.serverSideDataset), 350);
   }
 
   onRowClick(row: DemoUser): void {

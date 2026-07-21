@@ -51,3 +51,16 @@ export interface GenericTableCellContext<T = unknown> {
   /** Alias of `$implicit` for readability: `let-row="row"`. */
   row: T;
 }
+
+/**
+ * Payload for `(exportRequest)`. Use when rows live on the server and the parent
+ * must load the full dataset before the CSV can be built.
+ *
+ * @typeParam T - The row model the table renders.
+ */
+export interface GenericTableExportRequest<T = unknown> {
+  /** Filename that will be used for the download (includes `.csv` when applicable). */
+  fileName: string;
+  /** Call with the full row set to download the CSV. */
+  complete: (rows: readonly T[]) => void;
+}
