@@ -30,10 +30,10 @@ export interface ColumnDef<T = unknown> {
  * How the table sizes itself vertically.
  *
  * - `'auto'`: the body grows with its rows up to the default max height (480px), then scrolls.
- * - `'fill'`: the body sizes to its rows up to the remaining flex-column space,
- *   then scrolls. Pair with `minHeight` when the allocation is shorter than that floor.
- * - `'parent'`: the body sizes to its rows up to the parent's height, then scrolls.
- *   Ignores `height` and `maxHeight`. Pair with `minHeight` when the parent is shorter.
+ * - `'fill'`: sizes to its rows up to the remaining flex-column space, then scrolls.
+ *   Virtualized tables ignore `maxHeight` and use the full allocation.
+ * - `'parent'`: sizes to its rows up to the parent's height, then scrolls. Ignores
+ *   `height` and `maxHeight`. Virtualized tables use the full parent allocation.
  *
  * `'fill'` and `'parent'` both scroll the body once rows exceed the available
  * height, and both require the parent to resolve a height (see the README).
