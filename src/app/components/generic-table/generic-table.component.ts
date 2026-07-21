@@ -1,6 +1,7 @@
 import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   computed,
   contentChildren,
@@ -69,6 +70,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
 export class GenericTableComponent<T = unknown> {
   private readonly destroyRef = inject(DestroyRef);
   private readonly hostEl = inject(ElementRef<HTMLElement>);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private scrollEndTimer: ReturnType<typeof setTimeout> | null = null;
   private layoutSyncFrame: number | null = null;
   private virtualResizeObserver: ResizeObserver | null = null;
@@ -588,6 +590,25 @@ export class GenericTableComponent<T = unknown> {
     if (headerTrack && headerTrack.scrollLeft !== viewport.scrollLeft) {
       headerTrack.scrollLeft = viewport.scrollLeft;
     }
+  }
+
+  /**
+   * Runs after the virtualized `mat-table` re-renders its row range (CDK emits
+   * `contentChanged` at the end of every `renderRows()`).
+   *
+   * A `mat-table` hosted in a `cdk-virtual-scroll-viewport` is forced onto CDK's
+   * recycle view-repeater strategy, which reuses cached row views and only
+   * reassigns each row's `$implicit` — it does not re-run the cell templates.
+   * In a zoneless + OnPush app the range update happens inside a
+   * requestAnimationFrame-audited stream that does not schedule change detection
+   * for those reused rows, so their cells keep another row's stale content and
+   * fresh rows show blank until an unrelated event finally ticks CD (the source
+   * of the "wrong rows at the bottom" and "blank rows filled after a delay"
+   * glitches while scrolling). Marking for check here repaints the rendered
+   * range immediately after it changes.
+   */
+  onVirtualContentRendered(): void {
+    this.changeDetectorRef.markForCheck();
   }
 
   private queueVirtualLayoutSync(): void {
