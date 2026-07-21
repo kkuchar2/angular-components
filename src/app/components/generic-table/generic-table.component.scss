@@ -198,6 +198,12 @@ table {
   overflow-anchor: none;
   scroll-behavior: auto;
   scrollbar-gutter: stable;
+  // CDK positions every virtual row at `index * itemSize` (itemSize = rowHeight),
+  // so the real row height must equal rowHeight. Material's density gives native
+  // rows this token (52px by default); left unchanged it drifts against the itemSize
+  // and lands on the wrong rows — worst at the bottom / after a fast scrollbar drag
+  // (see angular/components#32715). Resolve the token to rowHeight instead.
+  --mat-table-row-item-container-height: var(--gt-row-height, 48px);
 }
 
 .generic-table__scroll--virtual-fill {
@@ -235,6 +241,16 @@ table {
       padding: 0;
       margin: 0;
     }
+  }
+
+  // Pin the row box (not just its cells) to rowHeight. Material's `.mat-mdc-row`
+  // height wins over the cell height below, so without this the DOM row stays 52px
+  // while CDK advances by the 48px itemSize — the drift that renders the wrong rows
+  // at the bottom on a fast scroll. This guarantees DOM row height == itemSize.
+  .generic-table__scroll--virtual .mat-mdc-row {
+    height: var(--gt-row-height, 48px);
+    min-height: var(--gt-row-height, 48px);
+    box-sizing: border-box;
   }
 
   .mat-mdc-row .mat-mdc-cell {
