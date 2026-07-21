@@ -269,26 +269,26 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   /** Minimum table width so fixed/min columns can overflow horizontally instead of crushing. */
   readonly gridMinWidthPx = computed(() => {
-    const reference = this.hostEl.nativeElement.clientWidth || globalThis.innerWidth;
+    const reference = this.scrollContentWidthPx() || this.hostEl.nativeElement.clientWidth || globalThis.innerWidth;
     let total = 0;
 
     for (const column of this.displayedColumns()) {
-      if (column.width) {
-        total += this.parseLengthToPx(column.width, reference) || 0;
-        continue;
-      }
-
-      if (column.minWidth) {
-        total += this.parseLengthToPx(column.minWidth, reference) || 0;
-        continue;
-      }
-
-      // Soft floor for unspecified columns so the grid does not collapse to content.
-      total += 96;
+      total += this.columnFloorPx(column, reference);
     }
 
     return Math.ceil(total);
   });
+
+  /**
+   * Width of the header/row grid: at least the scrollport content width, and never
+   * below the sum of column floors so `minWidth` survives window resize.
+   */
+  readonly gridLayoutWidthPx = computed(() =>
+    Math.max(this.scrollContentWidthPx(), this.gridMinWidthPx()),
+  );
+
+  /** Scrollport content width (excludes scrollbar); updated on layout/resize. */
+  readonly scrollContentWidthPx = signal(0);
 
   private readonly tanstackColumns = computed((): TanstackColumnDef<T, unknown>[] =>
     this.displayedColumns().map((column) => ({
@@ -387,7 +387,15 @@ export class GenericTableTanstackComponent<T = unknown> {
       this.boundedResizeObserver?.disconnect();
     });
 
-    this.boundedResizeObserver = new ResizeObserver(() => this.measureBoundedLayout());
+    this.boundedResizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === this.scrollElement()?.nativeElement) {
+          this.scrollContentWidthPx.set(entry.contentRect.width);
+        }
+      }
+
+      this.measureBoundedLayout();
+    });
 
     effect(() => {
       const size = this.pageSize();
@@ -428,6 +436,12 @@ export class GenericTableTanstackComponent<T = unknown> {
         targets.add(host);
       }
 
+      const viewportEl = this.scrollElement()?.nativeElement;
+
+      if (viewportEl) {
+        targets.add(viewportEl);
+      }
+
       for (const target of this.observedBoundedTargets) {
         if (!targets.has(target)) {
           this.boundedResizeObserver?.unobserve(target);
@@ -457,8 +471,25 @@ export class GenericTableTanstackComponent<T = unknown> {
       this.virtualShell();
       this.headerTrack();
       this.scrollElement();
+      this.gridMinWidthPx();
 
       untracked(() => this.queueLayoutSync());
+    });
+
+    // Keep column min-widths honest on resize even outside parent/fill modes.
+    effect(() => {
+      const viewportEl = this.scrollElement()?.nativeElement;
+
+      if (!viewportEl || this.isBoundedHeightMode()) {
+        return;
+      }
+
+      this.boundedResizeObserver?.observe(viewportEl);
+      this.observedBoundedTargets.add(viewportEl);
+
+      untracked(() => {
+        this.scrollContentWidthPx.set(viewportEl.clientWidth);
+      });
     });
   }
 
@@ -609,6 +640,10 @@ export class GenericTableTanstackComponent<T = unknown> {
       this.scrollbarGutterPx.set(gutter);
     }
 
+    if (viewport.clientWidth !== this.scrollContentWidthPx()) {
+      this.scrollContentWidthPx.set(viewport.clientWidth);
+    }
+
     const headerHeight = header?.offsetHeight ?? 0;
 
     if (headerHeight > 0 && headerHeight !== this.headerHeightPx()) {
@@ -731,15 +766,32 @@ export class GenericTableTanstackComponent<T = unknown> {
   }
 
   private resolveColumnTrack(column: ColumnDef<T>): string {
-    if (column.width) {
-      return column.width;
-    }
-
+    // minWidth is a hard floor that may grow; plain width is a fixed track.
     if (column.minWidth) {
       return `minmax(${column.minWidth}, 1fr)`;
     }
 
+    if (column.width) {
+      return column.width;
+    }
+
     return 'minmax(0, 1fr)';
+  }
+
+  /** Lowest pixel width a column may occupy (for layout min-width sum). */
+  private columnFloorPx(column: ColumnDef<T>, referenceWidth: number): number {
+    const widthPx = column.width ? this.parseLengthToPx(column.width, referenceWidth) : 0;
+    const minPx = column.minWidth ? this.parseLengthToPx(column.minWidth, referenceWidth) : 0;
+
+    if (widthPx > 0 || minPx > 0) {
+      return Math.max(widthPx, minPx);
+    }
+
+    return 96;
+  }
+
+  columnMinWidth(column: ColumnDef<T>): string | null {
+    return column.minWidth ?? column.width ?? null;
   }
 
   private resolveMaxScrollHeightPx(): number {
@@ -843,6 +895,7 @@ export class GenericTableTanstackComponent<T = unknown> {
     }
 
     this.scrollbarGutterPx.set(viewport.offsetWidth - viewport.clientWidth);
+    this.scrollContentWidthPx.set(viewport.clientWidth);
     this.measureBoundedLayout();
 
     // Flex sizing may have just given the viewport a real height — remeasure so

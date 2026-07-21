@@ -28,13 +28,12 @@
   --gtt-toggle-gap: var(--spacing-sm, 0.5rem);
   --gtt-border: var(--color-border, #e0e0e0);
   --gtt-radius: var(--radius-md, 8px);
-  --gtt-header-bg: var(--color-surface-elevated, #f5f5f5);
+  --gtt-header-bg: var(--color-surface, #ffffff);
   --gtt-header-text: var(--color-text, rgb(0 0 0 / 87%));
-  --gtt-header-accent: var(--color-primary, #1565c0);
-  --gtt-row-odd-bg: var(--color-surface, #ffffff);
-  --gtt-row-even-bg: var(--color-row-even, #fafbfc);
+  --gtt-header-accent: var(--color-border, #e0e0e0);
+  --gtt-row-bg: var(--color-surface, #ffffff);
   --gtt-row-hover-bg: var(--color-row-hover, #f2f2f2);
-  --gtt-row-divider: var(--color-row-divider, rgb(0 0 0 / 4%));
+  --gtt-row-divider: var(--color-border, #e0e0e0);
   --gtt-empty-color: var(--color-text-muted, rgb(0 0 0 / 60%));
   --gtt-empty-padding: var(--spacing-2xl, 3rem);
   --gtt-disabled-opacity: 0.55;
@@ -111,7 +110,7 @@
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--gtt-border);
-  border-radius: var(--gtt-radius);
+  border-radius: 0;
   max-height: var(--gtt-max-height);
 }
 
@@ -131,7 +130,8 @@
   max-height: var(--gtt-max-height);
   min-height: var(--gtt-min-height, 0);
   border: 1px solid var(--gtt-border);
-  border-radius: var(--gtt-radius);
+  border-radius: 0;
+  background: var(--gtt-row-bg);
 }
 
 .generic-table-tanstack__scroll--fill {
@@ -157,11 +157,16 @@
   min-height: 0;
 }
 
+.generic-table-tanstack__header-track {
+  flex-shrink: 0;
+  width: calc(100% - var(--gtt-virtual-scrollbar-gutter, 0px));
+  overflow: hidden;
+  background: var(--gtt-header-bg);
+}
+
 .generic-table-tanstack__header {
   display: grid;
   grid-template-columns: var(--gtt-cols);
-  width: max(100%, var(--gtt-grid-min, 100%));
-  min-width: max(100%, var(--gtt-grid-min, 100%));
   box-sizing: border-box;
   background: var(--gtt-header-bg);
 }
@@ -174,27 +179,12 @@
 
 .generic-table-tanstack__header--virtual {
   position: relative;
-  flex-shrink: 0;
-  overflow: hidden;
-  // Match the viewport content width so columns line up with the body.
-  // Do NOT also set scrollbar-gutter here — that double-reserves space and
-  // leaves a gap larger than the scrollbar under the accent line.
-  width: max(
-    calc(100% - var(--gtt-virtual-scrollbar-gutter, 0px)),
-    var(--gtt-grid-min, 0px)
-  );
-  min-width: max(
-    calc(100% - var(--gtt-virtual-scrollbar-gutter, 0px)),
-    var(--gtt-grid-min, 0px)
-  );
-  box-sizing: border-box;
 
-  // Full-bleed accent across the header + scrollbar strip (cells alone stop short).
   &::after {
     content: '';
     position: absolute;
     left: 0;
-    right: calc(-1 * var(--gtt-virtual-scrollbar-gutter, 0px));
+    right: 0;
     bottom: 0;
     z-index: 1;
     height: 1px;
@@ -207,7 +197,6 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  min-width: 0;
   height: var(--gtt-row-height);
   padding-inline: 16px;
   box-sizing: border-box;
@@ -282,15 +271,11 @@
 
 .generic-table-tanstack__spacer {
   position: relative;
-  width: max(100%, var(--gtt-grid-min, 100%));
-  min-width: max(100%, var(--gtt-grid-min, 100%));
 }
 
 .generic-table-tanstack__row {
   display: grid;
   grid-template-columns: var(--gtt-cols);
-  width: max(100%, var(--gtt-grid-min, 100%));
-  min-width: max(100%, var(--gtt-grid-min, 100%));
   box-sizing: border-box;
 }
 
@@ -298,7 +283,6 @@
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
   will-change: transform;
 }
 
@@ -307,20 +291,14 @@
   min-height: var(--gtt-row-height);
 }
 
-.generic-table-tanstack__row--odd {
-  background: var(--gtt-row-odd-bg);
-}
-
+.generic-table-tanstack__row--odd,
 .generic-table-tanstack__row--even {
-  background: var(--gtt-row-even-bg);
+  background: var(--gtt-row-bg);
 }
 
-.generic-table-tanstack__row--odd .generic-table-tanstack__cell {
-  background: var(--gtt-row-odd-bg);
-}
-
+.generic-table-tanstack__row--odd .generic-table-tanstack__cell,
 .generic-table-tanstack__row--even .generic-table-tanstack__cell {
-  background: var(--gtt-row-even-bg);
+  background: var(--gtt-row-bg);
 }
 
 .generic-table-tanstack__row--clickable {
@@ -336,7 +314,6 @@
 .generic-table-tanstack__cell {
   display: flex;
   align-items: center;
-  min-width: 0;
   height: 100%;
   min-height: var(--gtt-row-height);
   padding-inline: 16px;
@@ -344,7 +321,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  // Inset divider survives hover backgrounds (border-bottom gets covered).
+  background: var(--gtt-row-bg);
+  // Row separators instead of striped backgrounds.
   box-shadow: inset 0 -1px 0 var(--gtt-row-divider);
 }
 
