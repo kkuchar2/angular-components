@@ -27,6 +27,8 @@
         (ngModelChange)="countryValue.set($event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.outlined" />
   </article>
 
   <article class="demo-section">
@@ -47,6 +49,8 @@
     @if (basicValue()) {
       <div class="demo-section__output">Selected value: <strong>{{ basicValue() }}</strong></div>
     }
+
+    <app-demo-code-block [code]="snippets.basic" />
   </article>
 
   <article class="demo-section">
@@ -63,6 +67,8 @@
         (selectionChange)="onSelectionChange('Theme', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.icons" />
   </article>
 
   <article class="demo-section">
@@ -80,6 +86,8 @@
         (selectionChange)="onSelectionChange('Country', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.searchable" />
   </article>
 
   <article class="demo-section">
@@ -96,6 +104,8 @@
         (selectionChange)="onSelectionChange('Plan', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.disabledOptions" />
   </article>
 
   <article class="demo-section">
@@ -120,6 +130,39 @@
     @if (widthValue()) {
       <div class="demo-section__output">Selected value: <strong>{{ widthValue() }}</strong></div>
     }
+
+    <app-demo-code-block [code]="snippets.width" />
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Fixed Height</h2>
+    <p class="demo-section__desc">
+      Use the <code>height</code> input to set the trigger size (default <code>44px</code>).
+    </p>
+
+    <div class="demo-section__body demo-section__body--grid">
+      <app-custom-select
+        [options]="basicOptions"
+        placeholder="Compact"
+        label="Compact"
+        height="36px"
+        [ngModel]="basicValue()"
+        (ngModelChange)="basicValue.set($event)"
+        (selectionChange)="onSelectionChange('Compact height', $event)"
+      />
+      <app-custom-select
+        appearance="outlined"
+        [options]="basicOptions"
+        placeholder="Tall"
+        label="Tall"
+        height="56px"
+        [ngModel]="basicValue()"
+        (ngModelChange)="basicValue.set($event)"
+        (selectionChange)="onSelectionChange('Tall height', $event)"
+      />
+    </div>
+
+    <app-demo-code-block [code]="snippets.height" />
   </article>
 
   <article class="demo-section">
@@ -137,6 +180,8 @@
         (selectionChange)="onSelectionChange('Clearable', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.clearable" />
   </article>
 
   <article class="demo-section">
@@ -151,6 +196,8 @@
         [disabled]="true"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.disabled" />
   </article>
 
   @if (eventLog().length) {

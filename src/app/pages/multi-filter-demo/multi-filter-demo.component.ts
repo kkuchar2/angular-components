@@ -7,10 +7,11 @@ import {
   type MultiFilterField,
   type MultiFilterRule,
 } from '../../components/multi-filter';
+import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
 
 @Component({
   selector: 'app-multi-filter-demo',
-  imports: [MultiFilterComponent, FormsModule],
+  imports: [MultiFilterComponent, FormsModule, DemoCodeBlockComponent],
   templateUrl: './multi-filter-demo.component.html',
   styleUrl: './multi-filter-demo.component.scss',
 })
@@ -84,6 +85,53 @@ export class MultiFilterDemoComponent {
   };
 
   readonly eventLog = signal<string[]>([]);
+
+  readonly snippets = {
+    interactive: `import {
+  MultiFilterComponent,
+  type MultiFilterField,
+  type MultiFilterRule,
+} from './components/multi-filter';
+
+readonly fields: MultiFilterField[] = [
+  { value: 'name', label: 'Name' },
+  { value: 'department', label: 'Department' },
+  { value: 'status', label: 'Status' },
+];
+
+readonly filters = signal<MultiFilterRule[]>([]);
+
+<app-multi-filter
+  [fields]="fields"
+  [(ngModel)]="filters"
+  (filtersChange)="onFiltersChange($event)"
+/>`,
+    seeded: `import { createEmptyFilterRule } from './components/multi-filter';
+
+readonly filters = signal([
+  createEmptyFilterRule({
+    field: 'department',
+    operator: 'equals',
+    value: 'Engineering',
+  }),
+]);
+
+<app-multi-filter
+  [fields]="fields"
+  maxHeight="12rem"
+  [(ngModel)]="filters"
+/>`,
+    defaultAppearance: `<app-multi-filter
+  appearance="default"
+  [fields]="fields"
+  [(ngModel)]="filters"
+/>`,
+    disabled: `<app-multi-filter
+  [fields]="fields"
+  [disabled]="true"
+  [(ngModel)]="filters"
+/>`,
+  };
 
   readonly activeRuleCount = computed(
     () => this.interactiveFilters().filter((rule) => rule.field && rule.operator).length,

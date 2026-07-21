@@ -3,6 +3,7 @@
   position: relative;
   align-self: flex-start;
   min-width: 0;
+  --cs-field-height: 44px;
 }
 
 @mixin custom-select-tokens {
@@ -54,8 +55,9 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    min-height: 44px;
-    padding: var(--cs-field-padding-y) 14px;
+    min-height: var(--cs-field-height, 44px);
+    height: var(--cs-field-height, 44px);
+    padding: 0 14px;
     background: var(--cs-bg);
     border: 1.5px solid var(--cs-border);
     border-radius: var(--cs-border-radius);
@@ -81,6 +83,9 @@
 
   &__value {
     flex: 1;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
     min-width: 0;
     font-size: var(--cs-font-size);
     line-height: var(--cs-line-height);
@@ -97,7 +102,7 @@
   &__actions {
     display: flex;
     align-items: center;
-    align-self: center;
+    align-self: stretch;
     gap: 4px;
     margin-left: 8px;
     flex-shrink: 0;
@@ -270,9 +275,8 @@
   }
 
   &.appearance-outlined {
-    --cs-field-height: 44px;
     --cs-label-scale-float: 0.733;
-    --cs-label-rest-y: calc((var(--cs-field-height) - (var(--cs-font-size) * var(--cs-line-height))) / 2);
+    --cs-label-rest-y: calc((var(--cs-field-height, 44px) - (var(--cs-font-size) * var(--cs-line-height))) / 2);
     --cs-label-float-y: calc(-0.5em * var(--cs-label-scale-float));
 
     .custom-select__trigger {
@@ -315,12 +319,6 @@
 
     &.label-floated .custom-select__trigger {
       align-items: center;
-      padding-top: 14px;
-      padding-bottom: 8px;
-    }
-
-    &.label-floated .custom-select__value {
-      align-self: center;
     }
 
     &.disabled.label-floated .custom-select__label--floating {

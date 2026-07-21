@@ -23,6 +23,7 @@ export type CustomInputAppearance = 'default' | 'outlined';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.width]': 'width()',
+    '[style.--ci-field-height]': 'height()',
   },
   providers: [
     {
@@ -47,6 +48,8 @@ export class CustomInputComponent implements ControlValueAccessor {
   readonly hint = input('');
   readonly error = input('');
   readonly width = input('100%');
+  /** Field height (e.g. `44px`, `2.75rem`). */
+  readonly height = input('44px');
   readonly autocomplete = input<string | null>(null);
   readonly spellcheck = input<boolean | null>(null);
 

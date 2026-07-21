@@ -1,0 +1,32 @@
+<div class="demo-code" [class.demo-code--collapsed]="!expanded()">
+  <div class="demo-code__toolbar">
+    <button
+      type="button"
+      class="demo-code__toggle"
+      (click)="toggle()"
+      [attr.aria-expanded]="expanded()"
+    >
+      <span class="demo-code__chevron" aria-hidden="true">{{ expanded() ? '▾' : '▸' }}</span>
+      <span class="demo-code__label">{{ label() }}</span>
+    </button>
+
+    <button
+      type="button"
+      class="demo-code__copy"
+      (click)="copy()"
+      [attr.aria-label]="copied() ? 'Copied' : 'Copy code'"
+    >
+      {{ copied() ? 'Copied' : 'Copy' }}
+    </button>
+  </div>
+
+  @if (expanded()) {
+    <pre class="demo-code__pre" [class.demo-code__pre--pending]="highlightPending() && !highlightedHtml()">
+      @if (highlightedHtml(); as html) {
+        <code class="demo-code__code" [innerHTML]="html"></code>
+      } @else {
+        <code class="demo-code__code">{{ code().trim() }}</code>
+      }
+    </pre>
+  }
+</div>

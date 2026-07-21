@@ -44,6 +44,7 @@ export type CustomSelectAppearance = 'default' | 'outlined';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.width]': 'width()',
+    '[style.--cs-field-height]': 'height()',
   },
   providers: [
     {
@@ -70,6 +71,8 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
   readonly clearable = input(false);
   readonly searchable = input(false);
   readonly width = input('100%');
+  /** Trigger field height (e.g. `44px`, `2.75rem`). */
+  readonly height = input('44px');
   readonly compareWith = input<(a: T, b: T) => boolean>((a, b) => a === b);
 
   readonly selectionChange = output<SelectOption<T> | null>();

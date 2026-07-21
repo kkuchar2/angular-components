@@ -3,6 +3,7 @@
 :host {
   display: block;
   position: relative;
+  --ci-field-height: 44px;
 }
 
 .custom-input {
@@ -38,7 +39,8 @@
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: 44px;
+    min-height: var(--ci-field-height, 44px);
+    height: var(--ci-field-height, 44px);
     padding: 0 14px;
     background: var(--ci-bg);
     border: 1.5px solid var(--ci-border);
@@ -62,7 +64,10 @@
 
   &__control {
     flex: 1;
+    align-self: stretch;
     min-width: 0;
+    min-height: 0;
+    height: 100%;
     padding: 0;
     font-size: var(--ci-font-size);
     font-family: inherit;
@@ -164,9 +169,8 @@
   }
 
   &.appearance-outlined {
-    --ci-field-height: 44px;
     --ci-label-scale-float: 0.733;
-    --ci-label-rest-y: calc((var(--ci-field-height) - 1em) / 2);
+    --ci-label-rest-y: calc((var(--ci-field-height, 44px) - 1em) / 2);
     --ci-label-float-y: calc(-0.5em * var(--ci-label-scale-float));
 
     .custom-input__field {

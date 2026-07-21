@@ -35,6 +35,8 @@
         Selected: <strong>{{ selected.name }}</strong> ({{ selected.email }})
       </p>
     }
+
+    <app-demo-code-block [code]="snippets.fullFeatured" />
   </article>
 
   <article class="home__demo">
@@ -73,6 +75,8 @@
         <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>
       </ng-template>
     </app-generic-table>
+
+    <app-demo-code-block [code]="snippets.serverSide" />
   </article>
 
   <article class="home__demo home__demo--playground">
@@ -123,6 +127,8 @@
         </article>
       }
     </div>
+
+    <app-demo-code-block [code]="snippets.heightModes" />
   </article>
 
   <article class="home__demo">
@@ -152,6 +158,8 @@
         <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>
       </ng-template>
     </app-generic-table>
+
+    <app-demo-code-block [code]="snippets.customCells" />
   </article>
 
   <article class="home__demo">
@@ -170,6 +178,8 @@
       [showColumnToggle]="false"
       [trackBy]="trackById"
     />
+
+    <app-demo-code-block [code]="snippets.virtualScroll" />
   </article>
 
   <article class="home__demo">
@@ -184,6 +194,8 @@
       [showColumnToggle]="false"
       emptyMessage="No team members found."
     />
+
+    <app-demo-code-block [code]="snippets.empty" />
   </article>
 
   <article class="home__demo">
@@ -238,5 +250,7 @@
         />
       </section>
     </div>
+
+    <app-demo-code-block [code]="snippets.virtualEmpty" />
   </article>
 </section>

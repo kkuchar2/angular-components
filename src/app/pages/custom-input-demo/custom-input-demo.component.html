@@ -27,6 +27,8 @@
         (ngModelChange)="emailValue.set($event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.outlined" />
   </article>
 
   <article class="demo-section">
@@ -46,6 +48,8 @@
     @if (nameValue()) {
       <div class="demo-section__output">Current value: <strong>{{ nameValue() }}</strong></div>
     }
+
+    <app-demo-code-block [code]="snippets.basic" />
   </article>
 
   <article class="demo-section">
@@ -64,6 +68,8 @@
         (valueChange)="onValueChange('Email', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.emailHint" />
   </article>
 
   <article class="demo-section">
@@ -82,6 +88,8 @@
         (valueChange)="onValueChange('Search', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.searchClear" />
   </article>
 
   <article class="demo-section">
@@ -99,6 +107,8 @@
         (valueChange)="onValueChange('Password', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.passwordError" />
   </article>
 
   <article class="demo-section">
@@ -114,6 +124,35 @@
         [clearable]="true"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.width" />
+  </article>
+
+  <article class="demo-section">
+    <h2 class="demo-section__title">Fixed Height</h2>
+    <p class="demo-section__desc">
+      Use the <code>height</code> input to set the field size (default <code>44px</code>).
+    </p>
+
+    <div class="demo-section__body demo-section__body--grid">
+      <app-custom-input
+        label="Compact"
+        placeholder="36px tall"
+        height="36px"
+        [ngModel]="nameValue()"
+        (ngModelChange)="nameValue.set($event)"
+      />
+      <app-custom-input
+        appearance="outlined"
+        label="Tall"
+        placeholder="56px tall"
+        height="56px"
+        [ngModel]="nameValue()"
+        (ngModelChange)="nameValue.set($event)"
+      />
+    </div>
+
+    <app-demo-code-block [code]="snippets.height" />
   </article>
 
   <article class="demo-section">
@@ -127,6 +166,8 @@
         [disabled]="true"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.disabled" />
   </article>
 
   @if (eventLog().length) {

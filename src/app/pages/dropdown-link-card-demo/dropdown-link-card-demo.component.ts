@@ -13,10 +13,11 @@ import {
   DropdownLinkCardComponent,
   DropdownLinkCardIcon,
 } from '../../components/dropdown-link-card/dropdown-link-card';
+import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
 
 @Component({
   selector: 'app-dropdown-link-card-demo',
-  imports: [DropdownLinkCardComponent],
+  imports: [DropdownLinkCardComponent, DemoCodeBlockComponent],
   templateUrl: './dropdown-link-card-demo.component.html',
   styleUrl: './dropdown-link-card-demo.component.scss',
 })
@@ -111,4 +112,62 @@ export class DropdownLinkCardDemoComponent {
       description: 'Source code hosting',
     },
   ];
+
+  readonly snippets = {
+    nested: `import { LucideBookOpen, LucideFileText, LucideLayers } from '@lucide/angular';
+
+readonly cardIcon = { type: 'lucide', icon: LucideBookOpen };
+
+readonly links = [
+  {
+    label: 'Angular Docs',
+    url: 'https://angular.dev',
+    icon: { type: 'lucide', icon: LucideFileText },
+  },
+  {
+    label: 'Web Resources',
+    icon: { type: 'lucide', icon: LucideLayers },
+    children: [
+      { label: 'MDN', url: 'https://developer.mozilla.org' },
+      { label: 'Can I Use', url: 'https://caniuse.com' },
+    ],
+  },
+];
+
+<app-dropdown-link-card
+  title="Documentation"
+  [icon]="cardIcon"
+  [links]="links"
+/>`,
+    imageIcons: `readonly cardIcon = {
+  type: 'image',
+  src: '/icons/angular.svg',
+  alt: 'Angular',
+};
+
+readonly links = [
+  {
+    label: 'Angular',
+    url: 'https://angular.dev',
+    icon: { type: 'image', src: '/icons/angular.svg', alt: 'Angular' },
+  },
+];
+
+<app-dropdown-link-card
+  title="Frameworks"
+  [icon]="cardIcon"
+  [links]="links"
+/>`,
+    flat: `<app-dropdown-link-card
+  title="Quick Links"
+  [icon]="cardIcon"
+  [links]="flatLinks"
+/>`,
+    disabled: `<app-dropdown-link-card
+  title="Unavailable"
+  [icon]="cardIcon"
+  [links]="links"
+  [disabled]="true"
+/>`,
+  };
 }

@@ -2,6 +2,10 @@
 @use 'styles/variables';
 @use 'styles/base';
 
+/* PrettyLights class rules + default light tokens (code blocks override to Monokai). */
+@import '@wooorm/starry-night/style/core';
+@import '@wooorm/starry-night/style/light';
+
 html {
   color-scheme: light;
 

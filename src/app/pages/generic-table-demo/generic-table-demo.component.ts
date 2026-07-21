@@ -9,6 +9,7 @@ import {
   GenericTableExportRequest,
   GenericTableHeightMode,
 } from '../../components/generic-table';
+import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
 import { ResizeObserverDirective } from './resize-observer.directive';
 
 interface DemoUser {
@@ -40,6 +41,7 @@ interface HeightDemoCard {
     GenericTableComponent,
     GenericTableCellDirective,
     ResizeObserverDirective,
+    DemoCodeBlockComponent,
   ],
   templateUrl: './generic-table-demo.component.html',
   styleUrl: './generic-table-demo.component.scss',
@@ -272,6 +274,82 @@ export class GenericTableDemoComponent {
   statusBadgeClass(status: string): string {
     return `home__status-badge home__status-badge--${status.toLowerCase()}`;
   }
+
+  readonly snippets = {
+    fullFeatured: `<app-generic-table
+  [columns]="columns"
+  [data]="rows()"
+  [paginated]="true"
+  [pageSize]="5"
+  [rowClickable]="true"
+  [showExport]="true"
+  exportFileName="team-members.csv"
+  [trackBy]="trackById"
+  (rowClick)="onRowClick($event)"
+>
+  <ng-template appGenericTableCell="status" [appGenericTableCellFor]="rows()" let-row>
+    <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>
+  </ng-template>
+</app-generic-table>`,
+    serverSide: `<app-generic-table
+  [columns]="columns"
+  [data]="pageRows()"
+  [paginated]="true"
+  [serverSide]="true"
+  [totalCount]="totalCount"
+  [pageIndex]="pageIndex()"
+  [pageSize]="pageSize()"
+  [showExport]="true"
+  (pageChange)="onPageChange($event)"
+  (exportRequest)="onExport($event)"
+/>`,
+    heightModes: `<!-- auto (default): grow with rows, then scroll -->
+<app-generic-table heightMode="auto" ... />
+
+<!-- fixed height -->
+<app-generic-table height="200px" ... />
+
+<!-- cap growth -->
+<app-generic-table maxHeight="160px" ... />
+
+<!-- fill parent / remaining space -->
+<app-generic-table heightMode="parent" ... />
+<app-generic-table heightMode="fill" ... />`,
+    customCells: `<app-generic-table [columns]="columns" [data]="rows()" [trackBy]="trackById">
+  <ng-template appGenericTableCell="name" [appGenericTableCellFor]="rows()" let-row>
+    <span class="user">
+      <span class="avatar">{{ initials(row) }}</span>
+      {{ row.name }}
+    </span>
+  </ng-template>
+
+  <ng-template appGenericTableCell="email" [appGenericTableCellFor]="rows()" let-row>
+    <a [href]="'mailto:' + row.email">{{ row.email }}</a>
+  </ng-template>
+</app-generic-table>`,
+    virtualScroll: `<app-generic-table
+  [columns]="columns"
+  [data]="rows()"
+  [virtualized]="true"
+  [rowHeight]="48"
+  height="400px"
+  [trackBy]="trackById"
+/>`,
+    empty: `<app-generic-table
+  [columns]="columns"
+  [data]="[]"
+  emptyMessage="No team members found."
+/>`,
+    virtualEmpty: `<app-generic-table
+  [columns]="columns"
+  [data]="rows()"
+  [virtualized]="true"
+  [rowHeight]="48"
+  height="240px"
+  emptyMessage="Cold start — no rows yet."
+  [trackBy]="trackById"
+/>`,
+  };
 
   private loadServerSidePage(pageIndex: number, pageSize: number): void {
     this.serverSideLoading.set(true);

@@ -27,6 +27,8 @@
         Query preview: <strong>{{ interactiveSummary() }}</strong>
       </div>
     </div>
+
+    <app-demo-code-block [code]="snippets.interactive" />
   </article>
 
   <article class="demo-section">
@@ -44,6 +46,8 @@
         (filtersChange)="onFiltersChange('Seeded', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.seeded" />
   </article>
 
   <article class="demo-section">
@@ -61,6 +65,8 @@
         (filtersChange)="onFiltersChange('Default', $event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.defaultAppearance" />
   </article>
 
   <article class="demo-section">
@@ -75,6 +81,8 @@
         (ngModelChange)="disabledFilters.set($event)"
       />
     </div>
+
+    <app-demo-code-block [code]="snippets.disabled" />
   </article>
 
   @if (eventLog().length > 0) {
