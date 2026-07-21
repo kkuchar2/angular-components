@@ -4,6 +4,7 @@
   [class.generic-table--virtualized]="virtualized()"
   [class.generic-table--disabled]="disabled()"
   [attr.aria-disabled]="disabled() || null"
+  [style.--gt-max-height]="maxHeight()"
 >
   @if (showColumnToggle() && hideableColumns().length > 0) {
     <mat-chip-listbox
@@ -39,7 +40,6 @@
       #virtualShell
       [class.generic-table__virtual-shell--fill]="isFilling()"
       [style.height]="height()"
-      [style.max-height]="maxHeight()"
     >
       <div class="generic-table__virtual-header" #virtualHeaderTrack>
         <table
@@ -91,8 +91,10 @@
       <cdk-virtual-scroll-viewport
         #virtualViewport
         class="generic-table__scroll generic-table__scroll--virtual"
+        [class.generic-table__scroll--virtual-fill]="isFilling() || isFixed()"
         [class.generic-table__scroll--scrolling]="isScrolling()"
         [style.--gt-row-height.px]="rowHeight()"
+        [style.height.px]="virtualViewportHeightPx()"
         [itemSize]="rowHeight()"
         [minBufferPx]="virtualMinBufferPx()"
         [maxBufferPx]="virtualMaxBufferPx()"
@@ -170,7 +172,6 @@
       [class.generic-table__scroll--scrolling]="isScrolling()"
       [class.generic-table__scroll--fill]="isFilling()"
       [style.height]="height()"
-      [style.max-height]="maxHeight()"
       (scroll)="onScroll()"
     >
       <table

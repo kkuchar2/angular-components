@@ -28,6 +28,8 @@
 }
 
 .generic-table {
+  // Default cap for the scroll body — grows with rows up to this height, then scrolls.
+  --gt-max-height: 480px;
   --gt-gap: var(--spacing-md, 1rem);
   --gt-toggle-gap: var(--spacing-sm, 0.5rem);
   --gt-border: var(--color-border, #e0e0e0);
@@ -74,6 +76,7 @@
 .generic-table__scroll {
   overflow: auto;
   border-radius: var(--gt-radius);
+  max-height: var(--gt-max-height);
 }
 
 .generic-table__scroll--fill {
@@ -128,6 +131,7 @@ table {
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--gt-radius);
+  max-height: var(--gt-max-height);
 }
 
 .generic-table__virtual-shell--fill {
@@ -144,12 +148,15 @@ table {
 }
 
 .generic-table__scroll--virtual {
-  flex: 1 1 0;
-  min-height: 0;
   overflow: auto;
   overflow-anchor: none;
   scroll-behavior: auto;
   scrollbar-gutter: stable;
+}
+
+.generic-table__scroll--virtual-fill {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .generic-table--virtualized {

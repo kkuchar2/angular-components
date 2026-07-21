@@ -29,6 +29,9 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { GenericTableCellDirective } from './generic-table-cell.directive';
 import { ColumnDef, GenericTableCellContext, GenericTableHeightMode } from './generic-table.types';
 
+/** Default scroll-body cap; mirrored by `--gt-max-height` in the component stylesheet. */
+const DEFAULT_MAX_HEIGHT_PX = 480;
+
 /**
  * A configurable, signal-based table built on Angular Material's `mat-table`.
  *
@@ -109,14 +112,14 @@ export class GenericTableComponent<T = unknown> {
   readonly disabled = input(false);
   /**
    * How the table sizes vertically:
-   * - `'auto'` (default): grows with content; pair with `maxHeight` to cap it.
+   * - `'auto'` (default): grows with content up to the default max height (480px), then scrolls.
    * - `'fill'`: fills the remaining space of a flex-column parent (`flex: 1`).
    * - `'parent'`: fills the parent's full height (`height: 100%`).
    */
   readonly heightMode = input<GenericTableHeightMode>('auto');
   /** Exact, fixed height for the scroll body, e.g. `'320px'`. */
   readonly height = input<string | null>(null);
-  /** Caps the scroll body height, e.g. `'320px'`. */
+  /** Caps the scroll body height, e.g. `'320px'`. Defaults to `480px` via `--gt-max-height`. */
   readonly maxHeight = input<string | null>(null);
 
   readonly isFixed = computed(() => this.height() != null);
@@ -127,6 +130,26 @@ export class GenericTableComponent<T = unknown> {
   readonly isServerSidePagination = computed(() => this.serverSide() && this.showPaginator());
   readonly virtualMinBufferPx = computed(() => this.rowHeight() * 10);
   readonly virtualMaxBufferPx = computed(() => this.rowHeight() * 20);
+  /** Measured header track height for virtual viewport sizing. */
+  readonly virtualHeaderHeightPx = signal(56);
+  /**
+   * Virtual viewport height when not in fill/fixed mode: content height capped by
+   * max height minus the header. `null` lets CSS flex sizing take over.
+   */
+  readonly virtualViewportHeightPx = computed(() => {
+    if (this.isFilling() || this.isFixed()) {
+      return null;
+    }
+
+    const rowCount = Math.max(this.data().length, 1);
+    const bodyContent = rowCount * this.rowHeight();
+    const maxBody = Math.max(
+      this.rowHeight(),
+      this.resolveMaxScrollHeightPx() - this.virtualHeaderHeightPx(),
+    );
+
+    return Math.min(bodyContent, maxBody);
+  });
   readonly trackBy = input<TrackByFunction<T>>((_index, row) => row);
 
   readonly rowClick = output<T>();
@@ -399,6 +422,12 @@ export class GenericTableComponent<T = unknown> {
       return;
     }
 
+    const headerHeight = headerTrack.offsetHeight;
+
+    if (headerHeight > 0) {
+      this.virtualHeaderHeightPx.set(headerHeight);
+    }
+
     const gutter = viewport.offsetWidth - viewport.clientWidth;
     const contentWidth = viewport.clientWidth;
 
@@ -488,6 +517,19 @@ export class GenericTableComponent<T = unknown> {
   private parseLengthToPx(value: string, referenceWidth: number): number {
     const trimmed = value.trim();
 
+    if (trimmed.endsWith('vh')) {
+      const vh = Number.parseFloat(trimmed);
+
+      return Number.isNaN(vh) ? 0 : (globalThis.innerHeight * vh) / 100;
+    }
+
+    if (trimmed.endsWith('rem')) {
+      const rem = Number.parseFloat(trimmed);
+      const rootSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+      return Number.isNaN(rem) ? 0 : rem * (Number.isNaN(rootSize) ? 16 : rootSize);
+    }
+
     if (trimmed.endsWith('%')) {
       const percent = Number.parseFloat(trimmed);
 
@@ -497,6 +539,20 @@ export class GenericTableComponent<T = unknown> {
     const pixels = Number.parseFloat(trimmed);
 
     return Number.isNaN(pixels) ? 0 : pixels;
+  }
+
+  private resolveMaxScrollHeightPx(): number {
+    const maxHeight = this.maxHeight();
+
+    if (!maxHeight) {
+      return DEFAULT_MAX_HEIGHT_PX;
+    }
+
+    const shell = this.virtualShell()?.nativeElement;
+    const referenceWidth = shell?.clientWidth ?? globalThis.innerWidth;
+    const parsed = this.parseLengthToPx(maxHeight, referenceWidth);
+
+    return parsed > 0 ? parsed : DEFAULT_MAX_HEIGHT_PX;
   }
 
   private resetSyncedColumnWidths(

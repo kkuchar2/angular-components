@@ -76,7 +76,7 @@ export class GenericTableDemoComponent {
     {
       id: 'auto',
       code: 'heightMode="auto"',
-      description: 'Default — the table grows with its rows.',
+      description: 'Default — grows with rows up to 480px, then scrolls.',
     },
     {
       id: 'fixed',

@@ -29,7 +29,7 @@ export interface ColumnDef<T = unknown> {
 /**
  * How the table sizes itself vertically.
  *
- * - `'auto'`: the body grows with its content. Pair with `maxHeight` to cap it.
+ * - `'auto'`: the body grows with its rows up to the default max height (480px), then scrolls.
  * - `'fill'`: the body fills the remaining space of a flex-column parent
  *   (`flex: 1`). Use when the table sits next to other content in a sized column.
  * - `'parent'`: the body fills the parent's full height (`height: 100%`). Use
