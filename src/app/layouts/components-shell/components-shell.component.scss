@@ -68,18 +68,6 @@
   overflow-y: auto;
 }
 
-.sidebar__media {
-  flex-shrink: 0;
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-}
-
-.sidebar__gif {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 .sidebar__link {
   display: flex;
   flex-direction: column;
@@ -219,10 +207,6 @@
     flex-direction: row;
     flex-wrap: wrap;
     overflow-y: auto;
-  }
-
-  .sidebar__media {
-    display: none;
   }
 
   .sidebar__link {
