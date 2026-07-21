@@ -1,0 +1,245 @@
+<div
+  class="generic-table-tanstack"
+  [class.generic-table-tanstack--fill]="isFillMode()"
+  [class.generic-table-tanstack--parent]="isParentMode()"
+  [class.generic-table-tanstack--bounded]="isBoundedHeightMode()"
+  [class.generic-table-tanstack--virtualized]="virtualized()"
+  [class.generic-table-tanstack--disabled]="disabled()"
+  [attr.aria-disabled]="disabled() || null"
+  [style.--gtt-max-height]="isBoundedHeightMode() ? null : maxHeight()"
+  [style.--gtt-min-height]="minHeight()"
+  [style.--gtt-row-height.px]="rowHeight()"
+  [style.--gtt-virtual-scrollbar-gutter.px]="scrollbarGutterPx()"
+>
+  @if ((showColumnToggle() && hideableColumns().length > 0) || showExport()) {
+    <div class="generic-table-tanstack__toolbar">
+      @if (showColumnToggle() && hideableColumns().length > 0) {
+        <mat-chip-listbox
+          class="generic-table-tanstack__column-toggle"
+          multiple
+          aria-label="Toggle columns"
+          [disabled]="disabled()"
+          (change)="onToggleColumns($event)"
+        >
+          @for (col of hideableColumns(); track col.key) {
+            <mat-chip-option [value]="col.key" [selected]="isColumnVisible(col.key)">
+              {{ col.header }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      }
+
+      @if (showExport()) {
+        <button
+          type="button"
+          class="generic-table-tanstack__export"
+          [disabled]="disabled()"
+          (click)="onExportClick()"
+        >
+          Export CSV
+        </button>
+      }
+    </div>
+  }
+
+  @if (virtualized()) {
+    <div
+      class="generic-table-tanstack__virtual-shell"
+      #virtualShell
+      [class.generic-table-tanstack__virtual-shell--bounded]="isBoundedHeightMode()"
+      [style.height]="scrollBodyHeight()"
+    >
+      <div
+        class="generic-table-tanstack__header generic-table-tanstack__header--virtual"
+        #headerTrack
+        [style.grid-template-columns]="gridTemplateColumns()"
+      >
+        @for (col of displayedColumns(); track col.key) {
+          <div
+            class="generic-table-tanstack__header-cell"
+            [class.generic-table-tanstack__header-cell--sortable]="col.sortable"
+            [ngStyle]="columnWidthStyles().get(col.key) ?? null"
+            [style.text-align]="col.align ?? 'left'"
+            [attr.role]="col.sortable ? 'button' : null"
+            [attr.tabindex]="col.sortable && !disabled() ? 0 : null"
+            (click)="toggleSort(col)"
+            (keydown.enter)="toggleSort(col)"
+            (keydown.space)="$event.preventDefault(); toggleSort(col)"
+          >
+            <span class="generic-table-tanstack__header-label">{{ col.header }}</span>
+            @if (col.sortable) {
+              <span class="generic-table-tanstack__sort" aria-hidden="true">
+                @switch (sortDirection(col.key)) {
+                  @case ('asc') {
+                    ↑
+                  }
+                  @case ('desc') {
+                    ↓
+                  }
+                  @default {
+                    ↕
+                  }
+                }
+              </span>
+            }
+          </div>
+        }
+      </div>
+
+      <div
+        #scrollElement
+        class="generic-table-tanstack__scroll generic-table-tanstack__scroll--virtual"
+        [class.generic-table-tanstack__scroll--scrolling]="isScrolling()"
+        [class.generic-table-tanstack__scroll--fill]="isFixed() || isBoundedHeightMode()"
+        [style.height.px]="virtualViewportHeightPx()"
+        (scroll)="onScroll($event)"
+      >
+        @if (sortedRows().length === 0) {
+          <div class="generic-table-tanstack__empty">{{ emptyMessage() }}</div>
+        } @else {
+          <div
+            class="generic-table-tanstack__spacer"
+            [style.height.px]="virtualizer.getTotalSize()"
+          >
+            @for (
+              virtualRow of virtualizer.getVirtualItems();
+              track trackVirtualRow(virtualRow.index)
+            ) {
+              @if (sortedRows()[virtualRow.index]; as rowModel) {
+                <div
+                  class="generic-table-tanstack__row"
+                  [class.generic-table-tanstack__row--even]="virtualRow.index % 2 === 0"
+                  [class.generic-table-tanstack__row--odd]="virtualRow.index % 2 === 1"
+                  [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
+                  [style.height.px]="virtualRow.size"
+                  [style.transform]="'translateY(' + virtualRow.start + 'px)'"
+                  [style.grid-template-columns]="gridTemplateColumns()"
+                  [attr.role]="rowClickable() && !disabled() ? 'button' : null"
+                  [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
+                  (click)="onRowClick(rowModel.original)"
+                  (keydown.enter)="onRowClick(rowModel.original)"
+                  (keydown.space)="$event.preventDefault(); onRowClick(rowModel.original)"
+                >
+                  @for (col of displayedColumns(); track col.key) {
+                    <div
+                      class="generic-table-tanstack__cell"
+                      [ngStyle]="columnWidthStyles().get(col.key) ?? null"
+                      [style.text-align]="col.align ?? 'left'"
+                    >
+                      @if (cellTemplates().get(col.key); as template) {
+                        <div class="generic-table-tanstack__cell-content">
+                          <ng-container
+                            [ngTemplateOutlet]="template"
+                            [ngTemplateOutletContext]="cellContext(rowModel.original)"
+                          />
+                        </div>
+                      } @else {
+                        {{ formatCell(col, rowModel.original) }}
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <div
+      #scrollElement
+      class="generic-table-tanstack__scroll"
+      [class.generic-table-tanstack__scroll--scrolling]="isScrolling()"
+      [class.generic-table-tanstack__scroll--fill]="isFillMode()"
+      [class.generic-table-tanstack__scroll--bounded]="isBoundedHeightMode()"
+      [style.height]="scrollBodyHeight()"
+      (scroll)="onScroll($event)"
+    >
+      <div
+        class="generic-table-tanstack__header generic-table-tanstack__header--sticky"
+        [style.grid-template-columns]="gridTemplateColumns()"
+      >
+        @for (col of displayedColumns(); track col.key) {
+          <div
+            class="generic-table-tanstack__header-cell"
+            [class.generic-table-tanstack__header-cell--sortable]="col.sortable"
+            [class.generic-table-tanstack__header-cell--plain]="!col.sortable"
+            [ngStyle]="columnWidthStyles().get(col.key) ?? null"
+            [style.text-align]="col.align ?? 'left'"
+            [attr.role]="col.sortable ? 'button' : null"
+            [attr.tabindex]="col.sortable && !disabled() ? 0 : null"
+            (click)="toggleSort(col)"
+            (keydown.enter)="toggleSort(col)"
+            (keydown.space)="$event.preventDefault(); toggleSort(col)"
+          >
+            <span class="generic-table-tanstack__header-label">{{ col.header }}</span>
+            @if (col.sortable) {
+              <span class="generic-table-tanstack__sort" aria-hidden="true">
+                @switch (sortDirection(col.key)) {
+                  @case ('asc') {
+                    ↑
+                  }
+                  @case ('desc') {
+                    ↓
+                  }
+                  @default {
+                    ↕
+                  }
+                }
+              </span>
+            }
+          </div>
+        }
+      </div>
+
+      @if (bodyRows().length === 0) {
+        <div class="generic-table-tanstack__empty">{{ emptyMessage() }}</div>
+      } @else {
+        @for (rowModel of bodyRows(); track trackBodyRow($index, rowModel)) {
+          <div
+            class="generic-table-tanstack__row generic-table-tanstack__row--static"
+            [class.generic-table-tanstack__row--even]="$index % 2 === 0"
+            [class.generic-table-tanstack__row--odd]="$index % 2 === 1"
+            [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
+            [style.grid-template-columns]="gridTemplateColumns()"
+            [attr.role]="rowClickable() && !disabled() ? 'button' : null"
+            [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
+            (click)="onRowClick(rowModel.original)"
+            (keydown.enter)="onRowClick(rowModel.original)"
+            (keydown.space)="$event.preventDefault(); onRowClick(rowModel.original)"
+          >
+            @for (col of displayedColumns(); track col.key) {
+              <div
+                class="generic-table-tanstack__cell"
+                [ngStyle]="columnWidthStyles().get(col.key) ?? null"
+                [style.text-align]="col.align ?? 'left'"
+              >
+                @if (cellTemplates().get(col.key); as template) {
+                  <div class="generic-table-tanstack__cell-content">
+                    <ng-container
+                      [ngTemplateOutlet]="template"
+                      [ngTemplateOutletContext]="cellContext(rowModel.original)"
+                    />
+                  </div>
+                } @else {
+                  {{ formatCell(col, rowModel.original) }}
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  }
+
+  @if (showPaginator()) {
+    <mat-paginator
+      [disabled]="disabled()"
+      [length]="paginatorLength()"
+      [pageIndex]="paginatorPageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions()"
+      (page)="onPageChange($event)"
+    />
+  }
+</div>

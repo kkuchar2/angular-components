@@ -1,0 +1,266 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+:host(.generic-table-tanstack-host--fill),
+:host(.generic-table-tanstack-host--parent) {
+  flex: 0 1 auto;
+  min-height: 0;
+  height: auto;
+  max-height: var(--gtt-bounded-max-height, 100%);
+  overflow: hidden;
+}
+
+.generic-table-tanstack {
+  --gtt-max-height: 480px;
+  --gtt-gap: var(--spacing-md, 1rem);
+  --gtt-toggle-gap: var(--spacing-sm, 0.5rem);
+  --gtt-border: var(--color-border, #e0e0e0);
+  --gtt-radius: var(--radius-md, 8px);
+  --gtt-header-bg: var(--color-surface-elevated, #f5f5f5);
+  --gtt-header-text: var(--color-text, rgb(0 0 0 / 87%));
+  --gtt-header-accent: var(--color-primary, #1565c0);
+  --gtt-row-odd-bg: var(--color-surface, #ffffff);
+  --gtt-row-even-bg: var(--color-row-even, #fafbfc);
+  --gtt-row-hover-bg: var(--color-row-hover, #f2f2f2);
+  --gtt-row-divider: var(--color-row-divider, rgb(0 0 0 / 4%));
+  --gtt-empty-color: var(--color-text-muted, rgb(0 0 0 / 60%));
+  --gtt-empty-padding: var(--spacing-2xl, 3rem);
+  --gtt-disabled-opacity: 0.55;
+  --gtt-row-height: 48px;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--gtt-gap);
+}
+
+.generic-table-tanstack--disabled {
+  opacity: var(--gtt-disabled-opacity);
+  pointer-events: none;
+  user-select: none;
+}
+
+.generic-table-tanstack__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gtt-toggle-gap);
+}
+
+.generic-table-tanstack__column-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gtt-toggle-gap);
+}
+
+.generic-table-tanstack__export {
+  margin-inline-start: auto;
+  padding: 0.375rem 0.75rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gtt-header-text);
+  cursor: pointer;
+  background: var(--gtt-header-bg);
+  border: 1px solid var(--gtt-border);
+  border-radius: var(--gtt-radius);
+}
+
+.generic-table-tanstack__export:hover:not(:disabled) {
+  background: var(--gtt-row-hover-bg);
+}
+
+.generic-table-tanstack__export:disabled {
+  cursor: not-allowed;
+  opacity: var(--gtt-disabled-opacity);
+}
+
+.generic-table-tanstack--fill,
+.generic-table-tanstack--parent,
+.generic-table-tanstack--bounded {
+  flex: 0 1 auto;
+  min-height: 0;
+  height: auto;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.generic-table-tanstack__virtual-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--gtt-border);
+  border-radius: var(--gtt-radius);
+  max-height: var(--gtt-max-height);
+}
+
+.generic-table-tanstack__virtual-shell--bounded {
+  flex: 1 1 auto;
+  height: auto;
+  max-height: 100%;
+  min-height: var(--gtt-min-height, 0);
+}
+
+.generic-table-tanstack__scroll {
+  position: relative;
+  overflow: auto;
+  overflow-anchor: none;
+  scroll-behavior: auto;
+  scrollbar-gutter: stable;
+  max-height: var(--gtt-max-height);
+  min-height: var(--gtt-min-height, 0);
+  border: 1px solid var(--gtt-border);
+  border-radius: var(--gtt-radius);
+}
+
+.generic-table-tanstack__scroll--fill {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+}
+
+.generic-table-tanstack__scroll--bounded {
+  max-height: none;
+  min-height: var(--gtt-min-height, 0);
+}
+
+.generic-table-tanstack__scroll--virtual {
+  border: none;
+  border-radius: 0;
+  max-height: none;
+}
+
+.generic-table-tanstack__scroll--virtual.generic-table-tanstack__scroll--fill {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.generic-table-tanstack__header {
+  display: grid;
+  background: var(--gtt-header-bg);
+  box-shadow: inset 0 -1px 0 var(--gtt-header-accent);
+}
+
+.generic-table-tanstack__header--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.generic-table-tanstack__header--virtual {
+  flex-shrink: 0;
+  overflow: hidden;
+  width: calc(100% - var(--gtt-virtual-scrollbar-gutter, 0px));
+  scrollbar-gutter: stable;
+}
+
+.generic-table-tanstack__header-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  height: var(--gtt-row-height);
+  padding-inline: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--gtt-header-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.generic-table-tanstack__header-cell--sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.generic-table-tanstack__header-cell--sortable:hover {
+  background: var(--gtt-row-hover-bg);
+}
+
+.generic-table-tanstack__header-cell--plain {
+  padding-inline-end: 18px;
+}
+
+.generic-table-tanstack__header-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.generic-table-tanstack__sort {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  opacity: 0.65;
+}
+
+.generic-table-tanstack__spacer {
+  position: relative;
+  width: 100%;
+}
+
+.generic-table-tanstack__row {
+  display: grid;
+  width: 100%;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--gtt-row-divider);
+}
+
+.generic-table-tanstack__row:not(.generic-table-tanstack__row--static) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.generic-table-tanstack__row--static {
+  position: relative;
+  min-height: var(--gtt-row-height);
+}
+
+.generic-table-tanstack__row--odd {
+  background: var(--gtt-row-odd-bg);
+}
+
+.generic-table-tanstack__row--even {
+  background: var(--gtt-row-even-bg);
+}
+
+.generic-table-tanstack__row--clickable {
+  cursor: pointer;
+}
+
+.generic-table-tanstack__scroll:not(.generic-table-tanstack__scroll--scrolling) {
+  .generic-table-tanstack__row--clickable:hover {
+    background: var(--gtt-row-hover-bg);
+  }
+}
+
+.generic-table-tanstack__cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 100%;
+  min-height: var(--gtt-row-height);
+  padding-inline: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generic-table-tanstack__cell-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.generic-table-tanstack__empty {
+  padding: var(--gtt-empty-padding);
+  text-align: center;
+  color: var(--gtt-empty-color);
+}

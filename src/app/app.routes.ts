@@ -4,6 +4,7 @@ import { CustomSelectDemoComponent } from './pages/custom-select-demo/custom-sel
 import { CustomInputDemoComponent } from './pages/custom-input-demo/custom-input-demo.component';
 import { DropdownLinkCardDemoComponent } from './pages/dropdown-link-card-demo/dropdown-link-card-demo.component';
 import { GenericTableDemoComponent } from './pages/generic-table-demo/generic-table-demo.component';
+import { GenericTableTanstackDemoComponent } from './pages/generic-table-tanstack-demo/generic-table-tanstack-demo.component';
 import { MultiFilterDemoComponent } from './pages/multi-filter-demo/multi-filter-demo.component';
 
 export const routes: Routes = [
@@ -16,6 +17,11 @@ export const routes: Routes = [
     path: 'generic-table',
     component: GenericTableDemoComponent,
     title: 'Generic Table',
+  },
+  {
+    path: 'generic-table-tanstack',
+    component: GenericTableTanstackDemoComponent,
+    title: 'Generic Table (TanStack)',
   },
   {
     path: 'custom-select',

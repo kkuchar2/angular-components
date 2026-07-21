@@ -11,6 +11,11 @@ export const COMPONENT_NAV_ITEMS: ComponentNavItem[] = [
     description: 'Sortable, paginated data table with custom cells',
   },
   {
+    path: 'generic-table-tanstack',
+    label: 'Generic Table (TanStack)',
+    description: 'Virtualized table via TanStack Table + Virtual',
+  },
+  {
     path: 'custom-select',
     label: 'Custom Select',
     description: 'Accessible dropdown with search and icons',

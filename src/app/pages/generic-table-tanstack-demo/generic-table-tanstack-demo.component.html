@@ -1,0 +1,92 @@
+<section class="demo">
+  <article class="demo__card">
+    <h2 class="demo__title">1. Paginated + column chips + custom cells</h2>
+    <p class="demo__hint">
+      Same features as Material <code>app-generic-table</code>: chip column toggle,
+      client-side pagination, sorting, export, and custom cell templates.
+    </p>
+
+    <app-generic-table-tanstack
+      [columns]="columns"
+      [data]="rows()"
+      [paginated]="true"
+      [pageSize]="5"
+      [rowClickable]="true"
+      [showExport]="true"
+      exportFileName="tanstack-team.csv"
+      [trackBy]="trackById"
+      (rowClick)="onRowClick($event)"
+    >
+      <ng-template
+        appGenericTableCell="status"
+        [appGenericTableCellFor]="rows()"
+        let-row
+      >
+        <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>
+      </ng-template>
+    </app-generic-table-tanstack>
+
+    @if (selectedRow(); as row) {
+      <p class="demo__selection">Selected: {{ row.name }} ({{ row.email }})</p>
+    }
+
+    <app-demo-code-block [code]="snippets.paginated" />
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">2. Server-side pagination</h2>
+    <p class="demo__hint">
+      Parent owns the page slice. Export waits for <code>exportRequest.complete()</code>.
+    </p>
+
+    <app-generic-table-tanstack
+      [columns]="columns"
+      [data]="serverSideRows()"
+      [paginated]="true"
+      [serverSide]="true"
+      [totalCount]="serverSideTotal"
+      [pageIndex]="serverSidePageIndex()"
+      [pageSize]="serverSidePageSize()"
+      [showColumnToggle]="false"
+      [showExport]="true"
+      exportFileName="server-users.csv"
+      [trackBy]="trackById"
+      (pageChange)="onServerSidePageChange($event)"
+      (exportRequest)="onServerSideExport($event)"
+    />
+
+    <app-demo-code-block [code]="snippets.serverSide" />
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">3. Virtual scroll (10 000 rows)</h2>
+    <p class="demo__hint">
+      TanStack Virtual — fast scrollbar drags should keep the correct rows at the
+      bottom. Mutually exclusive with pagination.
+    </p>
+
+    <app-generic-table-tanstack
+      [columns]="scrollColumns"
+      [data]="virtualRows()"
+      [virtualized]="true"
+      [rowHeight]="48"
+      height="400px"
+      [showColumnToggle]="false"
+      [trackBy]="trackById"
+    />
+
+    <app-demo-code-block [code]="snippets.virtual" />
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">4. Empty state</h2>
+    <p class="demo__hint">Non-virtual table with no rows.</p>
+
+    <app-generic-table-tanstack
+      [columns]="columns"
+      [data]="emptyRows()"
+      [showColumnToggle]="false"
+      emptyMessage="No team members found."
+    />
+  </article>
+</section>
