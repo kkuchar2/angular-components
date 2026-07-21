@@ -31,9 +31,22 @@ interface DemoUser {
 export class GenericTableTanstackDemoComponent {
   readonly columns: ColumnDef<DemoUser>[] = [
     { key: 'name', header: 'Name', sortable: true },
-    { key: 'email', header: 'Email', sortable: true, minWidth: '220px' },
+    {
+      key: 'email',
+      header: 'Email',
+      sortable: true,
+      minWidth: '220px',
+      description: 'Primary contact address used for account notifications.',
+    },
     { key: 'department', header: 'Department', sortable: true },
-    { key: 'status', header: 'Status', sortable: true, align: 'center', width: '120px' },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      align: 'center',
+      width: '120px',
+      description: 'Active = can sign in. Pending = invited but not confirmed.',
+    },
     {
       key: 'createdAt',
       header: 'Created',

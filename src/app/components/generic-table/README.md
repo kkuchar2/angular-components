@@ -317,6 +317,7 @@ Typical app-shell layout:
 | -------------- | ------------------------------- | ----------------------------------------------------------------- |
 | `key`          | `string`                        | Unique id; also the default `row[key]` accessor.                  |
 | `header`       | `string`                        | Header label.                                                     |
+| `description`  | `string`                        | Optional help text; shows a small info icon + tooltip by the header. |
 | `sortable`     | `boolean`                       | Enable sorting for this column (default `false`).                 |
 | `cell`         | `(row: T) => string \| number`  | Custom text formatter (default `row[key]`).                       |
 | `sortAccessor` | `(row: T) => string \| number`  | Value used for sorting (default `cell`, then `row[key]`).         |

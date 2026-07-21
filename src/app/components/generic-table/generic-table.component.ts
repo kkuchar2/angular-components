@@ -28,6 +28,7 @@ import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { GenericTableCellDirective } from './generic-table-cell.directive';
+import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
 import { ColumnDef, GenericTableCellContext, GenericTableExportRequest, GenericTableHeightMode } from './generic-table.types';
 
 /** Default scroll-body cap; mirrored by `--gt-max-height` in the component stylesheet. */
@@ -53,6 +54,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
     MatSortModule,
     MatPaginatorModule,
     MatChipsModule,
+    GenericTableHeaderInfoComponent,
   ],
   templateUrl: './generic-table.component.html',
   styleUrl: './generic-table.component.scss',

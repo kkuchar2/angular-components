@@ -8,6 +8,11 @@ export interface ColumnDef<T = unknown> {
   key: string;
   /** Text rendered in the header cell. */
   header: string;
+  /**
+   * Optional help text. When set, a small info icon appears to the right of the
+   * header label and shows this description in a tooltip.
+   */
+  description?: string;
   /** When true the header becomes sortable. Defaults to `false`. */
   sortable?: boolean;
   /** Custom text formatter for the cell. Defaults to `row[key]`. */

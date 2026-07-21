@@ -89,7 +89,13 @@
                   [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                   [style.text-align]="col.align ?? 'left'"
                 >
-                  {{ col.header }}
+                  <span class="generic-table__header-text">{{ col.header }}</span>
+                  @if (col.description) {
+                    <app-generic-table-header-info
+                      [description]="col.description"
+                      [label]="col.header"
+                    />
+                  }
                 </th>
               } @else {
                 <th
@@ -98,7 +104,13 @@
                   [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                   [style.text-align]="col.align ?? 'left'"
                 >
-                  {{ col.header }}
+                  <span class="generic-table__header-text">{{ col.header }}</span>
+                  @if (col.description) {
+                    <app-generic-table-header-info
+                      [description]="col.description"
+                      [label]="col.header"
+                    />
+                  }
                 </th>
               }
               <td mat-cell *matCellDef="let row"></td>
@@ -225,7 +237,13 @@
                 [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                 [style.text-align]="col.align ?? 'left'"
               >
-                {{ col.header }}
+                <span class="generic-table__header-text">{{ col.header }}</span>
+                @if (col.description) {
+                  <app-generic-table-header-info
+                    [description]="col.description"
+                    [label]="col.header"
+                  />
+                }
               </th>
             } @else {
               <th
@@ -235,7 +253,13 @@
                 [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                 [style.text-align]="col.align ?? 'left'"
               >
-                {{ col.header }}
+                <span class="generic-table__header-text">{{ col.header }}</span>
+                @if (col.description) {
+                  <app-generic-table-header-info
+                    [description]="col.description"
+                    [label]="col.header"
+                  />
+                }
               </th>
             }
             <td

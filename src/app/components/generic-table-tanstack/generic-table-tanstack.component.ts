@@ -33,6 +33,7 @@ import {
 import { injectVirtualizer } from '@tanstack/angular-virtual';
 
 import { GenericTableCellDirective } from '../generic-table/generic-table-cell.directive';
+import { GenericTableHeaderInfoComponent } from '../generic-table/generic-table-header-info.component';
 import {
   ColumnDef,
   GenericTableCellContext,
@@ -54,7 +55,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
  */
 @Component({
   selector: 'app-generic-table-tanstack',
-  imports: [NgStyle, NgTemplateOutlet, MatChipsModule, MatPaginatorModule],
+  imports: [NgStyle, NgTemplateOutlet, MatChipsModule, MatPaginatorModule, GenericTableHeaderInfoComponent],
   templateUrl: './generic-table-tanstack.component.html',
   styleUrl: './generic-table-tanstack.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -156,6 +156,19 @@ table {
   box-shadow: inset 0 -1px 0 var(--gt-header-accent);
 }
 
+.generic-table__header-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mat-mdc-header-cell.mat-sort-header .mat-sort-header-content,
+.mat-mdc-header-cell:not(.mat-sort-header) {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+}
+
 .mat-mdc-row.generic-table__row--odd .mat-mdc-cell {
   background: var(--gt-row-odd-bg);
 }
