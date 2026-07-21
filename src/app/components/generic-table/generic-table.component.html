@@ -2,10 +2,11 @@
   class="generic-table"
   [class.generic-table--fill]="isFillMode()"
   [class.generic-table--parent]="isParentMode()"
+  [class.generic-table--bounded]="isBoundedHeightMode()"
   [class.generic-table--virtualized]="virtualized()"
   [class.generic-table--disabled]="disabled()"
   [attr.aria-disabled]="disabled() || null"
-  [style.--gt-max-height]="isParentMode() ? null : maxHeight()"
+  [style.--gt-max-height]="isBoundedHeightMode() ? null : maxHeight()"
   [style.--gt-min-height]="minHeight()"
 >
   @if (showColumnToggle() && hideableColumns().length > 0) {
@@ -40,8 +41,7 @@
     <div
       class="generic-table__virtual-shell"
       #virtualShell
-      [class.generic-table__virtual-shell--fill]="isFillMode()"
-      [class.generic-table__virtual-shell--parent]="isParentMode()"
+      [class.generic-table__virtual-shell--bounded]="isBoundedHeightMode()"
       [style.height]="scrollBodyHeight()"
     >
       <div class="generic-table__virtual-header" #virtualHeaderTrack>
@@ -94,8 +94,8 @@
       <cdk-virtual-scroll-viewport
         #virtualViewport
         class="generic-table__scroll generic-table__scroll--virtual"
-        [class.generic-table__scroll--virtual-fill]="isFillMode() || isFixed()"
-        [class.generic-table__scroll--parent]="isParentMode()"
+        [class.generic-table__scroll--virtual-fill]="isFixed()"
+        [class.generic-table__scroll--bounded]="isBoundedHeightMode()"
         [class.generic-table__scroll--scrolling]="isScrolling()"
         [style.--gt-row-height.px]="rowHeight()"
         [style.height.px]="virtualViewportHeightPx()"
@@ -175,7 +175,7 @@
       class="generic-table__scroll"
       [class.generic-table__scroll--scrolling]="isScrolling()"
       [class.generic-table__scroll--fill]="isFillMode()"
-      [class.generic-table__scroll--parent]="isParentMode()"
+      [class.generic-table__scroll--bounded]="isBoundedHeightMode()"
       [style.height]="scrollBodyHeight()"
       (scroll)="onScroll()"
     >

@@ -7,13 +7,12 @@
   min-height: 0;
 }
 
-// Fill the remaining space of a flex-column parent. `flex-basis: 0` plus
-// `overflow: hidden` keeps row content from pushing the host past the parent's
-// allocated height — `flex: 1 1 auto` was still content-sized and overflowed.
+// Fill remaining flex space but shrink to row content when rows need less room.
 :host(.generic-table-host--fill) {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-height: 0;
-  max-height: 100%;
+  height: auto;
+  max-height: var(--gt-bounded-max-height, 100%);
   overflow: hidden;
 }
 
@@ -22,7 +21,7 @@
   flex: 0 1 auto;
   min-height: 0;
   height: auto;
-  max-height: 100%;
+  max-height: var(--gt-bounded-max-height, 100%);
   overflow: hidden;
 }
 
@@ -64,16 +63,10 @@
   gap: var(--gt-toggle-gap);
 }
 
-// When filling, the wrapper and scroll body chain the resolved height downward
-// so the body (not the whole component) scrolls.
-.generic-table--fill {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow: hidden;
-}
-
-// Parent mode: shrink to rows, cap at parent height, scroll when rows exceed it.
-.generic-table--parent {
+// When filling, cap at the measured flex/parent allocation and shrink to rows.
+.generic-table--fill,
+.generic-table--parent,
+.generic-table--bounded {
   flex: 0 1 auto;
   min-height: 0;
   height: auto;
@@ -91,11 +84,11 @@
 }
 
 .generic-table__scroll--fill {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-height: 0;
 }
 
-.generic-table__scroll--parent {
+.generic-table__scroll--bounded {
   flex: 1 1 auto;
   max-height: none;
   min-height: var(--gt-min-height, 0);
@@ -151,11 +144,11 @@ table {
 }
 
 .generic-table__virtual-shell--fill {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-height: 0;
 }
 
-.generic-table__virtual-shell--parent {
+.generic-table__virtual-shell--bounded {
   flex: 1 1 auto;
   height: auto;
   max-height: 100%;

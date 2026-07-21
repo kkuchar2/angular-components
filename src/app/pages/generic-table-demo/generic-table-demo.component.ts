@@ -102,7 +102,7 @@ export class GenericTableDemoComponent {
     {
       id: 'fill',
       code: 'heightMode="fill"',
-      description: 'Fills space below the toolbar in a flex column.',
+      description: 'Shrinks to rows; caps at remaining space below the toolbar.',
       heightMode: 'fill',
       flexShell: true,
       toolbar: true,

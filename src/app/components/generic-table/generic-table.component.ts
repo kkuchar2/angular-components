@@ -133,9 +133,9 @@ export class GenericTableComponent<T = unknown> {
   readonly minHeight = input<string | null>(null);
 
   readonly isParentMode = computed(() => this.heightMode() === 'parent');
+  readonly isFixed = computed(() => !this.isParentMode() && this.height() != null);
   readonly isFillMode = computed(() => !this.isFixed() && this.heightMode() === 'fill');
   readonly isBoundedHeightMode = computed(() => this.isParentMode() || this.isFillMode());
-  readonly isFixed = computed(() => !this.isParentMode() && this.height() != null);
   /** Fixed scroll-body height; suppressed in `'parent'` mode. */
   readonly scrollBodyHeight = computed(() => (this.isParentMode() ? null : this.height()));
   readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
@@ -671,8 +671,8 @@ export class GenericTableComponent<T = unknown> {
     return parsed > 0 ? parsed : 0;
   }
 
-  /** Shrinks to row content, caps at parent space, floors at minHeight when parent is short. */
-  private resolveParentScrollBodyHeightPx(contentHeight: number, fillHeight: number): number {
+  /** Shrinks to row content, caps at available space, floors at minHeight when space is short. */
+  private resolveBoundedScrollBodyHeightPx(contentHeight: number, fillHeight: number): number {
     const minHeight = this.resolveMinScrollHeightPx();
 
     if (fillHeight < minHeight) {
@@ -682,8 +682,8 @@ export class GenericTableComponent<T = unknown> {
     return Math.min(contentHeight, fillHeight);
   }
 
-  private measureParentLayout(): void {
-    if (!this.isParentMode()) {
+  private measureBoundedLayout(): void {
+    if (!this.isBoundedHeightMode()) {
       return;
     }
 
@@ -694,14 +694,36 @@ export class GenericTableComponent<T = unknown> {
       return;
     }
 
-    this.parentAvailableHeightPx.set(parent.clientHeight);
+    const available = this.isFillMode()
+      ? this.measureFillAvailableHeight(host, parent)
+      : parent.clientHeight;
+
+    this.boundedAvailableHeightPx.set(available);
 
     const tableRoot = host.querySelector('.generic-table');
     const scrollBody = host.querySelector('.generic-table__scroll, .generic-table__virtual-shell');
 
     if (tableRoot instanceof HTMLElement && scrollBody instanceof HTMLElement) {
-      this.parentChromeHeightPx.set(Math.max(0, tableRoot.clientHeight - scrollBody.clientHeight));
+      this.boundedChromeHeightPx.set(Math.max(0, tableRoot.clientHeight - scrollBody.clientHeight));
     }
+  }
+
+  private measureFillAvailableHeight(host: HTMLElement, parent: HTMLElement): number {
+    const parentStyle = getComputedStyle(parent);
+    const gap = Number.parseFloat(parentStyle.rowGap || parentStyle.gap) || 0;
+    let siblingHeight = 0;
+
+    for (const child of parent.children) {
+      if (child === host || !(child instanceof HTMLElement)) {
+        continue;
+      }
+
+      siblingHeight += child.offsetHeight;
+    }
+
+    const flexGapTotal = Math.max(0, parent.children.length - 1) * gap;
+
+    return Math.max(0, parent.clientHeight - siblingHeight - flexGapTotal);
   }
 
   private resetSyncedColumnWidths(
