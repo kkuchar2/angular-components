@@ -307,6 +307,14 @@
   min-height: var(--gtt-row-height);
 }
 
+.generic-table-tanstack__row--odd {
+  background: var(--gtt-row-odd-bg);
+}
+
+.generic-table-tanstack__row--even {
+  background: var(--gtt-row-even-bg);
+}
+
 .generic-table-tanstack__row--odd .generic-table-tanstack__cell {
   background: var(--gtt-row-odd-bg);
 }

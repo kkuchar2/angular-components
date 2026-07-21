@@ -250,11 +250,22 @@ export class GenericTableTanstackComponent<T = unknown> {
     ),
   );
 
-  readonly gridTemplateColumns = computed(() =>
-    this.displayedColumns()
-      .map((column) => this.resolveColumnTrack(column))
-      .join(' '),
-  );
+  readonly gridTemplateColumns = computed(() => {
+    const columns = this.displayedColumns();
+    const tracks = columns.map((column) => this.resolveColumnTrack(column));
+
+    // If every column is a fixed width, the grid leaves empty space on the right.
+    // Grow the last column so header/row backgrounds fill the table edge-to-edge.
+    const hasFlexibleTrack = tracks.some((track) => /\bfr\b/.test(track));
+
+    if (!hasFlexibleTrack && tracks.length > 0) {
+      const last = columns[columns.length - 1];
+      const floor = last.width ?? last.minWidth ?? '0px';
+      tracks[tracks.length - 1] = `minmax(${floor}, 1fr)`;
+    }
+
+    return tracks.join(' ');
+  });
 
   /** Minimum table width so fixed/min columns can overflow horizontally instead of crushing. */
   readonly gridMinWidthPx = computed(() => {
