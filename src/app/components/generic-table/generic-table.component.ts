@@ -121,13 +121,13 @@ export class GenericTableComponent<T = unknown> {
    * - `'fill'`: sizes to row content up to the remaining flex-column space; scrolls
    *   when rows exceed that space. Honors `minHeight` when the allocation is shorter.
    * - `'parent'`: sizes to row content up to the parent's height; scrolls when rows
-   *   exceed that space. Ignores `height` and `maxHeight`. Honors `minHeight` when
-   *   the parent is shorter than that floor.
+   *   exceed that space. Ignores `height`. Honors `minHeight` when the parent is
+   *   shorter than that floor. An explicit `maxHeight` caps the available space.
    */
   readonly heightMode = input<GenericTableHeightMode>('auto');
   /** Exact, fixed height for the scroll body, e.g. `'320px'`. Ignored when `heightMode` is `'parent'`. */
   readonly height = input<string | null>(null);
-  /** Caps the scroll body height, e.g. `'320px'`. Defaults to `480px` via `--gt-max-height`. Ignored in `'fill'` / `'parent'` modes. */
+  /** Caps the scroll body height, e.g. `'320px'`. Defaults to `480px` in `'auto'` mode. Also caps `'fill'` / `'parent'` when set. */
   readonly maxHeight = input<string | null>(null);
   /** Minimum scroll body height, e.g. `'200px'`. In `'fill'` / `'parent'` modes, never shrinks below this when the available space is shorter. */
   readonly minHeight = input<string | null>(null);
@@ -153,7 +153,18 @@ export class GenericTableComponent<T = unknown> {
       return null;
     }
 
-    return this.boundedAvailableHeightPx();
+    const available =
+      this.boundedAvailableHeightPx() ?? this.resolveBoundedAvailableFallbackPx();
+    const maxBodyCap = this.resolveExplicitMaxHeightPx();
+
+    if (maxBodyCap == null) {
+      return available;
+    }
+
+    const chrome = this.boundedChromeHeightPx();
+    const header = this.virtualized() ? this.virtualHeaderHeightPx() : 0;
+
+    return Math.min(available, maxBodyCap + chrome + header);
   });
   /**
    * Virtual viewport height when not fixed: content height capped by max height (auto)
@@ -168,16 +179,18 @@ export class GenericTableComponent<T = unknown> {
     const bodyContent = rowCount * this.rowHeight();
 
     if (this.isBoundedHeightMode()) {
-      const available = this.boundedAvailableHeightPx();
+      const available =
+        this.boundedAvailableHeightPx() ?? this.resolveBoundedAvailableFallbackPx();
 
-      if (available == null) {
-        return bodyContent;
-      }
-
-      const fillHeight = Math.max(
+      let fillHeight = Math.max(
         0,
         available - this.boundedChromeHeightPx() - this.virtualHeaderHeightPx(),
       );
+      const maxBodyCap = this.resolveExplicitMaxHeightPx();
+
+      if (maxBodyCap != null) {
+        fillHeight = Math.min(fillHeight, maxBodyCap);
+      }
 
       return this.resolveBoundedScrollBodyHeightPx(bodyContent, fillHeight);
     }
@@ -696,7 +709,7 @@ export class GenericTableComponent<T = unknown> {
 
     const available = this.isFillMode()
       ? this.measureFillAvailableHeight(host, parent)
-      : parent.clientHeight;
+      : this.measureParentAvailableHeight(host, parent);
 
     this.boundedAvailableHeightPx.set(available);
 
@@ -722,8 +735,56 @@ export class GenericTableComponent<T = unknown> {
     }
 
     const flexGapTotal = Math.max(0, parent.children.length - 1) * gap;
+    const fillAvailable = Math.max(0, parent.clientHeight - siblingHeight - flexGapTotal);
 
-    return Math.max(0, parent.clientHeight - siblingHeight - flexGapTotal);
+    return fillAvailable;
+  }
+
+  /**
+   * Resolves vertical space for `'parent'` mode without feeding host growth back into
+   * the measurement (which would expand a content-sized parent in a loop).
+   */
+  private measureParentAvailableHeight(host: HTMLElement, parent: HTMLElement): number {
+    const parentStyle = getComputedStyle(parent);
+    const parsedHeight = this.parseLengthToPx(parentStyle.height, parent.clientWidth);
+    const parsedMaxHeight = this.parseLengthToPx(parentStyle.maxHeight, parent.clientWidth);
+    const hasExplicitHeight = parentStyle.height !== 'auto' && parsedHeight > 0;
+    const hasExplicitMaxHeight = parentStyle.maxHeight !== 'none' && parsedMaxHeight > 0;
+    const hostHeight = host.offsetHeight;
+    const parentHeight = parent.clientHeight;
+
+    if (hasExplicitHeight || hasExplicitMaxHeight) {
+      return parentHeight;
+    }
+
+    if (hostHeight > 0 && parentHeight - hostHeight <= 2) {
+      // Parent height tracks our content — use explicit cap, never grow the parent.
+      return this.resolveBoundedAvailableFallbackPx();
+    }
+
+    return parentHeight;
+  }
+
+  private resolveExplicitMaxHeightPx(referenceWidth?: number): number | null {
+    const maxHeight = this.maxHeight();
+
+    if (!maxHeight) {
+      return null;
+    }
+
+    const ref = referenceWidth ?? this.hostEl.nativeElement.clientWidth ?? globalThis.innerWidth;
+    const parsed = this.parseLengthToPx(maxHeight, ref);
+
+    return parsed > 0 ? parsed : null;
+  }
+
+  /** Host-level cap while bounded layout is pending or when the parent sizes to content. */
+  private resolveBoundedAvailableFallbackPx(): number {
+    const maxBody = this.resolveExplicitMaxHeightPx() ?? DEFAULT_MAX_HEIGHT_PX;
+    const chrome = this.boundedChromeHeightPx();
+    const header = this.virtualized() ? this.virtualHeaderHeightPx() : 0;
+
+    return maxBody + chrome + header;
   }
 
   private resetSyncedColumnWidths(
