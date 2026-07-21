@@ -1,4 +1,4 @@
-import { NgStyle, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -55,7 +55,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
  */
 @Component({
   selector: 'app-generic-table-tanstack',
-  imports: [NgStyle, NgTemplateOutlet, MatChipsModule, MatPaginatorModule, GenericTableHeaderInfoComponent],
+  imports: [NgTemplateOutlet, MatChipsModule, MatPaginatorModule, GenericTableHeaderInfoComponent],
   templateUrl: './generic-table-tanstack.component.html',
   styleUrl: './generic-table-tanstack.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -232,16 +232,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return map;
   });
 
-  readonly columnWidthStyles = computed(() => {
-    const styles = new Map<string, Record<string, string>>();
-
-    for (const column of this.columns()) {
-      styles.set(column.key, this.buildColumnWidthStyles(column));
-    }
-
-    return styles;
-  });
-
   readonly hideableColumns = computed(() =>
     this.columns().filter((column) => column.hideable !== false),
   );
@@ -262,19 +252,32 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   readonly gridTemplateColumns = computed(() =>
     this.displayedColumns()
-      .map((column) => {
-        if (column.width) {
-          return column.width;
-        }
-
-        if (column.minWidth) {
-          return `minmax(${column.minWidth}, 1fr)`;
-        }
-
-        return 'minmax(0, 1fr)';
-      })
+      .map((column) => this.resolveColumnTrack(column))
       .join(' '),
   );
+
+  /** Minimum table width so fixed/min columns can overflow horizontally instead of crushing. */
+  readonly gridMinWidthPx = computed(() => {
+    const reference = this.hostEl.nativeElement.clientWidth || globalThis.innerWidth;
+    let total = 0;
+
+    for (const column of this.displayedColumns()) {
+      if (column.width) {
+        total += this.parseLengthToPx(column.width, reference) || 0;
+        continue;
+      }
+
+      if (column.minWidth) {
+        total += this.parseLengthToPx(column.minWidth, reference) || 0;
+        continue;
+      }
+
+      // Soft floor for unspecified columns so the grid does not collapse to content.
+      total += 96;
+    }
+
+    return Math.ceil(total);
+  });
 
   private readonly tanstackColumns = computed((): TanstackColumnDef<T, unknown>[] =>
     this.displayedColumns().map((column) => ({
@@ -716,21 +719,16 @@ export class GenericTableTanstackComponent<T = unknown> {
     return String(value);
   }
 
-  private buildColumnWidthStyles(column: ColumnDef<T>): Record<string, string> {
-    const styles: Record<string, string> = {};
-
+  private resolveColumnTrack(column: ColumnDef<T>): string {
     if (column.width) {
-      styles['width'] = column.width;
-      styles['max-width'] = column.width;
+      return column.width;
     }
 
-    if (column.minWidth !== undefined) {
-      styles['min-width'] = column.minWidth;
-    } else if (column.width) {
-      styles['min-width'] = column.width;
+    if (column.minWidth) {
+      return `minmax(${column.minWidth}, 1fr)`;
     }
 
-    return styles;
+    return 'minmax(0, 1fr)';
   }
 
   private resolveMaxScrollHeightPx(): number {

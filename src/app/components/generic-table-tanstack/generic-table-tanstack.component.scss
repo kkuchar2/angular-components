@@ -159,6 +159,10 @@
 
 .generic-table-tanstack__header {
   display: grid;
+  grid-template-columns: var(--gtt-cols);
+  width: max(100%, var(--gtt-grid-min, 100%));
+  min-width: max(100%, var(--gtt-grid-min, 100%));
+  box-sizing: border-box;
   background: var(--gtt-header-bg);
 }
 
@@ -175,7 +179,14 @@
   // Match the viewport content width so columns line up with the body.
   // Do NOT also set scrollbar-gutter here — that double-reserves space and
   // leaves a gap larger than the scrollbar under the accent line.
-  width: calc(100% - var(--gtt-virtual-scrollbar-gutter, 0px));
+  width: max(
+    calc(100% - var(--gtt-virtual-scrollbar-gutter, 0px)),
+    var(--gtt-grid-min, 0px)
+  );
+  min-width: max(
+    calc(100% - var(--gtt-virtual-scrollbar-gutter, 0px)),
+    var(--gtt-grid-min, 0px)
+  );
   box-sizing: border-box;
 
   // Full-bleed accent across the header + scrollbar strip (cells alone stop short).
@@ -271,12 +282,15 @@
 
 .generic-table-tanstack__spacer {
   position: relative;
-  width: 100%;
+  width: max(100%, var(--gtt-grid-min, 100%));
+  min-width: max(100%, var(--gtt-grid-min, 100%));
 }
 
 .generic-table-tanstack__row {
   display: grid;
-  width: 100%;
+  grid-template-columns: var(--gtt-cols);
+  width: max(100%, var(--gtt-grid-min, 100%));
+  min-width: max(100%, var(--gtt-grid-min, 100%));
   box-sizing: border-box;
 }
 
@@ -284,6 +298,7 @@
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
   will-change: transform;
 }
 

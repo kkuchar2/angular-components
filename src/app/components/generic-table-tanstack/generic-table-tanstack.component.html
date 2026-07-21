@@ -48,18 +48,21 @@
       #virtualShell
       [class.generic-table-tanstack__virtual-shell--bounded]="isBoundedHeightMode()"
       [style.height]="scrollBodyHeight()"
+      [style.--gtt-cols]="gridTemplateColumns()"
+      [style.--gtt-grid-min.px]="gridMinWidthPx()"
     >
       <div
         class="generic-table-tanstack__header generic-table-tanstack__header--virtual"
         #headerTrack
-        [style.grid-template-columns]="gridTemplateColumns()"
       >
         @for (col of displayedColumns(); track col.key) {
           <div
             class="generic-table-tanstack__header-cell"
             [class.generic-table-tanstack__header-cell--sortable]="col.sortable"
-            [ngStyle]="columnWidthStyles().get(col.key) ?? null"
             [style.text-align]="col.align ?? 'left'"
+            [style.justify-content]="
+              col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start'
+            "
             [attr.role]="col.sortable ? 'button' : null"
             [attr.tabindex]="col.sortable && !disabled() ? 0 : null"
             (click)="toggleSort(col)"
@@ -122,7 +125,6 @@
                   [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
                   [style.height.px]="virtualRow.size"
                   [style.transform]="'translateY(' + virtualRow.start + 'px)'"
-                  [style.grid-template-columns]="gridTemplateColumns()"
                   [attr.role]="rowClickable() && !disabled() ? 'button' : null"
                   [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
                   (click)="onRowClick(rowModel.original)"
@@ -132,8 +134,14 @@
                   @for (col of displayedColumns(); track col.key) {
                     <div
                       class="generic-table-tanstack__cell"
-                      [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                       [style.text-align]="col.align ?? 'left'"
+                      [style.justify-content]="
+                        col.align === 'center'
+                          ? 'center'
+                          : col.align === 'right'
+                            ? 'flex-end'
+                            : 'flex-start'
+                      "
                     >
                       @if (cellTemplates().get(col.key); as template) {
                         <div class="generic-table-tanstack__cell-content">
@@ -162,19 +170,20 @@
       [class.generic-table-tanstack__scroll--fill]="isFillMode()"
       [class.generic-table-tanstack__scroll--bounded]="isBoundedHeightMode()"
       [style.height]="scrollBodyHeight()"
+      [style.--gtt-cols]="gridTemplateColumns()"
+      [style.--gtt-grid-min.px]="gridMinWidthPx()"
       (scroll)="onScroll($event)"
     >
-      <div
-        class="generic-table-tanstack__header generic-table-tanstack__header--sticky"
-        [style.grid-template-columns]="gridTemplateColumns()"
-      >
+      <div class="generic-table-tanstack__header generic-table-tanstack__header--sticky">
         @for (col of displayedColumns(); track col.key) {
           <div
             class="generic-table-tanstack__header-cell"
             [class.generic-table-tanstack__header-cell--sortable]="col.sortable"
             [class.generic-table-tanstack__header-cell--plain]="!col.sortable"
-            [ngStyle]="columnWidthStyles().get(col.key) ?? null"
             [style.text-align]="col.align ?? 'left'"
+            [style.justify-content]="
+              col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start'
+            "
             [attr.role]="col.sortable ? 'button' : null"
             [attr.tabindex]="col.sortable && !disabled() ? 0 : null"
             (click)="toggleSort(col)"
@@ -218,7 +227,6 @@
             [class.generic-table-tanstack__row--even]="$index % 2 === 0"
             [class.generic-table-tanstack__row--odd]="$index % 2 === 1"
             [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
-            [style.grid-template-columns]="gridTemplateColumns()"
             [attr.role]="rowClickable() && !disabled() ? 'button' : null"
             [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
             (click)="onRowClick(rowModel.original)"
@@ -228,8 +236,14 @@
             @for (col of displayedColumns(); track col.key) {
               <div
                 class="generic-table-tanstack__cell"
-                [ngStyle]="columnWidthStyles().get(col.key) ?? null"
                 [style.text-align]="col.align ?? 'left'"
+                [style.justify-content]="
+                  col.align === 'center'
+                    ? 'center'
+                    : col.align === 'right'
+                      ? 'flex-end'
+                      : 'flex-start'
+                "
               >
                 @if (cellTemplates().get(col.key); as template) {
                   <div class="generic-table-tanstack__cell-content">
