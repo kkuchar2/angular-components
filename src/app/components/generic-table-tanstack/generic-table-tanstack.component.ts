@@ -32,16 +32,16 @@ import {
 } from '@tanstack/angular-table';
 import { injectVirtualizer } from '@tanstack/angular-virtual';
 
-import { GenericTableCellDirective } from '../generic-table/generic-table-cell.directive';
-import { resolveSortValue } from '../generic-table/generic-table-cell-format';
-import { GenericTableCellValueComponent } from '../generic-table/generic-table-cell-value.component';
-import { GenericTableHeaderInfoComponent } from '../generic-table/generic-table-header-info.component';
+import { GenericTableCellDirective } from './generic-table-cell.directive';
+import { resolveSortValue } from './generic-table-cell-format';
+import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
+import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
 import {
   ColumnDef,
   GenericTableCellContext,
   GenericTableExportRequest,
   GenericTableHeightMode,
-} from '../generic-table/generic-table.types';
+} from './generic-table.types';
 
 /** Default scroll-body cap; mirrored by `--gtt-max-height` in the stylesheet. */
 const DEFAULT_MAX_HEIGHT_PX = 480;

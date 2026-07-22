@@ -5,8 +5,8 @@ import {
   ColumnDef,
   GenericTableCellDirective,
   GenericTableExportRequest,
-} from '../../components/generic-table';
-import { GenericTableTanstackComponent } from '../../components/generic-table-tanstack';
+  GenericTableTanstackComponent,
+} from '../../components/generic-table-tanstack';
 import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
 import { code } from '../../shared/demo-code-block/demo-code.util';
 
@@ -145,8 +145,8 @@ export class GenericTableTanstackDemoComponent {
           ColumnDef,
           GenericTableCellDirective,
           GenericTableExportRequest,
-        } from './components/generic-table';
-        import { GenericTableTanstackComponent } from './components/generic-table-tanstack';
+          GenericTableTanstackComponent,
+        } from './components/generic-table-tanstack';
 
         interface DemoUser {
           id: number;
@@ -203,7 +203,7 @@ export class GenericTableTanstackDemoComponent {
         import {
           ColumnDef,
           GenericTableExportRequest,
-        } from './components/generic-table';
+        } from './components/generic-table-tanstack';
 
         readonly columns: ColumnDef<DemoUser>[] = [/* ... */];
         readonly totalCount = 87;
@@ -236,7 +236,7 @@ export class GenericTableTanstackDemoComponent {
       `,
       ts: code`
         import { signal } from '@angular/core';
-        import { ColumnDef } from './components/generic-table';
+        import { ColumnDef } from './components/generic-table-tanstack';
 
         readonly columns: ColumnDef<DemoUser>[] = [/* ... */];
         readonly rows = signal<DemoUser[]>(this.buildRows(10_000));
