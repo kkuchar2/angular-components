@@ -170,6 +170,8 @@
   display: grid;
   grid-template-columns: var(--gtt-cols);
   box-sizing: border-box;
+  width: 100%;
+  min-width: var(--gtt-grid-min, 0);
   background: var(--gtt-header-bg);
 }
 
@@ -283,6 +285,9 @@
 
 .generic-table-tanstack__spacer {
   position: relative;
+  width: 100%;
+  min-width: var(--gtt-grid-min, 0);
+  box-sizing: border-box;
 }
 
 .generic-table-tanstack__body {
@@ -296,6 +301,8 @@
   display: grid;
   grid-template-columns: var(--gtt-cols);
   box-sizing: border-box;
+  width: 100%;
+  min-width: var(--gtt-grid-min, 0);
 }
 
 .generic-table-tanstack__row:not(.generic-table-tanstack__row--static) {

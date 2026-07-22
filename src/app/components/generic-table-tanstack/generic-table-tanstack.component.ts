@@ -286,12 +286,22 @@ export class GenericTableTanstackComponent<T = unknown> {
   });
 
   /**
-   * Width of the header/row grid: at least the scrollport content width, and never
-   * below the sum of column floors so `minWidth` survives window resize.
+   * Forced pixel width for header/rows when column floors exceed the viewport
+   * (horizontal overflow). `null` when content fits — CSS `width: 100%` fills the
+   * scrollport. Locking to `clientWidth` in that case causes scrollbar flicker on
+   * resize (width ↔ scrollbar ↔ clientWidth feedback loop).
    */
-  readonly gridLayoutWidthPx = computed(() =>
-    Math.max(this.scrollContentWidthPx(), this.gridMinWidthPx()),
-  );
+  readonly gridLayoutWidthPx = computed((): number | null => {
+    const min = this.gridMinWidthPx();
+    const viewport = this.scrollContentWidthPx();
+
+    // 1px epsilon avoids subpixel/rounding oscillation at the fit boundary.
+    if (viewport > 0 && min > viewport + 1) {
+      return min;
+    }
+
+    return null;
+  });
 
   /** Scrollport content width (excludes scrollbar); updated on layout/resize. */
   readonly scrollContentWidthPx = signal(0);

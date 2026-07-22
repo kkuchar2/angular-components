@@ -55,7 +55,7 @@
         <div
           class="generic-table-tanstack__header generic-table-tanstack__header--virtual"
           [style.width.px]="gridLayoutWidthPx()"
-          [style.min-width.px]="gridLayoutWidthPx()"
+          [style.min-width.px]="gridMinWidthPx()"
         >
           @for (col of displayedColumns(); track col.key) {
             <div
@@ -118,7 +118,7 @@
             class="generic-table-tanstack__spacer"
             [style.height.px]="virtualizer.getTotalSize()"
             [style.width.px]="gridLayoutWidthPx()"
-            [style.min-width.px]="gridLayoutWidthPx()"
+            [style.min-width.px]="gridMinWidthPx()"
           >
             @for (
               virtualRow of virtualizer.getVirtualItems();
@@ -132,7 +132,7 @@
                   [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
                   [style.height.px]="virtualRow.size"
                   [style.width.px]="gridLayoutWidthPx()"
-                  [style.min-width.px]="gridLayoutWidthPx()"
+                  [style.min-width.px]="gridMinWidthPx()"
                   [style.transform]="'translateY(' + virtualRow.start + 'px)'"
                   [attr.role]="rowClickable() && !disabled() ? 'button' : null"
                   [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
@@ -191,7 +191,7 @@
       <div
         class="generic-table-tanstack__header generic-table-tanstack__header--sticky"
         [style.width.px]="gridLayoutWidthPx()"
-        [style.min-width.px]="gridLayoutWidthPx()"
+        [style.min-width.px]="gridMinWidthPx()"
       >
         @for (col of displayedColumns(); track col.key) {
           <div
@@ -254,7 +254,7 @@
               [class.generic-table-tanstack__row--odd]="$index % 2 === 1"
               [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
               [style.width.px]="gridLayoutWidthPx()"
-              [style.min-width.px]="gridLayoutWidthPx()"
+              [style.min-width.px]="gridMinWidthPx()"
               [attr.role]="rowClickable() && !disabled() ? 'button' : null"
               [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
               (click)="onRowClick(rowModel.original)"
