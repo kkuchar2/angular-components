@@ -41,12 +41,12 @@ export interface ColumnDef<T = unknown> {
   hideable?: boolean;
   /** Initial visibility of the column. Defaults to `true`. */
   visible?: boolean;
-  /** Fixed column width, e.g. `'120px'` or `'20%'`. */
+  /** Fixed preferred width, e.g. `'120px'` or `'20%'`. With `minWidth`, acts as a max. */
   width?: string;
   /**
-   * Minimum column width, e.g. `'120px'` or `'0px'`. The column never shrinks
-   * below this. Non-last columns with only `minWidth` stay at that size; only
-   * the last column grows to fill leftover container width.
+   * Minimum column width, e.g. `'50px'` or `'0px'`. The column never shrinks below
+   * this. With `width`, the track is `minmax(minWidth, width)` so it can shrink.
+   * Only the last column grows to fill leftover container width.
    */
   minWidth?: string;
   /** Horizontal alignment of header and cells. Defaults to `'left'`. */

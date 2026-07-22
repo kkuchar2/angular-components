@@ -778,18 +778,23 @@ export class GenericTableTanstackComponent<T = unknown> {
   /**
    * CSS grid track for a column.
    *
-   * - `width`: fixed track
-   * - `minWidth`: hard floor; non-stretch columns stay at that size (do not take free space)
-   * - stretch (last column only): `minmax(floor, 1fr)` fills the container
+   * - `width` + `minWidth`: preferred `width`, can shrink down to `minWidth`
+   * - `width` only: fixed track
+   * - `minWidth` only: fixed at the floor (no free-space growth)
+   * - stretch (last column only): `minmax(floor, 1fr)` fills leftover container width
    */
   private resolveColumnTrack(
     column: ColumnDef<T>,
     options: { stretch?: boolean } = {},
   ): string {
-    const floor = column.width ?? column.minWidth ?? '0px';
+    const floor = this.columnFloorLength(column);
 
     if (options.stretch) {
       return `minmax(${floor}, 1fr)`;
+    }
+
+    if (column.width && column.minWidth != null && column.minWidth !== '') {
+      return `minmax(${column.minWidth}, ${column.width})`;
     }
 
     if (column.width) {
@@ -797,29 +802,42 @@ export class GenericTableTanstackComponent<T = unknown> {
     }
 
     if (column.minWidth != null && column.minWidth !== '') {
-      // Fixed at minWidth so free space goes only to the last (stretch) column.
-      // Long cell content (uuid, custom templates) ellipsizes inside the track.
       return column.minWidth;
     }
 
     return 'minmax(0, max-content)';
   }
 
-  /** Lowest pixel width a column may occupy (for layout min-width sum). */
-  private columnFloorPx(column: ColumnDef<T>, referenceWidth: number): number {
-    if (column.width) {
-      return Math.max(0, this.parseLengthToPx(column.width, referenceWidth));
-    }
-
+  /** CSS length used as the track/content floor (`minWidth` wins over `width`). */
+  private columnFloorLength(column: ColumnDef<T>): string {
     if (column.minWidth != null && column.minWidth !== '') {
-      return Math.max(0, this.parseLengthToPx(column.minWidth, referenceWidth));
+      return column.minWidth;
     }
 
-    return 0;
+    if (column.width) {
+      return column.width;
+    }
+
+    return '0px';
   }
 
+  /** Lowest pixel width a column may occupy (for layout min-width sum). */
+  private columnFloorPx(column: ColumnDef<T>, referenceWidth: number): number {
+    return Math.max(0, this.parseLengthToPx(this.columnFloorLength(column), referenceWidth));
+  }
+
+  /** Inline min-width for cells — the shrink floor, not the preferred `width`. */
   columnMinWidth(column: ColumnDef<T>): string | null {
-    return column.minWidth ?? column.width ?? null;
+    if (column.minWidth != null && column.minWidth !== '') {
+      return column.minWidth;
+    }
+
+    return column.width ?? null;
+  }
+
+  /** Inline max-width when `width` caps the column (lets `minWidth` still shrink). */
+  columnMaxWidth(column: ColumnDef<T>): string | null {
+    return column.width ?? null;
   }
 
   private resolveMaxScrollHeightPx(): number {

@@ -62,6 +62,7 @@
               class="generic-table-tanstack__header-cell"
               [class.generic-table-tanstack__header-cell--sortable]="col.sortable"
               [style.min-width]="columnMinWidth(col)"
+              [style.max-width]="columnMaxWidth(col)"
               [style.text-align]="col.align ?? 'left'"
               [style.justify-content]="
                 col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start'
@@ -143,6 +144,7 @@
                     <div
                       class="generic-table-tanstack__cell"
                       [style.min-width]="columnMinWidth(col)"
+                      [style.max-width]="columnMaxWidth(col)"
                       [style.text-align]="col.align ?? 'left'"
                       [style.justify-content]="
                         col.align === 'center'
@@ -197,6 +199,7 @@
             [class.generic-table-tanstack__header-cell--sortable]="col.sortable"
             [class.generic-table-tanstack__header-cell--plain]="!col.sortable"
             [style.min-width]="columnMinWidth(col)"
+            [style.max-width]="columnMaxWidth(col)"
             [style.text-align]="col.align ?? 'left'"
             [style.justify-content]="
               col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start'
@@ -262,6 +265,7 @@
                 <div
                   class="generic-table-tanstack__cell"
                   [style.min-width]="columnMinWidth(col)"
+                  [style.max-width]="columnMaxWidth(col)"
                   [style.text-align]="col.align ?? 'left'"
                   [style.justify-content]="
                     col.align === 'center'
