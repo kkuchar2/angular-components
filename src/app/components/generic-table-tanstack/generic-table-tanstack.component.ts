@@ -836,7 +836,12 @@ export class GenericTableTanstackComponent<T = unknown> {
   }
 
   /** Inline max-width when `width` caps the column (lets `minWidth` still shrink). */
-  columnMaxWidth(column: ColumnDef<T>): string | null {
+  columnMaxWidth(column: ColumnDef<T>, stretch = false): string | null {
+    // Last column uses `1fr` — never cap it or the row/header stops short of the edge.
+    if (stretch) {
+      return null;
+    }
+
     return column.width ?? null;
   }
 
