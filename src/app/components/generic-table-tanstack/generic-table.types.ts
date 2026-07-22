@@ -43,7 +43,11 @@ export interface ColumnDef<T = unknown> {
   visible?: boolean;
   /** Fixed column width, e.g. `'120px'` or `'20%'`. */
   width?: string;
-  /** Minimum column width, e.g. `'120px'`. The column never shrinks below this. */
+  /**
+   * Minimum column width, e.g. `'120px'` or `'0px'`. The column never shrinks
+   * below this. Non-last columns with only `minWidth` stay at that size; only
+   * the last column grows to fill leftover container width.
+   */
   minWidth?: string;
   /** Horizontal alignment of header and cells. Defaults to `'left'`. */
   align?: 'left' | 'center' | 'right';

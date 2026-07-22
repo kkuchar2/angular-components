@@ -260,24 +260,22 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   readonly gridTemplateColumns = computed(() => {
     const columns = this.displayedColumns();
-    const tracks = columns.map((column) => this.resolveColumnTrack(column));
 
-    // If every column is a fixed width, the grid leaves empty space on the right.
-    // Grow the last column so header/row backgrounds fill the table edge-to-edge.
-    const hasFlexibleTrack = tracks.some((track) => /\bfr\b/.test(track));
-
-    if (!hasFlexibleTrack && tracks.length > 0) {
-      const last = columns[columns.length - 1];
-      const floor = last.width ?? last.minWidth ?? '0px';
-      tracks[tracks.length - 1] = `minmax(${floor}, 1fr)`;
+    if (columns.length === 0) {
+      return '';
     }
 
-    return tracks.join(' ');
+    return columns
+      .map((column, index) =>
+        this.resolveColumnTrack(column, { stretch: index === columns.length - 1 }),
+      )
+      .join(' ');
   });
 
   /** Minimum table width so fixed/min columns can overflow horizontally instead of crushing. */
   readonly gridMinWidthPx = computed(() => {
-    const reference = this.scrollContentWidthPx() || this.hostEl.nativeElement.clientWidth || globalThis.innerWidth;
+    const reference =
+      this.scrollContentWidthPx() || this.hostEl.nativeElement.clientWidth || globalThis.innerWidth;
     let total = 0;
 
     for (const column of this.displayedColumns()) {
@@ -376,11 +374,13 @@ export class GenericTableTanstackComponent<T = unknown> {
   });
 
   /**
-   * When paginated, keep the body tall enough for a full page even if the last
-   * page has fewer rows — only real rows are rendered; the rest is empty space.
+   * When paginated with rows, keep the body tall enough for a full page even if
+   * the last page has fewer rows — only real rows are rendered; the rest is empty
+   * space. Not applied to the empty state (that would bury the message in a tall
+   * centered box and force pointless scrolling).
    */
   readonly paginatedBodyMinHeightPx = computed(() => {
-    if (!this.showPaginator()) {
+    if (!this.showPaginator() || this.bodyRows().length === 0) {
       return null;
     }
 
@@ -775,29 +775,47 @@ export class GenericTableTanstackComponent<T = unknown> {
     return String(value);
   }
 
-  private resolveColumnTrack(column: ColumnDef<T>): string {
-    // minWidth is a hard floor that may grow; plain width is a fixed track.
-    if (column.minWidth) {
-      return `minmax(${column.minWidth}, 1fr)`;
+  /**
+   * CSS grid track for a column.
+   *
+   * - `width`: fixed track
+   * - `minWidth`: hard floor; non-stretch columns stay at that size (do not take free space)
+   * - stretch (last column only): `minmax(floor, 1fr)` fills the container
+   */
+  private resolveColumnTrack(
+    column: ColumnDef<T>,
+    options: { stretch?: boolean } = {},
+  ): string {
+    const floor = column.width ?? column.minWidth ?? '0px';
+
+    if (options.stretch) {
+      return `minmax(${floor}, 1fr)`;
     }
 
     if (column.width) {
       return column.width;
     }
 
-    return 'minmax(0, 1fr)';
+    if (column.minWidth != null && column.minWidth !== '') {
+      // Fixed at minWidth so free space goes only to the last (stretch) column.
+      // Long cell content (uuid, custom templates) ellipsizes inside the track.
+      return column.minWidth;
+    }
+
+    return 'minmax(0, max-content)';
   }
 
   /** Lowest pixel width a column may occupy (for layout min-width sum). */
   private columnFloorPx(column: ColumnDef<T>, referenceWidth: number): number {
-    const widthPx = column.width ? this.parseLengthToPx(column.width, referenceWidth) : 0;
-    const minPx = column.minWidth ? this.parseLengthToPx(column.minWidth, referenceWidth) : 0;
-
-    if (widthPx > 0 || minPx > 0) {
-      return Math.max(widthPx, minPx);
+    if (column.width) {
+      return Math.max(0, this.parseLengthToPx(column.width, referenceWidth));
     }
 
-    return 96;
+    if (column.minWidth != null && column.minWidth !== '') {
+      return Math.max(0, this.parseLengthToPx(column.minWidth, referenceWidth));
+    }
+
+    return 0;
   }
 
   columnMinWidth(column: ColumnDef<T>): string | null {

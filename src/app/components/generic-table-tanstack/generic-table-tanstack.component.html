@@ -236,10 +236,7 @@
       </div>
 
       @if (bodyRows().length === 0) {
-        <div
-          class="generic-table-tanstack__empty"
-          [style.min-height.px]="paginatedBodyMinHeightPx()"
-        >
+        <div class="generic-table-tanstack__empty">
           {{ emptyMessage() }}
         </div>
       } @else {
