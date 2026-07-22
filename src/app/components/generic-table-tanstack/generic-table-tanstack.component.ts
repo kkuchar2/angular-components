@@ -309,7 +309,9 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   private readonly paginationState = computed((): PaginationState => {
     if (this.isServerSidePagination()) {
-      return { pageIndex: this.pageIndex(), pageSize: this.pageSize() };
+      // `data` is already one page; keep TanStack at index 0. The Material
+      // paginator owns the real pageIndex via `paginatorPageIndex()`.
+      return { pageIndex: 0, pageSize: this.pageSize() };
     }
 
     const client = this.clientPagination();
@@ -319,12 +321,20 @@ export class GenericTableTanstackComponent<T = unknown> {
     };
   });
 
+  /**
+   * Bridges for `createAngularTable`: its `lazyInit` schedules a microtask that
+   * can run before `input.required` values are bound (NG0950 on `data`/`columns`).
+   * Effects sync the real inputs once they are available.
+   */
+  private readonly tableData = signal<T[]>([]);
+  private readonly tableColumnDefs = signal<TanstackColumnDef<T, unknown>[]>([]);
+
   private readonly table = createAngularTable(() => {
     const paginateClientSide = this.showPaginator() && !this.isServerSidePagination();
 
     return {
-      data: [...this.data()],
-      columns: this.tanstackColumns(),
+      data: this.tableData(),
+      columns: this.tableColumnDefs(),
       state: {
         sorting: this.sorting(),
         pagination: this.paginationState(),
@@ -415,6 +425,11 @@ export class GenericTableTanstackComponent<T = unknown> {
       }
 
       this.measureBoundedLayout();
+    });
+
+    effect(() => {
+      this.tableData.set([...this.data()]);
+      this.tableColumnDefs.set(this.tanstackColumns());
     });
 
     effect(() => {
