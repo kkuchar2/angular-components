@@ -1,6 +1,41 @@
 import type { Type } from '@angular/core';
+import type { LucideIconInput } from '@lucide/angular';
 
 import type { GenericTableCellType, GenericTableDateDisplay } from './generic-table-cell.types';
+
+/**
+ * Action shown in the row ⋮ context menu when `rowActions` is set on the table.
+ *
+ * @typeParam T - The row model the table renders.
+ */
+export interface GenericTableRowAction<T = unknown> {
+  /** Stable id emitted via `(rowAction)`. */
+  id: string;
+  /** Visible label in the menu. */
+  label: string;
+  /** Optional Lucide icon before the label. */
+  icon?: LucideIconInput;
+  /** Static or per-row disabled state. */
+  disabled?: boolean | ((row: T) => boolean);
+  /** Danger / destructive styling (e.g. Delete). */
+  danger?: boolean;
+  /** When true (or the predicate returns true) the action is omitted for that row. */
+  hidden?: boolean | ((row: T) => boolean);
+  /** Render a separator line above this item. */
+  dividerBefore?: boolean;
+}
+
+/**
+ * Payload for `(rowAction)` when a row context-menu item is chosen.
+ *
+ * @typeParam T - The row model the table renders.
+ */
+export interface GenericTableRowActionEvent<T = unknown> {
+  /** `GenericTableRowAction.id` of the selected item. */
+  actionId: string;
+  /** Row the menu was opened for. */
+  row: T;
+}
 
 /**
  * Documented NgComponentOutlet inputs for `ColumnDef.cellComponent`.
@@ -123,3 +158,6 @@ export interface GenericTableExportRequest<T = unknown> {
   /** Call with the full row set to download the CSV. */
   complete: (rows: readonly T[]) => void;
 }
+
+/** Fixed CSS track width for the optional row-actions column. */
+export const GENERIC_TABLE_ROW_ACTIONS_TRACK = '48px';

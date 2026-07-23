@@ -1,0 +1,87 @@
+<button
+  #trigger
+  type="button"
+  class="context-menu__trigger"
+  [attr.id]="controlId"
+  [attr.aria-controls]="isOpen() ? menuId : null"
+  [attr.aria-expanded]="isOpen()"
+  [attr.aria-haspopup]="variant() === 'details' ? 'dialog' : 'menu'"
+  [attr.aria-label]="ariaLabel()"
+  [disabled]="disabled()"
+  (click)="onTriggerClick($event)"
+  (keydown)="onTriggerKeyDown($event)"
+>
+  <svg [lucideIcon]="LucideEllipsisVertical" [size]="16" aria-hidden="true"></svg>
+</button>
+
+<ng-template #menuTemplate>
+  @if (variant() === 'details') {
+    <div
+      class="context-menu__panel context-menu__panel--details"
+      [id]="menuId"
+      role="dialog"
+      [attr.aria-labelledby]="title() ? titleId : controlId"
+      (keydown)="onMenuKeyDown($event)"
+    >
+      @if (title(); as heading) {
+        <div class="context-menu__details-header" [id]="titleId">{{ heading }}</div>
+      }
+
+      <div class="context-menu__details-body">
+        @if (panelDirective(); as panel) {
+          <ng-container [ngTemplateOutlet]="panel.templateRef" />
+        } @else if (details().length > 0) {
+          <dl class="context-menu__details-list">
+            @for (field of details(); track field.label + field.value) {
+              <div class="context-menu__details-row">
+                <dt class="context-menu__details-label">{{ field.label }}</dt>
+                <dd class="context-menu__details-value" [attr.title]="field.value">
+                  {{ field.value }}
+                </dd>
+              </div>
+            }
+          </dl>
+        } @else {
+          <div class="context-menu__empty" role="presentation">No details</div>
+        }
+      </div>
+    </div>
+  } @else {
+    <div
+      class="context-menu__panel"
+      [id]="menuId"
+      role="menu"
+      [attr.aria-labelledby]="controlId"
+      (keydown)="onMenuKeyDown($event)"
+    >
+      @if (items().length === 0) {
+        <div class="context-menu__empty" role="presentation">No actions</div>
+      } @else {
+        @for (item of items(); track item.id; let index = $index) {
+          @if (item.dividerBefore) {
+            <div class="context-menu__divider" role="separator"></div>
+          }
+
+          <button
+            type="button"
+            class="context-menu__item"
+            role="menuitem"
+            [attr.id]="itemDomId(index)"
+            [class.context-menu__item--danger]="item.danger"
+            [class.context-menu__item--focused]="focusedIndex() === index"
+            [disabled]="item.disabled === true"
+            (click)="onItemClick($event, item)"
+            (mouseenter)="focusedIndex.set(index)"
+          >
+            @if (item.icon; as icon) {
+              <span class="context-menu__item-icon" aria-hidden="true">
+                <svg [lucideIcon]="icon" [size]="16"></svg>
+              </span>
+            }
+            <span class="context-menu__item-label">{{ item.label }}</span>
+          </button>
+        }
+      }
+    </div>
+  }
+</ng-template>

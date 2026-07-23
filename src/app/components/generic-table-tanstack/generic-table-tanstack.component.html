@@ -106,6 +106,12 @@
               </span>
             </div>
           }
+          @if (hasRowActions()) {
+            <div
+              class="generic-table-tanstack__header-cell generic-table-tanstack__header-cell--actions"
+              aria-hidden="true"
+            ></div>
+          }
         </div>
       </div>
 
@@ -183,6 +189,25 @@
                       }
                     </div>
                   }
+                  @if (hasRowActions()) {
+                    <div
+                      class="generic-table-tanstack__cell generic-table-tanstack__cell--actions"
+                      (click)="$event.stopPropagation()"
+                      (keydown)="$event.stopPropagation()"
+                    >
+                      <app-context-menu
+                        [variant]="rowMenuVariant()"
+                        [items]="rowMenuItems(rowModel.original)"
+                        [details]="rowMenuDetails(rowModel.original)"
+                        [title]="rowMenuDetailsTitle(rowModel.original)"
+                        [disabled]="disabled()"
+                        [ariaLabel]="
+                          rowMenuVariant() === 'details' ? 'Row details' : 'Row actions'
+                        "
+                        (itemSelect)="onRowMenuSelect($event, rowModel.original)"
+                      />
+                    </div>
+                  }
                 </div>
               }
             }
@@ -257,6 +282,12 @@
             </span>
           </div>
         }
+        @if (hasRowActions()) {
+          <div
+            class="generic-table-tanstack__header-cell generic-table-tanstack__header-cell--actions"
+            aria-hidden="true"
+          ></div>
+        }
       </div>
 
       @if (bodyRows().length === 0) {
@@ -316,6 +347,25 @@
                       [row]="rowModel.original"
                     />
                   }
+                </div>
+              }
+              @if (hasRowActions()) {
+                <div
+                  class="generic-table-tanstack__cell generic-table-tanstack__cell--actions"
+                  (click)="$event.stopPropagation()"
+                  (keydown)="$event.stopPropagation()"
+                >
+                  <app-context-menu
+                    [variant]="rowMenuVariant()"
+                    [items]="rowMenuItems(rowModel.original)"
+                    [details]="rowMenuDetails(rowModel.original)"
+                    [title]="rowMenuDetailsTitle(rowModel.original)"
+                    [disabled]="disabled()"
+                    [ariaLabel]="
+                      rowMenuVariant() === 'details' ? 'Row details' : 'Row actions'
+                    "
+                    (itemSelect)="onRowMenuSelect($event, rowModel.original)"
+                  />
                 </div>
               }
             </div>

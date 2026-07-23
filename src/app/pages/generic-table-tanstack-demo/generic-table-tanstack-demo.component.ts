@@ -1,10 +1,14 @@
 import { Component, signal } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
+import { LucideCopy, LucidePencil, LucideTrash2 } from '@lucide/angular';
 
 import {
   BooleanCellComponent,
   ColumnDef,
+  ContextMenuDetailField,
   GenericTableExportRequest,
+  GenericTableRowAction,
+  GenericTableRowActionEvent,
   GenericTableTanstackComponent,
   MailtoCellComponent,
   PersonCellComponent,
@@ -15,6 +19,7 @@ import {
 } from '../../components/generic-table-tanstack';
 import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
 import { code } from '../../shared/demo-code-block/demo-code.util';
+import { tanstackCellTabs } from './tanstack-cell-sources';
 
 interface DemoUser {
   id: number;
@@ -218,6 +223,36 @@ export class GenericTableTanstackDemoComponent {
   readonly virtualRows = signal<DemoUser[]>(this.buildVirtualRows(10_000));
   readonly emptyRows = signal<DemoUser[]>([]);
   readonly selectedRow = signal<DemoUser | null>(null);
+  readonly lastRowAction = signal<string | null>(null);
+
+  readonly rowActions: GenericTableRowAction<DemoUser>[] = [
+    { id: 'edit', label: 'Edit', icon: LucidePencil },
+    { id: 'copy', label: 'Copy email', icon: LucideCopy },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: LucideTrash2,
+      danger: true,
+      dividerBefore: true,
+      disabled: (row) => row.status === 'Active',
+    },
+  ];
+
+  readonly resolveRowDetails = (row: DemoUser): ContextMenuDetailField[] => [
+    { label: 'Email', value: row.email },
+    { label: 'Department', value: row.department },
+    { label: 'Status', value: row.status },
+    { label: 'UUID', value: row.uuid },
+    {
+      label: 'Last seen',
+      value: new Date(row.lastSeen).toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }),
+    },
+  ];
+
+  readonly resolveRowDetailsTitle = (row: DemoUser): string => row.name;
 
   private readonly serverSideDataset = this.buildVirtualRows(87);
   readonly serverSideTotal = this.serverSideDataset.length;
@@ -237,6 +272,17 @@ export class GenericTableTanstackDemoComponent {
     this.selectedRow.set(row);
   }
 
+  onRowAction(event: GenericTableRowActionEvent<DemoUser>): void {
+    if (event.actionId === 'copy') {
+      void navigator.clipboard.writeText(event.row.email).then(() => {
+        this.lastRowAction.set(`Copied ${event.row.email}`);
+      });
+      return;
+    }
+
+    this.lastRowAction.set(`${event.actionId} → ${event.row.name}`);
+  }
+
   onServerSidePageChange(event: PageEvent): void {
     this.loadServerSidePage(event.pageIndex, event.pageSize);
   }
@@ -254,16 +300,36 @@ export class GenericTableTanstackDemoComponent {
           [paginated]="true"
           [pageSize]="5"
           [rowClickable]="true"
+          [rowActions]="rowActions"
           [showExport]="true"
           [trackBy]="trackById"
           (rowClick)="onRowClick($event)"
+          (rowAction)="onRowAction($event)"
         />
       `,
       ts: code`
         import { signal } from '@angular/core';
-        import { GenericTableTanstackComponent } from './components/generic-table-tanstack';
+        import { LucideCopy, LucidePencil, LucideTrash2 } from '@lucide/angular';
+        import {
+          GenericTableRowAction,
+          GenericTableRowActionEvent,
+          GenericTableTanstackComponent,
+        } from './components/generic-table-tanstack';
 
         readonly rows = signal<DemoUser[]>([/* ... */]);
+
+        readonly rowActions: GenericTableRowAction<DemoUser>[] = [
+          { id: 'edit', label: 'Edit', icon: LucidePencil },
+          { id: 'copy', label: 'Copy email', icon: LucideCopy },
+          {
+            id: 'delete',
+            label: 'Delete',
+            icon: LucideTrash2,
+            danger: true,
+            dividerBefore: true,
+            disabled: (row) => row.status === 'Active',
+          },
+        ];
 
         trackById(_index: number, row: DemoUser): number {
           return row.id;
@@ -271,6 +337,15 @@ export class GenericTableTanstackDemoComponent {
 
         onRowClick(row: DemoUser): void {
           this.selectedRow.set(row);
+        }
+
+        onRowAction(event: GenericTableRowActionEvent<DemoUser>): void {
+          if (event.actionId === 'copy') {
+            void navigator.clipboard.writeText(event.row.email);
+            return;
+          }
+
+          console.log(event.actionId, event.row);
         }
       `,
       columnsTs: code`
@@ -336,6 +411,76 @@ export class GenericTableTanstackDemoComponent {
           },
         ];
       `,
+      cells: tanstackCellTabs('StatusBadge'),
+    },
+    rowDetails: {
+      html: code`
+        <app-generic-table-tanstack
+          [columns]="columns"
+          [data]="rows()"
+          rowMenuVariant="details"
+          [rowDetails]="resolveRowDetails"
+          [rowDetailsTitle]="resolveRowDetailsTitle"
+          [trackBy]="trackById"
+        />
+      `,
+      ts: code`
+        import { ContextMenuDetailField } from './components/generic-table-tanstack';
+
+        readonly resolveRowDetails = (row: DemoUser): ContextMenuDetailField[] => [
+          { label: 'Email', value: row.email },
+          { label: 'Department', value: row.department },
+          { label: 'Status', value: row.status },
+          { label: 'UUID', value: row.uuid },
+        ];
+
+        readonly resolveRowDetailsTitle = (row: DemoUser): string => row.name;
+      `,
+      columnsTs: code`
+        import {
+          BooleanCellComponent,
+          ColumnDef,
+          MailtoCellComponent,
+          PersonCellComponent,
+          StatusBadgeCellComponent,
+        } from './components/generic-table-tanstack';
+
+        readonly columns: ColumnDef<DemoUser>[] = [
+          {
+            key: 'name',
+            header: 'Member',
+            sortable: true,
+            minWidth: '100px',
+            width: '180px',
+            cellComponent: PersonCellComponent,
+          },
+          {
+            key: 'email',
+            header: 'Email',
+            sortable: true,
+            minWidth: '120px',
+            width: '220px',
+            cellComponent: MailtoCellComponent,
+          },
+          {
+            key: 'status',
+            header: 'Status',
+            sortable: true,
+            minWidth: '72px',
+            width: '110px',
+            cellComponent: StatusBadgeCellComponent,
+          },
+          {
+            key: 'verified',
+            header: 'Verified',
+            sortable: true,
+            minWidth: '72px',
+            width: '100px',
+            cellComponent: BooleanCellComponent,
+          },
+        ];
+      `,
+      cells: tanstackCellTabs('Person', 'Mailto', 'StatusBadge', 'Boolean'),
     },
     catalogCells: {
       html: code`
@@ -401,6 +546,7 @@ export class GenericTableTanstackDemoComponent {
           },
         ];
       `,
+      cells: tanstackCellTabs('Person', 'Mailto', 'StatusBadge', 'Boolean'),
     },
     animatedCells: {
       html: code`
@@ -468,6 +614,13 @@ export class GenericTableTanstackDemoComponent {
           },
         ];
       `,
+      cells: tanstackCellTabs(
+        'Person',
+        'PresencePulse',
+        'ProgressBar',
+        'Trend',
+        'StatusBadge',
+      ),
     },
     serverSide: {
       html: code`
@@ -536,6 +689,7 @@ export class GenericTableTanstackDemoComponent {
           },
         ];
       `,
+      cells: tanstackCellTabs('StatusBadge'),
     },
     virtual: {
       html: code`
@@ -589,6 +743,7 @@ export class GenericTableTanstackDemoComponent {
           },
         ];
       `,
+      cells: tanstackCellTabs('Person', 'StatusBadge'),
     },
   };
 

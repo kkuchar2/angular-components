@@ -5,7 +5,8 @@
       Same features as Material <code>app-generic-table</code>: chip column toggle,
       client-side pagination, sorting, export, built-in <code>uuid</code>/<code>date</code>
       cells with optional copy, plus reusable <code>cellComponent</code> cells
-      (status badge). Projected templates still work for one-offs.
+      (status badge). Pass <code>[rowActions]</code> for a rightmost ⋮ context menu
+      (<code>app-context-menu</code>). Projected templates still work for one-offs.
     </p>
 
     <app-generic-table-tanstack
@@ -14,21 +15,48 @@
       [paginated]="true"
       [pageSize]="5"
       [rowClickable]="true"
+      [rowActions]="rowActions"
       [showExport]="true"
       exportFileName="tanstack-team.csv"
       [trackBy]="trackById"
       (rowClick)="onRowClick($event)"
+      (rowAction)="onRowAction($event)"
     />
 
     @if (selectedRow(); as row) {
       <p class="demo__selection">Selected: {{ row.name }} ({{ row.email }})</p>
     }
 
+    @if (lastRowAction(); as action) {
+      <p class="demo__selection">Last row action: {{ action }}</p>
+    }
+
     <app-demo-code-block [snippet]="snippets.paginated" />
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">2. Cell component catalog</h2>
+    <h2 class="demo__title">2. Row details menu</h2>
+    <p class="demo__hint">
+      Same ⋮ trigger with <code>rowMenuVariant="details"</code> — opens a larger
+      panel of read-only fields via <code>[rowDetails]</code> /
+      <code>[rowDetailsTitle]</code> instead of action items.
+    </p>
+
+    <app-generic-table-tanstack
+      [columns]="catalogColumns"
+      [data]="catalogRows()"
+      rowMenuVariant="details"
+      [rowDetails]="resolveRowDetails"
+      [rowDetailsTitle]="resolveRowDetailsTitle"
+      [showColumnToggle]="false"
+      [trackBy]="trackById"
+    />
+
+    <app-demo-code-block [snippet]="snippets.rowDetails" />
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">3. Cell component catalog</h2>
     <p class="demo__hint">
       Reusable library cells via <code>ColumnDef.cellComponent</code>:
       <code>PersonCellComponent</code>,
@@ -48,7 +76,7 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">3. Animated cells</h2>
+    <h2 class="demo__title">4. Animated cells</h2>
     <p class="demo__hint">
       Motion-friendly cells (respect <code>prefers-reduced-motion</code>):
       pulsing presence, grow-in progress bars, and trend deltas.
@@ -65,7 +93,7 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">4. Server-side pagination</h2>
+    <h2 class="demo__title">5. Server-side pagination</h2>
     <p class="demo__hint">
       Parent owns the page slice. Export waits for <code>exportRequest.complete()</code>.
     </p>
@@ -90,7 +118,7 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">5. Virtual scroll (10 000 rows)</h2>
+    <h2 class="demo__title">6. Virtual scroll (10 000 rows)</h2>
     <p class="demo__hint">
       TanStack Virtual — person + status cells stay cheap enough for large lists.
       Mutually exclusive with pagination.
@@ -110,7 +138,7 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">6. Empty state</h2>
+    <h2 class="demo__title">7. Empty state</h2>
     <p class="demo__hint">Non-virtual table with no rows.</p>
 
     <app-generic-table-tanstack

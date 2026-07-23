@@ -1,10 +1,20 @@
-/** One usage example with optional HTML / TypeScript / Columns panes. */
+/** One usage example with optional HTML / TypeScript / Columns / cell panes. */
 export interface DemoCodeSnippet {
   html?: string;
   /** Component: data, handlers, table wiring (not column defs). */
   ts?: string;
   /** Column definitions only. */
   columnsTs?: string;
+  /** Custom cell components used by this example (one tab each). */
+  cells?: DemoCodeCellTab[];
+}
+
+/** Extra tab showing a custom cell component's source. */
+export interface DemoCodeCellTab {
+  /** Tab label, e.g. `StatusBadge`. */
+  label: string;
+  /** Full TypeScript source for the cell component. */
+  code: string;
 }
 
 /**

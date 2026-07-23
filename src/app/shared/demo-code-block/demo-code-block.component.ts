@@ -16,7 +16,7 @@ import {
   StarryNightService,
 } from './starry-night.service';
 
-type DemoCodeTabId = 'html' | 'ts' | 'columns' | 'code';
+type DemoCodeTabId = string;
 
 interface DemoCodeTab {
   id: DemoCodeTabId;
@@ -36,8 +36,8 @@ export class DemoCodeBlockComponent {
   private readonly sanitizer = inject(DomSanitizer);
 
   /**
-   * Preferred API: HTML + TypeScript (+ optional Columns) panes for a usage example.
-   * When multiple panes are set, the toolbar shows tabs.
+   * Preferred API: HTML + TypeScript (+ optional Columns / cell) panes for a
+   * usage example. When multiple panes are set, the toolbar shows tabs.
    */
   readonly snippet = input<DemoCodeSnippet | null>(null);
 
@@ -56,8 +56,9 @@ export class DemoCodeBlockComponent {
     const html = snippet?.html?.trim() ?? '';
     const ts = snippet?.ts?.trim() ?? '';
     const columnsTs = snippet?.columnsTs?.trim() ?? '';
+    const cells = snippet?.cells ?? [];
 
-    if (html || ts || columnsTs) {
+    if (html || ts || columnsTs || cells.length > 0) {
       const panes: DemoCodeTab[] = [];
 
       if (html) {
@@ -70,6 +71,21 @@ export class DemoCodeBlockComponent {
 
       if (columnsTs) {
         panes.push({ id: 'columns', label: 'Columns', code: columnsTs + '\n', language: 'ts' });
+      }
+
+      for (const [index, cell] of cells.entries()) {
+        const source = cell.code.trim();
+
+        if (!source) {
+          continue;
+        }
+
+        panes.push({
+          id: `cell-${index}-${slugify(cell.label)}`,
+          label: cell.label,
+          code: source.endsWith('\n') ? source : source + '\n',
+          language: 'ts',
+        });
       }
 
       return panes;
@@ -166,4 +182,12 @@ function escapeHtml(value: string): string {
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;');
+}
+
+function slugify(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'cell';
 }

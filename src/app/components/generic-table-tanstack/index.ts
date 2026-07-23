@@ -15,5 +15,16 @@ export type {
   GenericTableCellContext,
   GenericTableExportRequest,
   GenericTableHeightMode,
+  GenericTableRowAction,
+  GenericTableRowActionEvent,
 } from './generic-table.types';
 export type { GenericTableCellType, GenericTableDateDisplay } from './generic-table-cell.types';
+export {
+  ContextMenuComponent,
+  ContextMenuPanelDirective,
+} from '../context-menu';
+export type {
+  ContextMenuDetailField,
+  ContextMenuItem,
+  ContextMenuVariant,
+} from '../context-menu';

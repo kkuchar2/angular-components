@@ -401,6 +401,13 @@
   box-shadow: inset 0 -1px 0 var(--gtt-row-divider);
 }
 
+.generic-table-tanstack__header-cell--actions,
+.generic-table-tanstack__cell--actions {
+  justify-content: center;
+  padding-inline: 4px;
+  overflow: visible;
+}
+
 .generic-table-tanstack__cell-content {
   min-width: 0;
   max-width: 100%;

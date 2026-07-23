@@ -32,15 +32,20 @@ import {
 } from '@tanstack/angular-table';
 import { injectVirtualizer } from '@tanstack/angular-virtual';
 
+import { ContextMenuComponent, type ContextMenuItem } from '../context-menu';
+import type { ContextMenuDetailField, ContextMenuVariant } from '../context-menu';
 import { GenericTableCellDirective } from './generic-table-cell.directive';
 import { resolveCellRawValue, resolveSortValue } from './generic-table-cell-format';
 import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
 import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
 import {
   ColumnDef,
+  GENERIC_TABLE_ROW_ACTIONS_TRACK,
   GenericTableCellContext,
   GenericTableExportRequest,
   GenericTableHeightMode,
+  GenericTableRowAction,
+  GenericTableRowActionEvent,
 } from './generic-table.types';
 
 /** Default scroll-body cap; mirrored by `--gtt-max-height` in the stylesheet. */
@@ -62,6 +67,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
     NgTemplateOutlet,
     MatChipsModule,
     MatPaginatorModule,
+    ContextMenuComponent,
     GenericTableHeaderInfoComponent,
     GenericTableCellValueComponent,
   ],
@@ -113,6 +119,23 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly showColumnToggle = input(true);
   readonly emptyMessage = input('No data available');
   readonly rowClickable = input(false);
+  /**
+   * Row ⋮ menu mode. `'actions'` uses `rowActions`; `'details'` uses
+   * `rowDetails` / `rowDetailsTitle` for a larger read-only panel.
+   */
+  readonly rowMenuVariant = input<ContextMenuVariant>('actions');
+  /**
+   * When `rowMenuVariant` is `'actions'` and this is non-empty, appends a
+   * rightmost ⋮ column that opens an actions context menu.
+   */
+  readonly rowActions = input<GenericTableRowAction<T>[]>([]);
+  /**
+   * When `rowMenuVariant` is `'details'`, builds the detail fields for each
+   * row's larger context panel.
+   */
+  readonly rowDetails = input<((row: T) => ContextMenuDetailField[]) | null>(null);
+  /** Optional title for the details panel (string or per-row resolver). */
+  readonly rowDetailsTitle = input<string | ((row: T) => string) | null>(null);
   readonly disabled = input(false);
   readonly showExport = input(false);
   readonly exportFileName = input('table-export.csv');
@@ -124,6 +147,8 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly trackBy = input<TrackByFunction<T>>((_index, row) => row);
 
   readonly rowClick = output<T>();
+  /** Emitted when a row context-menu action is chosen. */
+  readonly rowAction = output<GenericTableRowActionEvent<T>>();
   /** Material-compatible sort payload for drop-in parent handlers. */
   readonly sortChange = output<Sort>();
   readonly pageChange = output<PageEvent>();
@@ -259,18 +284,28 @@ export class GenericTableTanstackComponent<T = unknown> {
     ),
   );
 
+  readonly hasRowActions = computed(
+    () =>
+      (this.rowMenuVariant() === 'actions' && this.rowActions().length > 0) ||
+      (this.rowMenuVariant() === 'details' && this.rowDetails() != null),
+  );
+
   readonly gridTemplateColumns = computed(() => {
     const columns = this.displayedColumns();
 
-    if (columns.length === 0) {
+    if (columns.length === 0 && !this.hasRowActions()) {
       return '';
     }
 
-    return columns
-      .map((column, index) =>
-        this.resolveColumnTrack(column, { stretch: index === columns.length - 1 }),
-      )
-      .join(' ');
+    const tracks = columns.map((column, index) =>
+      this.resolveColumnTrack(column, { stretch: index === columns.length - 1 }),
+    );
+
+    if (this.hasRowActions()) {
+      tracks.push(GENERIC_TABLE_ROW_ACTIONS_TRACK);
+    }
+
+    return tracks.join(' ');
   });
 
   /** Minimum table width so fixed/min columns can overflow horizontally instead of crushing. */
@@ -281,6 +316,10 @@ export class GenericTableTanstackComponent<T = unknown> {
 
     for (const column of this.displayedColumns()) {
       total += this.columnFloorPx(column, reference);
+    }
+
+    if (this.hasRowActions()) {
+      total += this.parseLengthToPx(GENERIC_TABLE_ROW_ACTIONS_TRACK, reference);
     }
 
     return Math.ceil(total);
@@ -629,6 +668,53 @@ export class GenericTableTanstackComponent<T = unknown> {
     }
 
     this.rowClick.emit(row);
+  }
+
+  /** Resolve per-row menu items (applies `hidden` / `disabled` predicates). */
+  rowMenuItems(row: T): ContextMenuItem[] {
+    return this.rowActions()
+      .filter((action) => !this.resolveRowActionFlag(action.hidden, row))
+      .map((action) => ({
+        id: action.id,
+        label: action.label,
+        icon: action.icon,
+        danger: action.danger,
+        dividerBefore: action.dividerBefore,
+        disabled: this.resolveRowActionFlag(action.disabled, row),
+      }));
+  }
+
+  rowMenuDetails(row: T): ContextMenuDetailField[] {
+    return this.rowDetails()?.(row) ?? [];
+  }
+
+  rowMenuDetailsTitle(row: T): string | null {
+    const title = this.rowDetailsTitle();
+
+    if (title == null) {
+      return null;
+    }
+
+    return typeof title === 'function' ? title(row) : title;
+  }
+
+  onRowMenuSelect(item: ContextMenuItem, row: T): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    this.rowAction.emit({ actionId: item.id, row });
+  }
+
+  private resolveRowActionFlag(
+    value: boolean | ((row: T) => boolean) | undefined,
+    row: T,
+  ): boolean {
+    if (typeof value === 'function') {
+      return value(row);
+    }
+
+    return value === true;
   }
 
   exportToCsv(fileName = this.exportFileName(), rows?: readonly T[]): void {
