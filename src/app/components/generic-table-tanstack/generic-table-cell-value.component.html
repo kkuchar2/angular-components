@@ -1,0 +1,25 @@
+<div
+  class="gt-cell-value"
+  [class.gt-cell-value--uuid]="isUuid()"
+  [class.gt-cell-value--date]="isDate()"
+  [class.gt-cell-value--copyable]="copyable()"
+>
+  <span class="gt-cell-value__text" [attr.title]="titleAttr()">{{ display() }}</span>
+
+  @if (copyable() && copyText()) {
+    <button
+      type="button"
+      class="gt-cell-value__copy"
+      [attr.aria-label]="copied() ? 'Copied' : 'Copy to clipboard'"
+      [attr.title]="copied() ? 'Copied' : 'Copy'"
+      (click)="onCopy($event)"
+      (pointerdown)="$event.stopPropagation()"
+    >
+      @if (copied()) {
+        <svg [lucideIcon]="LucideCheck" [size]="12" aria-hidden="true"></svg>
+      } @else {
+        <svg [lucideIcon]="LucideCopy" [size]="12" aria-hidden="true"></svg>
+      }
+    </button>
+  }
+</div>

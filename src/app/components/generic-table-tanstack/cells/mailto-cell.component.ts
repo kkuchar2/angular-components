@@ -8,38 +8,8 @@ import type { ColumnDef } from '../generic-table.types';
 @Component({
   selector: 'app-generic-table-mailto-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (email(); as address) {
-      <a
-        class="gt-mailto-cell"
-        [href]="'mailto:' + address"
-        (click)="$event.stopPropagation()"
-        (pointerdown)="$event.stopPropagation()"
-      >
-        {{ address }}
-      </a>
-    }
-  `,
-  styles: `
-    :host {
-      display: inline-flex;
-      max-width: 100%;
-      min-width: 0;
-    }
-
-    .gt-mailto-cell {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: var(--color-primary, #1565c0);
-      text-decoration: none;
-    }
-
-    .gt-mailto-cell:hover {
-      text-decoration: underline;
-    }
-  `,
+  templateUrl: './mailto-cell.component.html',
+  styleUrl: './mailto-cell.component.scss',
 })
 export class MailtoCellComponent<T = unknown> {
   readonly value = input.required<unknown>();

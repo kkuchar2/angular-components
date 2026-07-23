@@ -1,0 +1,36 @@
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 0;
+}
+
+.gt-header-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-inline-start: 4px;
+  color: var(--gt-header-info-color, var(--gtt-header-text, currentColor));
+  opacity: 0.55;
+  border-radius: 50%;
+  outline: none;
+  transition: opacity 120ms ease;
+}
+
+.gt-header-info:hover,
+.gt-header-info:focus-visible {
+  opacity: 0.9;
+}
+
+.gt-header-info:focus-visible {
+  box-shadow: 0 0 0 2px var(--gt-header-accent, var(--gtt-header-accent, #1565c0));
+}
+
+.gt-header-info__icon {
+  display: block;
+  width: 12px;
+  height: 12px;
+}

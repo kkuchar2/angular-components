@@ -1,0 +1,6 @@
+<div class="gt-progress" [attr.title]="percent() + '%'" [attr.aria-label]="percent() + ' percent'">
+  <div class="gt-progress__track">
+    <div class="gt-progress__fill" [style.width.%]="percent()"></div>
+  </div>
+  <span class="gt-progress__label">{{ percent() }}%</span>
+</div>

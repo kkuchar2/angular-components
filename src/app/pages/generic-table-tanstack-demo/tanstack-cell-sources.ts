@@ -8,6 +8,7 @@ import type { DemoCodeCellTab } from '../../shared/demo-code-block/demo-code.uti
 
 export const tanstackCellSources = {
   StatusBadge: `
+// status-badge-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
@@ -19,67 +20,8 @@ import type { ColumnDef } from '../generic-table.types';
 @Component({
   selector: 'app-generic-table-status-badge-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
-    <span [class]="badgeClass()">{{ label() }}</span>
-  \`,
-  styles: \`
-    :host {
-      display: inline-flex;
-      max-width: 100%;
-    }
-
-    .gt-status-badge {
-      display: inline-flex;
-      align-items: center;
-      max-width: 100%;
-      padding: 0.125rem 0.5rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 0.75rem;
-      font-weight: 600;
-      white-space: nowrap;
-      border-radius: 999px;
-      color: var(--color-text, rgb(0 0 0 / 87%));
-      background: var(--color-row-hover, #f2f2f2);
-    }
-
-    .gt-status-badge--active {
-      color: #0d6832;
-      background: #e6f4ea;
-    }
-
-    .gt-status-badge--inactive {
-      color: #5f6368;
-      background: #f1f3f4;
-    }
-
-    .gt-status-badge--pending {
-      color: #8a5a00;
-      background: #fef7e0;
-    }
-
-    :host-context(html[data-theme='dark']) {
-      .gt-status-badge {
-        color: #c8c8c8;
-        background: rgb(200 200 200 / 10%);
-      }
-
-      .gt-status-badge--active {
-        color: #8fd4a8;
-        background: rgb(129 201 149 / 12%);
-      }
-
-      .gt-status-badge--inactive {
-        color: #a8a8a8;
-        background: rgb(168 168 168 / 10%);
-      }
-
-      .gt-status-badge--pending {
-        color: #e6c76a;
-        background: rgb(253 214 99 / 10%);
-      }
-    }
-  \`,
+  templateUrl: './status-badge-cell.component.html',
+  styleUrl: './status-badge-cell.component.scss',
 })
 export class StatusBadgeCellComponent<T = unknown> {
   /** Resolved cell value (\`cell?.(row) ?? row[key]\`). */
@@ -100,8 +42,70 @@ export class StatusBadgeCellComponent<T = unknown> {
     return known ? \`gt-status-badge gt-status-badge--\${slug}\` : 'gt-status-badge';
   });
 }
+
+// status-badge-cell.component.html
+<span [class]="badgeClass()">{{ label() }}</span>
+
+// status-badge-cell.component.scss
+:host {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.gt-status-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.125rem 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+  color: var(--color-text, rgb(0 0 0 / 87%));
+  background: var(--color-row-hover, #f2f2f2);
+}
+
+.gt-status-badge--active {
+  color: #0d6832;
+  background: #e6f4ea;
+}
+
+.gt-status-badge--inactive {
+  color: #5f6368;
+  background: #f1f3f4;
+}
+
+.gt-status-badge--pending {
+  color: #8a5a00;
+  background: #fef7e0;
+}
+
+:host-context(html[data-theme='dark']) {
+  .gt-status-badge {
+    color: #c8c8c8;
+    background: rgb(200 200 200 / 10%);
+  }
+
+  .gt-status-badge--active {
+    color: #8fd4a8;
+    background: rgb(129 201 149 / 12%);
+  }
+
+  .gt-status-badge--inactive {
+    color: #a8a8a8;
+    background: rgb(168 168 168 / 10%);
+  }
+
+  .gt-status-badge--pending {
+    color: #e6c76a;
+    background: rgb(253 214 99 / 10%);
+  }
+}
 `,
   Person: `
+// person-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
@@ -112,60 +116,8 @@ import type { ColumnDef } from '../generic-table.types';
 @Component({
   selector: 'app-generic-table-person-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
-    <span class="gt-person-cell">
-      <span class="gt-person-cell__avatar" aria-hidden="true">{{ initials() }}</span>
-      <span class="gt-person-cell__name">{{ label() }}</span>
-    </span>
-  \`,
-  styles: \`
-    :host {
-      display: inline-flex;
-      max-width: 100%;
-      min-width: 0;
-    }
-
-    .gt-person-cell {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-      max-width: 100%;
-    }
-
-    .gt-person-cell__avatar {
-      display: inline-flex;
-      flex-shrink: 0;
-      align-items: center;
-      justify-content: center;
-      width: 1.75rem;
-      height: 1.75rem;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      color: var(--color-surface, #fff);
-      background: var(--color-primary, #1565c0);
-      border-radius: 50%;
-    }
-
-    .gt-person-cell__name {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    :host-context(html[data-theme='dark']) {
-      .gt-person-cell__avatar {
-        color: #1e1e1e;
-        background: #b0b0b0;
-      }
-
-      .gt-person-cell__name {
-        color: #d0d0d0;
-      }
-    }
-  \`,
+  templateUrl: './person-cell.component.html',
+  styleUrl: './person-cell.component.scss',
 })
 export class PersonCellComponent<T = unknown> {
   readonly value = input.required<unknown>();
@@ -188,8 +140,63 @@ export class PersonCellComponent<T = unknown> {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   });
 }
+
+// person-cell.component.html
+<span class="gt-person-cell">
+  <span class="gt-person-cell__avatar" aria-hidden="true">{{ initials() }}</span>
+  <span class="gt-person-cell__name">{{ label() }}</span>
+</span>
+
+// person-cell.component.scss
+:host {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.gt-person-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gt-person-cell__avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-surface, #fff);
+  background: var(--color-primary, #1565c0);
+  border-radius: 50%;
+}
+
+.gt-person-cell__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host-context(html[data-theme='dark']) {
+  .gt-person-cell__avatar {
+    color: #1e1e1e;
+    background: #b0b0b0;
+  }
+
+  .gt-person-cell__name {
+    color: #d0d0d0;
+  }
+}
 `,
   Mailto: `
+// mailto-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
@@ -200,38 +207,8 @@ import type { ColumnDef } from '../generic-table.types';
 @Component({
   selector: 'app-generic-table-mailto-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
-    @if (email(); as address) {
-      <a
-        class="gt-mailto-cell"
-        [href]="'mailto:' + address"
-        (click)="$event.stopPropagation()"
-        (pointerdown)="$event.stopPropagation()"
-      >
-        {{ address }}
-      </a>
-    }
-  \`,
-  styles: \`
-    :host {
-      display: inline-flex;
-      max-width: 100%;
-      min-width: 0;
-    }
-
-    .gt-mailto-cell {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: var(--color-primary, #1565c0);
-      text-decoration: none;
-    }
-
-    .gt-mailto-cell:hover {
-      text-decoration: underline;
-    }
-  \`,
+  templateUrl: './mailto-cell.component.html',
+  styleUrl: './mailto-cell.component.scss',
 })
 export class MailtoCellComponent<T = unknown> {
   readonly value = input.required<unknown>();
@@ -247,8 +224,41 @@ export class MailtoCellComponent<T = unknown> {
     return text.includes('@') ? text : '';
   });
 }
+
+// mailto-cell.component.html
+@if (email(); as address) {
+  <a
+    class="gt-mailto-cell"
+    [href]="'mailto:' + address"
+    (click)="$event.stopPropagation()"
+    (pointerdown)="$event.stopPropagation()"
+  >
+    {{ address }}
+  </a>
+}
+
+// mailto-cell.component.scss
+:host {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.gt-mailto-cell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-primary, #1565c0);
+  text-decoration: none;
+}
+
+.gt-mailto-cell:hover {
+  text-decoration: underline;
+}
 `,
   Boolean: `
+// boolean-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
@@ -259,47 +269,8 @@ import type { ColumnDef } from '../generic-table.types';
 @Component({
   selector: 'app-generic-table-boolean-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
-    <span class="gt-boolean-cell" [class]="chipClass()">{{ label() }}</span>
-  \`,
-  styles: \`
-    :host {
-      display: inline-flex;
-      max-width: 100%;
-    }
-
-    .gt-boolean-cell {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.125rem 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      white-space: nowrap;
-      border-radius: 999px;
-    }
-
-    .gt-boolean-cell--yes {
-      color: #0d6832;
-      background: #e6f4ea;
-    }
-
-    .gt-boolean-cell--no {
-      color: #5f6368;
-      background: #f1f3f4;
-    }
-
-    :host-context(html[data-theme='dark']) {
-      .gt-boolean-cell--yes {
-        color: #8fd4a8;
-        background: rgb(129 201 149 / 12%);
-      }
-
-      .gt-boolean-cell--no {
-        color: #a8a8a8;
-        background: rgb(168 168 168 / 10%);
-      }
-    }
-  \`,
+  templateUrl: './boolean-cell.component.html',
+  styleUrl: './boolean-cell.component.scss',
 })
 export class BooleanCellComponent<T = unknown> {
   readonly value = input.required<unknown>();
@@ -326,8 +297,50 @@ export class BooleanCellComponent<T = unknown> {
     this.isYes() ? 'gt-boolean-cell gt-boolean-cell--yes' : 'gt-boolean-cell gt-boolean-cell--no',
   );
 }
+
+// boolean-cell.component.html
+<span class="gt-boolean-cell" [class]="chipClass()">{{ label() }}</span>
+
+// boolean-cell.component.scss
+:host {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.gt-boolean-cell {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
+.gt-boolean-cell--yes {
+  color: #0d6832;
+  background: #e6f4ea;
+}
+
+.gt-boolean-cell--no {
+  color: #5f6368;
+  background: #f1f3f4;
+}
+
+:host-context(html[data-theme='dark']) {
+  .gt-boolean-cell--yes {
+    color: #8fd4a8;
+    background: rgb(129 201 149 / 12%);
+  }
+
+  .gt-boolean-cell--no {
+    color: #a8a8a8;
+    background: rgb(168 168 168 / 10%);
+  }
+}
 `,
   PresencePulse: `
+// presence-pulse-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
@@ -341,107 +354,8 @@ type Presence = 'online' | 'away' | 'offline';
 @Component({
   selector: 'app-generic-table-presence-pulse-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
-    <span class="gt-presence" [class]="'gt-presence gt-presence--' + presence()">
-      <span class="gt-presence__dot" aria-hidden="true"></span>
-      <span class="gt-presence__label">{{ label() }}</span>
-    </span>
-  \`,
-  styles: \`
-    :host {
-      display: inline-flex;
-      max-width: 100%;
-    }
-
-    .gt-presence {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      min-width: 0;
-    }
-
-    .gt-presence__dot {
-      position: relative;
-      flex-shrink: 0;
-      width: 0.5rem;
-      height: 0.5rem;
-      border-radius: 50%;
-      background: currentColor;
-    }
-
-    .gt-presence__dot::after {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 50%;
-      border: 1.5px solid currentColor;
-      opacity: 0;
-    }
-
-    .gt-presence--online {
-      color: #1b8a4a;
-    }
-
-    .gt-presence--online .gt-presence__dot::after {
-      animation: gt-presence-pulse 1.8s ease-out infinite;
-    }
-
-    .gt-presence--away {
-      color: #b8860b;
-    }
-
-    .gt-presence--offline {
-      color: #8a8a8a;
-    }
-
-    .gt-presence__label {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 0.8125rem;
-      font-weight: 500;
-      text-transform: capitalize;
-      white-space: nowrap;
-      color: var(--color-text, rgb(0 0 0 / 87%));
-    }
-
-    @keyframes gt-presence-pulse {
-      0% {
-        transform: scale(0.7);
-        opacity: 0.55;
-      }
-      70% {
-        transform: scale(1.7);
-        opacity: 0;
-      }
-      100% {
-        opacity: 0;
-      }
-    }
-
-    :host-context(html[data-theme='dark']) {
-      .gt-presence--online {
-        color: #6bcf8e;
-      }
-
-      .gt-presence--away {
-        color: #e0b34d;
-      }
-
-      .gt-presence--offline {
-        color: #8e8e8e;
-      }
-
-      .gt-presence__label {
-        color: color-mix(in srgb, var(--color-text, #f0f0f0) 82%, transparent);
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .gt-presence--online .gt-presence__dot::after {
-        animation: none;
-      }
-    }
-  \`,
+  templateUrl: './presence-pulse-cell.component.html',
+  styleUrl: './presence-pulse-cell.component.scss',
 })
 export class PresencePulseCellComponent<T = unknown> {
   readonly value = input.required<unknown>();
@@ -466,8 +380,110 @@ export class PresencePulseCellComponent<T = unknown> {
 
   readonly label = computed(() => this.presence());
 }
+
+// presence-pulse-cell.component.html
+<span class="gt-presence" [class]="'gt-presence gt-presence--' + presence()">
+  <span class="gt-presence__dot" aria-hidden="true"></span>
+  <span class="gt-presence__label">{{ label() }}</span>
+</span>
+
+// presence-pulse-cell.component.scss
+:host {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.gt-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.gt-presence__dot {
+  position: relative;
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.gt-presence__dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  opacity: 0;
+}
+
+.gt-presence--online {
+  color: #1b8a4a;
+}
+
+.gt-presence--online .gt-presence__dot::after {
+  animation: gt-presence-pulse 1.8s ease-out infinite;
+}
+
+.gt-presence--away {
+  color: #b8860b;
+}
+
+.gt-presence--offline {
+  color: #8a8a8a;
+}
+
+.gt-presence__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  white-space: nowrap;
+  color: var(--color-text, rgb(0 0 0 / 87%));
+}
+
+@keyframes gt-presence-pulse {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+:host-context(html[data-theme='dark']) {
+  .gt-presence--online {
+    color: #6bcf8e;
+  }
+
+  .gt-presence--away {
+    color: #e0b34d;
+  }
+
+  .gt-presence--offline {
+    color: #8e8e8e;
+  }
+
+  .gt-presence__label {
+    color: color-mix(in srgb, var(--color-text, #f0f0f0) 82%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-presence--online .gt-presence__dot::after {
+    animation: none;
+  }
+}
 `,
   ProgressBar: `
+// progress-bar-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
@@ -478,75 +494,8 @@ import type { ColumnDef } from '../generic-table.types';
 @Component({
   selector: 'app-generic-table-progress-bar-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
-    <div class="gt-progress" [attr.title]="percent() + '%'" [attr.aria-label]="percent() + ' percent'">
-      <div class="gt-progress__track">
-        <div class="gt-progress__fill" [style.width.%]="percent()"></div>
-      </div>
-      <span class="gt-progress__label">{{ percent() }}%</span>
-    </div>
-  \`,
-  styles: \`
-    :host {
-      display: block;
-      min-width: 0;
-      max-width: 100%;
-    }
-
-    .gt-progress {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    .gt-progress__track {
-      flex: 1 1 auto;
-      min-width: 0;
-      height: 0.375rem;
-      overflow: hidden;
-      background: var(--color-row-hover, #f2f2f2);
-      border-radius: 999px;
-    }
-
-    .gt-progress__fill {
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(
-        90deg,
-        var(--color-primary, #1565c0),
-        color-mix(in srgb, var(--color-primary, #1565c0) 65%, #7c4dff)
-      );
-      transform-origin: left center;
-      animation: gt-progress-grow 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .gt-progress__label {
-      flex-shrink: 0;
-      min-width: 2.25rem;
-      font-size: 0.75rem;
-      font-variant-numeric: tabular-nums;
-      color: var(--color-text-muted, rgb(0 0 0 / 60%));
-      text-align: end;
-    }
-
-    @keyframes gt-progress-grow {
-      from {
-        transform: scaleX(0);
-        opacity: 0.4;
-      }
-      to {
-        transform: scaleX(1);
-        opacity: 1;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .gt-progress__fill {
-        animation: none;
-      }
-    }
-  \`,
+  templateUrl: './progress-bar-cell.component.html',
+  styleUrl: './progress-bar-cell.component.scss',
 })
 export class ProgressBarCellComponent<T = unknown> {
   readonly value = input.required<unknown>();
@@ -562,8 +511,78 @@ export class ProgressBarCellComponent<T = unknown> {
     return Math.max(0, Math.min(100, Math.round(n)));
   });
 }
+
+// progress-bar-cell.component.html
+<div class="gt-progress" [attr.title]="percent() + '%'" [attr.aria-label]="percent() + ' percent'">
+  <div class="gt-progress__track">
+    <div class="gt-progress__fill" [style.width.%]="percent()"></div>
+  </div>
+  <span class="gt-progress__label">{{ percent() }}%</span>
+</div>
+
+// progress-bar-cell.component.scss
+:host {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gt-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.gt-progress__track {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 0.375rem;
+  overflow: hidden;
+  background: var(--color-row-hover, #f2f2f2);
+  border-radius: 999px;
+}
+
+.gt-progress__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary, #1565c0),
+    color-mix(in srgb, var(--color-primary, #1565c0) 65%, #7c4dff)
+  );
+  transform-origin: left center;
+  animation: gt-progress-grow 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gt-progress__label {
+  flex-shrink: 0;
+  min-width: 2.25rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted, rgb(0 0 0 / 60%));
+  text-align: end;
+}
+
+@keyframes gt-progress-grow {
+  from {
+    transform: scaleX(0);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-progress__fill {
+    animation: none;
+  }
+}
 `,
   Trend: `
+// trend-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
@@ -575,107 +594,8 @@ import type { ColumnDef } from '../generic-table.types';
 @Component({
   selector: 'app-generic-table-trend-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
-    <span class="gt-trend" [class]="'gt-trend gt-trend--' + direction()">
-      <span class="gt-trend__arrow" aria-hidden="true">{{ arrow() }}</span>
-      <span class="gt-trend__value">{{ formatted() }}</span>
-    </span>
-  \`,
-  styles: \`
-    :host {
-      display: inline-flex;
-      max-width: 100%;
-    }
-
-    .gt-trend {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.125rem 0.45rem;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      border-radius: 6px;
-      animation: gt-trend-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .gt-trend--up {
-      color: #0d6832;
-      background: #e6f4ea;
-    }
-
-    .gt-trend--down {
-      color: #a12828;
-      background: #fdecea;
-    }
-
-    .gt-trend--flat {
-      color: #5f6368;
-      background: #f1f3f4;
-    }
-
-    .gt-trend__arrow {
-      display: inline-flex;
-      animation: gt-trend-nudge 1.4s ease-in-out infinite;
-    }
-
-    .gt-trend--flat .gt-trend__arrow {
-      animation: none;
-    }
-
-    .gt-trend--up .gt-trend__arrow {
-      --gt-trend-nudge: -2px;
-    }
-
-    .gt-trend--down .gt-trend__arrow {
-      --gt-trend-nudge: 2px;
-    }
-
-    @keyframes gt-trend-in {
-      from {
-        opacity: 0;
-        transform: translateY(4px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes gt-trend-nudge {
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(var(--gt-trend-nudge, 0));
-      }
-    }
-
-    :host-context(html[data-theme='dark']) {
-      .gt-trend--up {
-        color: #81c995;
-        background: rgb(129 201 149 / 14%);
-      }
-
-      .gt-trend--down {
-        color: #f2b8b5;
-        background: rgb(242 184 181 / 12%);
-      }
-
-      .gt-trend--flat {
-        color: #b0b0b0;
-        background: rgb(176 176 176 / 10%);
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .gt-trend,
-      .gt-trend__arrow {
-        animation: none;
-      }
-    }
-  \`,
+  templateUrl: './trend-cell.component.html',
+  styleUrl: './trend-cell.component.scss',
 })
 export class TrendCellComponent<T = unknown> {
   readonly value = input.required<unknown>();
@@ -722,6 +642,107 @@ export class TrendCellComponent<T = unknown> {
     }
     return '0';
   });
+}
+
+// trend-cell.component.html
+<span class="gt-trend" [class]="'gt-trend gt-trend--' + direction()">
+  <span class="gt-trend__arrow" aria-hidden="true">{{ arrow() }}</span>
+  <span class="gt-trend__value">{{ formatted() }}</span>
+</span>
+
+// trend-cell.component.scss
+:host {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.gt-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.45rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-radius: 6px;
+  animation: gt-trend-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gt-trend--up {
+  color: #0d6832;
+  background: #e6f4ea;
+}
+
+.gt-trend--down {
+  color: #a12828;
+  background: #fdecea;
+}
+
+.gt-trend--flat {
+  color: #5f6368;
+  background: #f1f3f4;
+}
+
+.gt-trend__arrow {
+  display: inline-flex;
+  animation: gt-trend-nudge 1.4s ease-in-out infinite;
+}
+
+.gt-trend--flat .gt-trend__arrow {
+  animation: none;
+}
+
+.gt-trend--up .gt-trend__arrow {
+  --gt-trend-nudge: -2px;
+}
+
+.gt-trend--down .gt-trend__arrow {
+  --gt-trend-nudge: 2px;
+}
+
+@keyframes gt-trend-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gt-trend-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(var(--gt-trend-nudge, 0));
+  }
+}
+
+:host-context(html[data-theme='dark']) {
+  .gt-trend--up {
+    color: #81c995;
+    background: rgb(129 201 149 / 14%);
+  }
+
+  .gt-trend--down {
+    color: #f2b8b5;
+    background: rgb(242 184 181 / 12%);
+  }
+
+  .gt-trend--flat {
+    color: #b0b0b0;
+    background: rgb(176 176 176 / 10%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-trend,
+  .gt-trend__arrow {
+    animation: none;
+  }
 }
 `,
 } as const;

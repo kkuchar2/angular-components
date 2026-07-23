@@ -1,0 +1,10 @@
+@if (email(); as address) {
+  <a
+    class="gt-mailto-cell"
+    [href]="'mailto:' + address"
+    (click)="$event.stopPropagation()"
+    (pointerdown)="$event.stopPropagation()"
+  >
+    {{ address }}
+  </a>
+}

@@ -3,6 +3,8 @@
  * Embeds generic-table-tanstack cell component sources into
  * tanstack-cell-sources.ts for demo code tabs.
  *
+ * Concatenates .ts + .html + .scss so demo tabs still show the full component.
+ *
  * Usage: node scripts/generate-tanstack-cell-sources.mjs
  */
 import fs from 'node:fs';
@@ -17,13 +19,13 @@ const outPath = path.join(
 );
 
 const files = {
-  StatusBadge: 'status-badge-cell.component.ts',
-  Person: 'person-cell.component.ts',
-  Mailto: 'mailto-cell.component.ts',
-  Boolean: 'boolean-cell.component.ts',
-  PresencePulse: 'presence-pulse-cell.component.ts',
-  ProgressBar: 'progress-bar-cell.component.ts',
-  Trend: 'trend-cell.component.ts',
+  StatusBadge: 'status-badge-cell.component',
+  Person: 'person-cell.component',
+  Mailto: 'mailto-cell.component',
+  Boolean: 'boolean-cell.component',
+  PresencePulse: 'presence-pulse-cell.component',
+  ProgressBar: 'progress-bar-cell.component',
+  Trend: 'trend-cell.component',
 };
 
 function toTemplateLiteral(source) {
@@ -33,8 +35,28 @@ function toTemplateLiteral(source) {
     .replace(/\$\{/g, '\\${');
 }
 
-const entries = Object.entries(files).map(([key, file]) => {
-  const source = fs.readFileSync(path.join(cellsDir, file), 'utf8').replace(/\n$/, '');
+function readPart(baseName, ext) {
+  return fs.readFileSync(path.join(cellsDir, `${baseName}.${ext}`), 'utf8').replace(/\n$/, '');
+}
+
+function bundleCell(baseName) {
+  const ts = readPart(baseName, 'ts');
+  const html = readPart(baseName, 'html');
+  const scss = readPart(baseName, 'scss');
+  return [
+    `// ${baseName}.ts`,
+    ts,
+    '',
+    `// ${baseName}.html`,
+    html,
+    '',
+    `// ${baseName}.scss`,
+    scss,
+  ].join('\n');
+}
+
+const entries = Object.entries(files).map(([key, baseName]) => {
+  const source = bundleCell(baseName);
   return `  ${key}: \`\n${toTemplateLiteral(source)}\n\`,`;
 });
 
