@@ -1,4 +1,4 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -33,7 +33,7 @@ import {
 import { injectVirtualizer } from '@tanstack/angular-virtual';
 
 import { GenericTableCellDirective } from './generic-table-cell.directive';
-import { resolveSortValue } from './generic-table-cell-format';
+import { resolveCellRawValue, resolveSortValue } from './generic-table-cell-format';
 import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
 import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
 import {
@@ -58,6 +58,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
 @Component({
   selector: 'app-generic-table-tanstack',
   imports: [
+    NgComponentOutlet,
     NgTemplateOutlet,
     MatChipsModule,
     MatPaginatorModule,
@@ -553,6 +554,15 @@ export class GenericTableTanstackComponent<T = unknown> {
     return context;
   }
 
+  /** Inputs passed to `ColumnDef.cellComponent` via `NgComponentOutlet`. */
+  cellComponentInputs(column: ColumnDef<T>, row: T): Record<string, unknown> {
+    return {
+      value: resolveCellRawValue(column, row),
+      row,
+      column,
+    };
+  }
+
   isColumnVisible(key: string): boolean {
     return this.visibleKeys().has(key);
   }
@@ -791,6 +801,8 @@ export class GenericTableTanstackComponent<T = unknown> {
    * - `width` + `minWidth`: preferred `width`, can shrink down to `minWidth`
    * - `width` only: fixed track
    * - `minWidth` only: fixed at the floor (no free-space growth)
+   * - neither: `minmax(0, 1fr)` shares free space (avoid `max-content` — header
+   *   and body are separate grids, so per-row max-content misaligns columns)
    * - stretch (last column only): `minmax(floor, 1fr)` fills leftover container width
    */
   private resolveColumnTrack(
@@ -815,7 +827,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       return column.minWidth;
     }
 
-    return 'minmax(0, max-content)';
+    return 'minmax(0, 1fr)';
   }
 
   /** CSS length used as the track/content floor (`minWidth` wins over `width`). */

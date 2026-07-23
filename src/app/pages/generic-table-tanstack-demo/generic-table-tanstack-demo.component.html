@@ -1,10 +1,11 @@
 <section class="demo">
   <article class="demo__card">
-    <h2 class="demo__title">1. Paginated + column chips + custom cells</h2>
+    <h2 class="demo__title">1. Paginated + column chips + cellComponent</h2>
     <p class="demo__hint">
       Same features as Material <code>app-generic-table</code>: chip column toggle,
       client-side pagination, sorting, export, built-in <code>uuid</code>/<code>date</code>
-      cells with optional copy, and custom cell templates.
+      cells with optional copy, plus reusable <code>cellComponent</code> cells
+      (status badge). Projected templates still work for one-offs.
     </p>
 
     <app-generic-table-tanstack
@@ -17,15 +18,7 @@
       exportFileName="tanstack-team.csv"
       [trackBy]="trackById"
       (rowClick)="onRowClick($event)"
-    >
-      <ng-template
-        appGenericTableCell="status"
-        [appGenericTableCellFor]="rows()"
-        let-row
-      >
-        <span [class]="statusBadgeClass(row.status)">{{ row.status }}</span>
-      </ng-template>
-    </app-generic-table-tanstack>
+    />
 
     @if (selectedRow(); as row) {
       <p class="demo__selection">Selected: {{ row.name }} ({{ row.email }})</p>
@@ -35,7 +28,44 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">2. Server-side pagination</h2>
+    <h2 class="demo__title">2. Cell component catalog</h2>
+    <p class="demo__hint">
+      Reusable library cells via <code>ColumnDef.cellComponent</code>:
+      <code>PersonCellComponent</code>,
+      <code>MailtoCellComponent</code>,
+      <code>StatusBadgeCellComponent</code>, and
+      <code>BooleanCellComponent</code>.
+    </p>
+
+    <app-generic-table-tanstack
+      [columns]="catalogColumns"
+      [data]="catalogRows()"
+      [showColumnToggle]="false"
+      [trackBy]="trackById"
+    />
+
+    <app-demo-code-block [snippet]="snippets.catalogCells" />
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">3. Animated cells</h2>
+    <p class="demo__hint">
+      Motion-friendly cells (respect <code>prefers-reduced-motion</code>):
+      pulsing presence, grow-in progress bars, and trend deltas.
+    </p>
+
+    <app-generic-table-tanstack
+      [columns]="animatedColumns"
+      [data]="animatedRows()"
+      [showColumnToggle]="false"
+      [trackBy]="trackById"
+    />
+
+    <app-demo-code-block [snippet]="snippets.animatedCells" />
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">4. Server-side pagination</h2>
     <p class="demo__hint">
       Parent owns the page slice. Export waits for <code>exportRequest.complete()</code>.
     </p>
@@ -60,10 +90,10 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">3. Virtual scroll (10 000 rows)</h2>
+    <h2 class="demo__title">5. Virtual scroll (10 000 rows)</h2>
     <p class="demo__hint">
-      TanStack Virtual — fast scrollbar drags should keep the correct rows at the
-      bottom. Mutually exclusive with pagination.
+      TanStack Virtual — person + status cells stay cheap enough for large lists.
+      Mutually exclusive with pagination.
     </p>
 
     <app-generic-table-tanstack
@@ -80,7 +110,7 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">4. Empty state</h2>
+    <h2 class="demo__title">6. Empty state</h2>
     <p class="demo__hint">Non-virtual table with no rows.</p>
 
     <app-generic-table-tanstack

@@ -1,4 +1,3 @@
-import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { Component, signal } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 
@@ -7,11 +6,9 @@ import {
   GenericTableCellDirective,
   GenericTableComponent,
   GenericTableExportRequest,
-  GenericTableHeightMode,
 } from '../../components/generic-table';
 import { DemoCodeBlockComponent } from '../../shared/demo-code-block/demo-code-block.component';
 import { code } from '../../shared/demo-code-block/demo-code.util';
-import { ResizeObserverDirective } from './resize-observer.directive';
 
 interface DemoUser {
   id: number;
@@ -24,26 +21,11 @@ interface DemoUser {
   lastSeen: string;
 }
 
-interface HeightDemoCard {
-  id: string;
-  code: string;
-  description: string;
-  heightMode?: GenericTableHeightMode;
-  height?: string;
-  maxHeight?: string;
-  /** Resizable shell is a flex column (required for fill / parent). */
-  flexShell?: boolean;
-  toolbar?: boolean;
-}
-
 @Component({
   selector: 'app-generic-table-demo',
   imports: [
-    CdkDrag,
-    CdkDragHandle,
     GenericTableComponent,
     GenericTableCellDirective,
-    ResizeObserverDirective,
     DemoCodeBlockComponent,
   ],
   templateUrl: './generic-table-demo.component.html',
@@ -56,25 +38,39 @@ export class GenericTableDemoComponent {
       header: 'UUID',
       cellType: 'uuid',
       copyable: true,
-      minWidth: '280px',
+      minWidth: '120px',
+      width: '280px',
       description: 'Built-in uuid cell: monospace + copy button.',
     },
-    { key: 'name', header: 'Name', sortable: true },
+    {
+      key: 'name',
+      header: 'Name',
+      sortable: true,
+      minWidth: '80px',
+      width: '140px',
+    },
     {
       key: 'email',
       header: 'Email',
       sortable: true,
       copyable: true,
-      minWidth: '220px',
+      minWidth: '120px',
+      width: '220px',
       description: 'Primary contact address used for account notifications.',
     },
-    { key: 'department', header: 'Department', sortable: true },
+    {
+      key: 'department',
+      header: 'Department',
+      sortable: true,
+      minWidth: '80px',
+      width: '140px',
+    },
     {
       key: 'status',
       header: 'Status',
       sortable: true,
-      align: 'center',
-      width: '120px',
+      minWidth: '72px',
+      width: '110px',
       description: 'Active = can sign in. Pending = invited but not confirmed.',
     },
     {
@@ -83,6 +79,8 @@ export class GenericTableDemoComponent {
       sortable: true,
       cellType: 'date',
       dateDisplay: 'date',
+      minWidth: '80px',
+      width: '120px',
       description: 'Date cell from a Date value (no custom template).',
     },
     {
@@ -91,59 +89,62 @@ export class GenericTableDemoComponent {
       sortable: true,
       cellType: 'date',
       copyable: true,
-      minWidth: '180px',
+      minWidth: '100px',
+      width: '180px',
       description: 'Date cell from an ISO datetime string.',
     },
   ];
 
   readonly showcaseColumns: ColumnDef<DemoUser>[] = [
-    { key: 'name', header: 'Member', sortable: true },
-    { key: 'email', header: 'Email' },
-    { key: 'department', header: 'Department', sortable: true },
-    { key: 'status', header: 'Status', align: 'center', width: '120px' },
+    {
+      key: 'name',
+      header: 'Member',
+      sortable: true,
+      minWidth: '80px',
+      width: '160px',
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      minWidth: '120px',
+      width: '200px',
+    },
+    {
+      key: 'department',
+      header: 'Department',
+      sortable: true,
+      minWidth: '80px',
+      width: '140px',
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      minWidth: '72px',
+      width: '110px',
+    },
   ];
 
-  /** Slimmer columns for the height-constraint demos. */
+  /** Slimmer columns for virtual-scroll demos. */
   readonly scrollColumns: ColumnDef<DemoUser>[] = [
-    { key: 'name', header: 'Name', sortable: true },
-    { key: 'department', header: 'Department', sortable: true },
-    { key: 'status', header: 'Status', align: 'center', width: '100px' },
-  ];
-
-  readonly heightDemos: HeightDemoCard[] = [
     {
-      id: 'auto',
-      code: 'heightMode="auto"',
-      description: 'Default — grows with rows up to 480px, then scrolls.',
+      key: 'name',
+      header: 'Name',
+      sortable: true,
+      minWidth: '80px',
+      width: '140px',
     },
     {
-      id: 'fixed',
-      code: 'height="200px"',
-      description: 'Fixed — the scroll body is always 200px tall.',
-      height: '200px',
-      flexShell: true,
+      key: 'department',
+      header: 'Department',
+      sortable: true,
+      minWidth: '80px',
+      width: '140px',
     },
     {
-      id: 'max',
-      code: 'maxHeight="160px"',
-      description: 'Capped — grows with content up to 160px.',
-      maxHeight: '160px',
-      flexShell: true,
-    },
-    {
-      id: 'parent',
-      code: 'heightMode="parent"',
-      description: 'Shrinks to rows; caps at container height and scrolls when needed.',
-      heightMode: 'parent',
-      flexShell: true,
-    },
-    {
-      id: 'fill',
-      code: 'heightMode="fill"',
-      description: 'Shrinks to rows; caps at remaining space below the toolbar.',
-      heightMode: 'fill',
-      flexShell: true,
-      toolbar: true,
+      key: 'status',
+      header: 'Status',
+      minWidth: '72px',
+      width: '110px',
     },
   ];
 
@@ -443,31 +444,6 @@ export class GenericTableDemoComponent {
         onExport(request: GenericTableExportRequest<DemoUser>): void {
           this.fetchAllRows().then((rows) => request.complete(rows));
         }
-      `,
-    },
-    heightModes: {
-      html: code`
-        <!-- auto (default): grow with rows, then scroll -->
-        <app-generic-table heightMode="auto" [columns]="columns" [data]="rows()" />
-
-        <!-- fixed height -->
-        <app-generic-table height="200px" [columns]="columns" [data]="rows()" />
-
-        <!-- cap growth -->
-        <app-generic-table maxHeight="160px" [columns]="columns" [data]="rows()" />
-
-        <!-- fill parent / remaining space -->
-        <app-generic-table heightMode="parent" [columns]="columns" [data]="rows()" />
-        <app-generic-table heightMode="fill" [columns]="columns" [data]="rows()" />
-      `,
-      ts: code`
-        import { ColumnDef, GenericTableHeightMode } from './components/generic-table';
-
-        readonly columns: ColumnDef<DemoUser>[] = [/* ... */];
-        readonly rows = signal<DemoUser[]>([/* ... */]);
-
-        // Optional: drive heightMode from a variable
-        readonly heightMode = signal<GenericTableHeightMode>('parent');
       `,
     },
     customCells: {

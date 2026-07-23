@@ -1,7 +1,10 @@
-/** One usage example with optional HTML / TypeScript panes. */
+/** One usage example with optional HTML / TypeScript / Columns panes. */
 export interface DemoCodeSnippet {
   html?: string;
+  /** Component: data, handlers, table wiring (not column defs). */
   ts?: string;
+  /** Column definitions only. */
+  columnsTs?: string;
 }
 
 /**

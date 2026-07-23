@@ -1,4 +1,20 @@
+import type { Type } from '@angular/core';
+
 import type { GenericTableCellType, GenericTableDateDisplay } from './generic-table-cell.types';
+
+/**
+ * Documented NgComponentOutlet inputs for `ColumnDef.cellComponent`.
+ *
+ * @typeParam T - The row model the table renders.
+ */
+export interface GenericTableCellComponentInputs<T = unknown> {
+  /** Resolved via `cell?.(row) ?? row[key]`. */
+  value: unknown;
+  /** Full row for the current cell. */
+  row: T;
+  /** Column definition for the current cell. */
+  column: ColumnDef<T>;
+}
 
 /**
  * Definition of a single table column.
@@ -18,9 +34,10 @@ export interface ColumnDef<T = unknown> {
   /** When true the header becomes sortable. Defaults to `false`. */
   sortable?: boolean;
   /**
-   * Built-in cell presentation when no custom `appGenericTableCell` template is
-   * projected: `'text'` (default), `'uuid'` (monospace), or `'date'`
-   * (`Date`, `YYYY-MM-DD`, or ISO datetimes like `2026-07-21T18:30:00.123456Z`).
+   * Built-in cell presentation when no custom `appGenericTableCell` template and
+   * no `cellComponent` is set: `'text'` (default), `'uuid'` (monospace), or
+   * `'date'` (`Date`, `YYYY-MM-DD`, or ISO datetimes like
+   * `2026-07-21T18:30:00.123456Z`).
    */
   cellType?: GenericTableCellType;
   /**
@@ -30,15 +47,23 @@ export interface ColumnDef<T = unknown> {
   dateDisplay?: GenericTableDateDisplay;
   /**
    * Show a small Lucide copy control that copies the cell value to the clipboard.
-   * Works with built-in cell types and plain text (not custom templates).
+   * Works with built-in cell types and plain text (not custom templates or
+   * `cellComponent`).
    */
   copyable?: boolean;
   /**
    * Value accessor for the cell (e.g. nested fields). Defaults to `row[key]`.
-   * The result is still formatted by `cellType` / copy — use a projected
-   * `appGenericTableCell` template for fully custom display.
+   * Used by built-in formatters, copy, and as the `value` input for
+   * `cellComponent`. Projected templates and `cellComponent` still win for display.
    */
   cell?: (row: T) => unknown;
+  /**
+   * Reusable cell component rendered via `NgComponentOutlet`.
+   * Receives `value`, `row`, and `column` inputs (see {@link GenericTableCellComponentInputs}).
+   * Ignored when a projected `appGenericTableCell` template exists for this key.
+   * `copyable` / built-in `cellType` do not apply — the component owns presentation.
+   */
+  cellComponent?: Type<unknown>;
   /**
    * Custom sort key from the row. When unset, sorts by the raw `row[key]`
    * value (dates → timestamp). Provide this for nested fields or computed keys.

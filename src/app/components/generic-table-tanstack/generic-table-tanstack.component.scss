@@ -39,11 +39,26 @@
   --gtt-disabled-opacity: 0.55;
   --gtt-row-height: 40px;
   --gtt-font-size: 14px;
+  --gtt-body-text: var(--color-text, rgb(0 0 0 / 87%));
 
   display: flex;
   flex-direction: column;
   gap: var(--gtt-gap);
   font-size: var(--gtt-font-size);
+  color: var(--gtt-body-text);
+}
+
+// Soften dark contrast: dimmer text, quieter borders / accent / hover.
+:host-context(html[data-theme='dark']) .generic-table-tanstack {
+  --gtt-header-bg: #262626;
+  --gtt-header-text: #c4c4c4;
+  --gtt-header-accent: #6e6e6e;
+  --gtt-row-bg: #2a2a2a;
+  --gtt-row-hover-bg: #323232;
+  --gtt-border: #3a3a3a;
+  --gtt-row-divider: rgb(255 255 255 / 5%);
+  --gtt-body-text: #d0d0d0;
+  --gtt-empty-color: #8e8e8e;
 }
 
 .generic-table-tanstack--disabled {
@@ -224,6 +239,38 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   line-height: 1.25;
+}
+
+.generic-table-tanstack__header-cluster {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.generic-table-tanstack__header-accessories {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+// Centered columns: only the label is in-flow so it lines up with centered cell
+// content. Info / sort hang to the right without shifting the label.
+.generic-table-tanstack__header-cell--center {
+  .generic-table-tanstack__header-cluster {
+    gap: 0;
+  }
+
+  .generic-table-tanstack__header-accessories {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    margin-left: 0.35rem;
+    transform: translateY(-50%);
+  }
 }
 
 .generic-table-tanstack__header-cell--sortable {

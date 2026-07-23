@@ -12,7 +12,7 @@ import type { ColumnDef } from './generic-table.types';
 
 /**
  * Built-in cell renderer for text / uuid / date columns, with optional copy.
- * Used when no custom `appGenericTableCell` template is projected for the column.
+ * Used when no custom `appGenericTableCell` template and no `cellComponent` are set.
  */
 @Component({
   selector: 'app-generic-table-cell-value',

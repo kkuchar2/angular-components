@@ -16,7 +16,7 @@ import {
   StarryNightService,
 } from './starry-night.service';
 
-type DemoCodeTabId = 'html' | 'ts' | 'code';
+type DemoCodeTabId = 'html' | 'ts' | 'columns' | 'code';
 
 interface DemoCodeTab {
   id: DemoCodeTabId;
@@ -36,8 +36,8 @@ export class DemoCodeBlockComponent {
   private readonly sanitizer = inject(DomSanitizer);
 
   /**
-   * Preferred API: HTML + TypeScript panes for a usage example.
-   * When both are set, the toolbar shows HTML / TypeScript tabs.
+   * Preferred API: HTML + TypeScript (+ optional Columns) panes for a usage example.
+   * When multiple panes are set, the toolbar shows tabs.
    */
   readonly snippet = input<DemoCodeSnippet | null>(null);
 
@@ -55,8 +55,9 @@ export class DemoCodeBlockComponent {
     const snippet = this.snippet();
     const html = snippet?.html?.trim() ?? '';
     const ts = snippet?.ts?.trim() ?? '';
+    const columnsTs = snippet?.columnsTs?.trim() ?? '';
 
-    if (html || ts) {
+    if (html || ts || columnsTs) {
       const panes: DemoCodeTab[] = [];
 
       if (html) {
@@ -65,6 +66,10 @@ export class DemoCodeBlockComponent {
 
       if (ts) {
         panes.push({ id: 'ts', label: 'TypeScript', code: ts + '\n', language: 'ts' });
+      }
+
+      if (columnsTs) {
+        panes.push({ id: 'columns', label: 'Columns', code: columnsTs + '\n', language: 'ts' });
       }
 
       return panes;
