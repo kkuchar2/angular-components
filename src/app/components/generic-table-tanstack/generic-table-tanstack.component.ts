@@ -103,7 +103,7 @@ export class GenericTableTanstackComponent<T = unknown> {
    * Mutually exclusive with `paginated`.
    */
   readonly virtualized = input(false);
-  readonly rowHeight = input(48);
+  readonly rowHeight = input(40);
   /** Extra rows rendered above/below the viewport when virtualized. */
   readonly overscan = input(12);
   readonly pageSize = input(10);
@@ -146,7 +146,7 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
   readonly isServerSidePagination = computed(() => this.serverSide() && this.showPaginator());
 
-  readonly headerHeightPx = signal(48);
+  readonly headerHeightPx = signal(40);
   readonly boundedAvailableHeightPx = signal<number | null>(null);
   readonly boundedChromeHeightPx = signal(0);
   readonly scrollbarGutterPx = signal(0);

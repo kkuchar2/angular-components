@@ -33,8 +33,12 @@ export interface ColumnDef<T = unknown> {
    * Works with built-in cell types and plain text (not custom templates).
    */
   copyable?: boolean;
-  /** Custom text formatter for the cell. Defaults to `row[key]`. */
-  cell?: (row: T) => string | number;
+  /**
+   * Value accessor for the cell (e.g. nested fields). Defaults to `row[key]`.
+   * The result is still formatted by `cellType` / copy / sort — use a projected
+   * `appGenericTableCell` template for fully custom display.
+   */
+  cell?: (row: T) => unknown;
   /** Custom value used when sorting. Defaults to `cell`, then `row[key]`. */
   sortAccessor?: (row: T) => string | number;
   /** When `false` the column is always visible and hidden from the toggle. Defaults to `true`. */

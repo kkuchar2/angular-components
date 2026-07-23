@@ -229,7 +229,7 @@ export class GenericTableTanstackDemoComponent {
           [columns]="columns"
           [data]="rows()"
           [virtualized]="true"
-          [rowHeight]="48"
+          [rowHeight]="40"
           height="400px"
           [trackBy]="trackById"
         />

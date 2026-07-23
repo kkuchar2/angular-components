@@ -14,13 +14,18 @@ export function readCellRawValue<T>(row: T, key: string): unknown {
   return (row as Record<string, unknown>)[key];
 }
 
-/** Value used for clipboard copy (raw string form, not the pretty display). */
-export function resolveCopyValue<T>(column: ColumnDef<T>, row: T): string {
+/** Resolve the cell value: `cell` accessor when set, otherwise `row[key]`. */
+export function resolveCellRawValue<T>(column: ColumnDef<T>, row: T): unknown {
   if (column.cell) {
-    return String(column.cell(row));
+    return column.cell(row);
   }
 
-  const raw = readCellRawValue(row, column.key);
+  return readCellRawValue(row, column.key);
+}
+
+/** Value used for clipboard copy (raw string form, not the pretty display). */
+export function resolveCopyValue<T>(column: ColumnDef<T>, row: T): string {
+  const raw = resolveCellRawValue(column, row);
 
   if (raw == null) {
     return '';
@@ -33,13 +38,9 @@ export function resolveCopyValue<T>(column: ColumnDef<T>, row: T): string {
   return String(raw);
 }
 
-/** Formatted text shown in the cell. */
+/** Formatted text shown in the cell (`cellType` still applies when `cell` is set). */
 export function formatColumnCell<T>(column: ColumnDef<T>, row: T): string {
-  if (column.cell) {
-    return String(column.cell(row));
-  }
-
-  const raw = readCellRawValue(row, column.key);
+  const raw = resolveCellRawValue(column, row);
 
   switch (column.cellType) {
     case 'uuid':
@@ -52,19 +53,16 @@ export function formatColumnCell<T>(column: ColumnDef<T>, row: T): string {
 }
 
 /**
- * Value used for client-side sorting when `sortAccessor` / `cell` are unset.
- * Date columns (and raw `Date` values) sort by timestamp.
+ * Value used for client-side sorting when `sortAccessor` is unset.
+ * Uses `cell` as an accessor when set. Date columns (and raw `Date` values)
+ * sort by timestamp.
  */
 export function resolveSortValue<T>(column: ColumnDef<T>, row: T): string | number {
   if (column.sortAccessor) {
     return column.sortAccessor(row);
   }
 
-  if (column.cell) {
-    return column.cell(row);
-  }
-
-  const raw = readCellRawValue(row, column.key);
+  const raw = resolveCellRawValue(column, row);
 
   if (column.cellType === 'date' || raw instanceof Date) {
     const parsed = parseCellDate(raw);
