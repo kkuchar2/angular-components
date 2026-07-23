@@ -79,8 +79,7 @@ export class UsersComponent {
       key: 'createdAt',
       header: 'Created',
       sortable: true,
-      cell: (u) => u.createdAt.toLocaleDateString(),
-      sortAccessor: (u) => u.createdAt.getTime(),
+      cellType: 'date',
     },
   ];
 
@@ -326,7 +325,7 @@ Typical app-shell layout:
 | `dateDisplay`  | `'auto' \| 'date' \| 'datetime'`| How `date` cells format values (default `'auto'`).                |
 | `copyable`     | `boolean`                       | Show a small Lucide copy button for the cell value (default `false`). |
 | `cell`         | `(row: T) => string \| number`  | Custom text formatter (default `row[key]`).                       |
-| `sortAccessor` | `(row: T) => string \| number`  | Value used for sorting (default `cell`, then `row[key]` / date timestamp). |
+| `sortAccessor` | `(row: T) => string \| number`  | Custom sort key (default: raw `row[key]`; dates → timestamp). |
 | `hideable`     | `boolean`                       | If `false`, always visible and not shown in the toggle (default `true`). |
 | `visible`      | `boolean`                       | Initial visibility (default `true`).                             |
 | `width`        | `string`                        | Fixed width, e.g. `'120px'` or `'20%'`.                          |

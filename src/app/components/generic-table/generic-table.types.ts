@@ -35,11 +35,14 @@ export interface ColumnDef<T = unknown> {
   copyable?: boolean;
   /**
    * Value accessor for the cell (e.g. nested fields). Defaults to `row[key]`.
-   * The result is still formatted by `cellType` / copy / sort — use a projected
+   * The result is still formatted by `cellType` / copy — use a projected
    * `appGenericTableCell` template for fully custom display.
    */
   cell?: (row: T) => unknown;
-  /** Custom value used when sorting. Defaults to `cell`, then `row[key]`. */
+  /**
+   * Custom sort key from the row. When unset, sorts by the raw `row[key]`
+   * value (dates → timestamp). Provide this for nested fields or computed keys.
+   */
   sortAccessor?: (row: T) => string | number;
   /** When `false` the column is always visible and hidden from the toggle. Defaults to `true`. */
   hideable?: boolean;

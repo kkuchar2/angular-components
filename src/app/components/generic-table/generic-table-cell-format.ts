@@ -53,16 +53,16 @@ export function formatColumnCell<T>(column: ColumnDef<T>, row: T): string {
 }
 
 /**
- * Value used for client-side sorting when `sortAccessor` is unset.
- * Uses `cell` as an accessor when set. Date columns (and raw `Date` values)
- * sort by timestamp.
+ * Value used for client-side sorting.
+ * When `sortAccessor` is unset, uses the raw `row[key]` value (not `cell`).
+ * Date columns (and raw `Date` values) sort by timestamp.
  */
 export function resolveSortValue<T>(column: ColumnDef<T>, row: T): string | number {
   if (column.sortAccessor) {
     return column.sortAccessor(row);
   }
 
-  const raw = resolveCellRawValue(column, row);
+  const raw = readCellRawValue(row, column.key);
 
   if (column.cellType === 'date' || raw instanceof Date) {
     const parsed = parseCellDate(raw);
