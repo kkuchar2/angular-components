@@ -148,4 +148,43 @@
       emptyMessage="No team members found."
     />
   </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">8. Parent height mode</h2>
+    <p class="demo__hint">
+      <code>heightMode="parent"</code> fills a <code>flex: 1</code> parent, even
+      when rows are fewer than the space. <code>height</code> is a floor — the
+      short frame stays at 240px instead of shrinking to 8rem.
+    </p>
+
+    <div class="demo__parent-row">
+      <div class="demo__parent-frame">
+        <span class="demo__parent-label">flex: 1 parent (40rem), 8 rows</span>
+        <div class="demo__parent-slot">
+          <app-generic-table-tanstack
+            heightMode="parent"
+            height="240px"
+            [columns]="scrollColumns"
+            [data]="catalogRows()"
+            [showColumnToggle]="false"
+            [trackBy]="trackById"
+          />
+        </div>
+      </div>
+
+      <div class="demo__parent-frame demo__parent-frame--short">
+        <span class="demo__parent-label">flex: 1 parent (8rem), height="240px"</span>
+        <div class="demo__parent-slot">
+          <app-generic-table-tanstack
+            heightMode="parent"
+            height="240px"
+            [columns]="scrollColumns"
+            [data]="catalogRows()"
+            [showColumnToggle]="false"
+            [trackBy]="trackById"
+          />
+        </div>
+      </div>
+    </div>
+  </article>
 </section>

@@ -82,6 +82,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
     '[class.generic-table-tanstack-host--virtualized]': 'virtualized()',
     '[class.generic-table-tanstack-host--disabled]': 'disabled()',
     '[style.--gtt-bounded-max-height.px]': 'boundedMaxHeightPx()',
+    '[style.--gtt-parent-min-height]': 'parentMinHeight()',
   },
 })
 export class GenericTableTanstackComponent<T = unknown> {
@@ -141,6 +142,10 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly exportFileName = input('table-export.csv');
   readonly exportData = input<readonly T[] | null>(null);
   readonly heightMode = input<GenericTableHeightMode>('auto');
+  /**
+   * Exact scroll-body height (e.g. `'320px'`). In `'parent'` mode this is a
+   * minimum instead: the table fills the parent unless that would be shorter.
+   */
   readonly height = input<string | null>(null);
   readonly maxHeight = input<string | null>(null);
   readonly minHeight = input<string | null>(null);
@@ -169,6 +174,8 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly isFillMode = computed(() => !this.isFixed() && this.heightMode() === 'fill');
   readonly isBoundedHeightMode = computed(() => this.isParentMode() || this.isFillMode());
   readonly scrollBodyHeight = computed(() => (this.isParentMode() ? null : this.height()));
+  /** CSS length used as the host min-height floor in `'parent'` mode. */
+  readonly parentMinHeight = computed(() => (this.isParentMode() ? this.height() : null));
   readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
   readonly isServerSidePagination = computed(() => this.serverSide() && this.showPaginator());
 
@@ -179,6 +186,12 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   readonly boundedMaxHeightPx = computed(() => {
     if (!this.isBoundedHeightMode()) {
+      return null;
+    }
+
+    // Parent mode fills via CSS (`height: 100%`). A pixel max-height cap here
+    // is what kept flex:1 parents from stretching past the 480px fallback.
+    if (this.isParentMode()) {
       return null;
     }
 
@@ -988,11 +1001,31 @@ export class GenericTableTanstackComponent<T = unknown> {
   private resolveBoundedScrollBodyHeightPx(contentHeight: number, fillHeight: number): number {
     const minHeight = this.resolveMinScrollHeightPx();
 
+    if (this.isParentMode()) {
+      return Math.max(fillHeight, minHeight);
+    }
+
     if (fillHeight < minHeight) {
       return Math.max(contentHeight, minHeight);
     }
 
     return Math.min(contentHeight, fillHeight);
+  }
+
+  /** Parsed `height` input in px; `0` when unset or not a positive length. */
+  private resolveHeightInputPx(): number {
+    const value = this.height();
+
+    if (!value) {
+      return 0;
+    }
+
+    const parsed = this.parseLengthToPx(
+      value,
+      this.hostEl.nativeElement.clientWidth ?? globalThis.innerWidth,
+    );
+
+    return parsed > 0 ? parsed : 0;
   }
 
   private resolveBoundedAvailableFallbackPx(): number {
@@ -1074,11 +1107,13 @@ export class GenericTableTanstackComponent<T = unknown> {
       return;
     }
 
-    const available = this.isFillMode()
+    const measured = this.isFillMode()
       ? this.measureFillAvailableHeight(host, parent)
       : this.measureParentAvailableHeight(host, parent);
 
-    this.boundedAvailableHeightPx.set(available);
+    this.boundedAvailableHeightPx.set(
+      this.isParentMode() ? Math.max(measured, this.resolveHeightInputPx()) : measured,
+    );
 
     const tableRoot = host.querySelector('.generic-table-tanstack');
     // Virtual: measure chrome outside the shell (toolbar/gaps). Header lives inside

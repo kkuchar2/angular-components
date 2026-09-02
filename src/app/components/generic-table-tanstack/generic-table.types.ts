@@ -126,8 +126,11 @@ export interface ColumnDef<T = unknown> {
  * - `'auto'`: the body grows with its rows up to the default max height (480px), then scrolls.
  * - `'fill'`: sizes to its rows up to the remaining flex-column space, then scrolls.
  *   Virtualized tables ignore `maxHeight` and use the full allocation.
- * - `'parent'`: sizes to its rows up to the parent's height, then scrolls. Ignores
- *   `height` and `maxHeight`. Virtualized tables use the full parent allocation.
+ * - `'parent'`: fills the parent's height (`height: 100%` / flex stretch, including
+ *   `flex: 1` parents). Scrolls when rows exceed that space. When `height` is set,
+ *   that value is a floor — the table will not size shorter than it. Ignores
+ *   `maxHeight`. Virtualized tables use the full parent allocation, floored by
+ *   `height`.
  *
  * `'fill'` and `'parent'` both scroll the body once rows exceed the available
  * height, and both require the parent to resolve a height (see the README).
