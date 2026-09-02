@@ -6,7 +6,10 @@
 
   <article class="demo-section">
     <h2 class="demo-section__title">Outlined Appearance</h2>
-    <p class="demo-section__desc">Material-style labels that float inside the field border on focus or when filled.</p>
+    <p class="demo-section__desc">
+      Underline field with a floating label above the text. Focus uses an orange
+      underline and label; hover/focus add a neutral fill.
+    </p>
 
     <div class="demo-section__body demo-section__body--grid">
       <app-custom-input
@@ -22,7 +25,7 @@
         type="email"
         placeholder="you@example.com"
         [prefixIcon]="LucideMail"
-        hint="Label sits on the border when active."
+        hint="Label floats above the text when active."
         [ngModel]="emailValue()"
         (ngModelChange)="emailValue.set($event)"
       />

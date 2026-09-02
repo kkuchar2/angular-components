@@ -48,8 +48,8 @@ export class CustomInputComponent implements ControlValueAccessor {
   readonly hint = input('');
   readonly error = input('');
   readonly width = input('100%');
-  /** Field height (e.g. `44px`, `2.75rem`). */
-  readonly height = input('44px');
+  /** Field height (e.g. `52px`, `3.25rem`). */
+  readonly height = input('52px');
   readonly autocomplete = input<string | null>(null);
   readonly spellcheck = input<boolean | null>(null);
 
@@ -109,7 +109,11 @@ export class CustomInputComponent implements ControlValueAccessor {
   }
 
   effectivePlaceholder(): string {
-    if (this.appearance() === 'outlined' && !this.isLabelFloated()) {
+    if (this.isFocused()) {
+      return '';
+    }
+
+    if (this.appearance() === 'outlined' && this.label() && !this.isLabelFloated()) {
       return '';
     }
 

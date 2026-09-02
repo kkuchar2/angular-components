@@ -39,10 +39,10 @@
   --gtt-toggle-gap: var(--spacing-sm, 0.5rem);
   --gtt-border: var(--color-border, #e0e0e0);
   --gtt-radius: var(--radius-md, 8px);
-  --gtt-header-bg: var(--color-surface, #ffffff);
+  --gtt-header-bg: transparent;
   --gtt-header-text: var(--color-text, rgb(0 0 0 / 87%));
-  --gtt-header-accent: var(--color-primary, #1565c0);
-  --gtt-row-bg: var(--color-surface, #ffffff);
+  --gtt-header-accent: #ff6200;
+  --gtt-row-bg: transparent;
   --gtt-row-hover-bg: var(--color-row-hover, #f2f2f2);
   --gtt-row-divider: var(--color-border, #e0e0e0);
   --gtt-empty-color: var(--color-text-muted, rgb(0 0 0 / 60%));
@@ -51,20 +51,23 @@
   --gtt-row-height: 40px;
   --gtt-font-size: 14px;
   --gtt-body-text: var(--color-text, rgb(0 0 0 / 87%));
+  --gtt-filter-width: 15.5rem;
 
   display: flex;
   flex-direction: column;
   gap: var(--gtt-gap);
   font-size: var(--gtt-font-size);
   color: var(--gtt-body-text);
+  container-type: inline-size;
+  container-name: gtt;
 }
 
 // Soften dark contrast: dimmer text, quieter borders / accent / hover.
 :host-context(html[data-theme='dark']) .generic-table-tanstack {
-  --gtt-header-bg: #262626;
+  --gtt-header-bg: transparent;
   --gtt-header-text: #c4c4c4;
-  --gtt-header-accent: #6e6e6e;
-  --gtt-row-bg: #2a2a2a;
+  --gtt-header-accent: #ff6200;
+  --gtt-row-bg: transparent;
   --gtt-row-hover-bg: #323232;
   --gtt-border: #3a3a3a;
   --gtt-row-divider: rgb(255 255 255 / 5%);
@@ -112,6 +115,115 @@
 .generic-table-tanstack__export:disabled {
   cursor: not-allowed;
   opacity: var(--gtt-disabled-opacity);
+}
+
+.generic-table-tanstack__layout {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.generic-table-tanstack__layout--filters {
+  display: grid;
+  grid-template-columns: var(--gtt-filter-width) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: var(--gtt-gap);
+  row-gap: 0;
+  align-items: stretch;
+}
+
+.generic-table-tanstack__layout--filters-independent {
+  align-items: start;
+}
+
+.generic-table-tanstack__table-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.generic-table-tanstack__layout--filters .generic-table-tanstack__table-pane {
+  grid-column: 2;
+  grid-row: 1;
+  flex: initial;
+}
+
+.generic-table-tanstack__layout--filters .generic-table-tanstack__paginator {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.generic-table-tanstack__filters {
+  box-sizing: border-box;
+  width: var(--gtt-filter-width);
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gtt-border) transparent;
+  padding: 0.875rem 0.875rem 0.75rem;
+  border: none;
+  border-radius: 0;
+}
+
+.generic-table-tanstack__layout--filters .generic-table-tanstack__filters {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+}
+
+.generic-table-tanstack__layout--filters-independent .generic-table-tanstack__filters {
+  align-self: start;
+  min-height: var(--gtt-filter-min-height);
+  height: var(--gtt-filter-min-height);
+  max-height: var(--gtt-filter-min-height);
+}
+
+.generic-table-tanstack__paginator {
+  flex-shrink: 0;
+  background: transparent;
+
+  &.mat-mdc-paginator {
+    background: transparent;
+  }
+}
+
+.generic-table-tanstack__filters-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.generic-table-tanstack__filter {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.generic-table-tanstack__filter-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--gtt-header-text);
+}
+
+.generic-table-tanstack--fill .generic-table-tanstack__layout,
+.generic-table-tanstack--parent .generic-table-tanstack__layout,
+.generic-table-tanstack--bounded .generic-table-tanstack__layout,
+.generic-table-tanstack--fill .generic-table-tanstack__table-pane,
+.generic-table-tanstack--parent .generic-table-tanstack__table-pane,
+.generic-table-tanstack--bounded .generic-table-tanstack__table-pane {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .generic-table-tanstack--fill,
@@ -445,4 +557,28 @@
   padding: var(--gtt-empty-padding);
   text-align: center;
   color: var(--gtt-empty-color);
+}
+
+@container gtt (max-width: 40rem) {
+  .generic-table-tanstack__layout--filters {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gtt-gap);
+  }
+
+  .generic-table-tanstack__layout--filters .generic-table-tanstack__filters,
+  .generic-table-tanstack__layout--filters .generic-table-tanstack__table-pane,
+  .generic-table-tanstack__layout--filters .generic-table-tanstack__paginator {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .generic-table-tanstack__filters {
+    width: 100%;
+    max-height: 14rem;
+  }
+
+  .generic-table-tanstack__layout--filters-independent .generic-table-tanstack__filters {
+    max-height: var(--gtt-filter-min-height);
+  }
 }

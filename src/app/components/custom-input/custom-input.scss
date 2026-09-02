@@ -3,25 +3,29 @@
 :host {
   display: block;
   position: relative;
-  --ci-field-height: 44px;
+  --ci-field-height: 52px;
 }
 
 .custom-input {
-  --ci-bg: var(--color-surface, #ffffff);
+  --ci-bg: transparent;
   --ci-border: var(--color-border, #e0e4ef);
   --ci-border-hover: var(--color-border-hover, #c8cdd9);
   --ci-text: var(--color-text, #1a1a2e);
   --ci-text-muted: var(--color-text-muted, #5c5c7a);
-  --ci-input-bg: var(--color-surface-elevated, #f5f5f5);
+  --ci-hover-bg: color-mix(in srgb, var(--color-neutral-bg, #eeeeee) 55%, transparent);
+  --ci-focus-bg: var(--color-neutral-bg, #eeeeee);
   --ci-disabled-bg: var(--color-surface-elevated, #f5f5f5);
-  --ci-accent: var(--color-primary, #1565c0);
+  --ci-accent: #ff6200;
   --ci-clear-hover-bg: var(--color-error-bg, #fdecea);
   --ci-clear-hover-text: var(--color-error-text, #c62828);
   --ci-error: var(--color-error-text, #c62828);
   --ci-error-bg: var(--color-error-bg, #fdecea);
-  --ci-border-radius: var(--radius-md, 0);
+  --ci-border-radius: 0;
+  --ci-field-radius-top: var(--radius-sm, 4px);
   --ci-font-size: 0.9375rem;
-  --ci-transition: 0.2s;
+  --ci-transition: 0.15s;
+  --ci-label-transition: 0.1s;
+  --ci-underline: 2px;
 
   font-family: var(--font-family-base, 'Segoe UI', system-ui, -apple-system, sans-serif);
   width: 100%;
@@ -33,20 +37,24 @@
     font-weight: 600;
     color: var(--ci-text);
     letter-spacing: 0.01em;
+    transition: color var(--ci-transition) ease;
   }
 
   &__field {
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: var(--ci-field-height, 44px);
-    height: var(--ci-field-height, 44px);
-    padding: 0 14px;
+    min-height: var(--ci-field-height, 52px);
+    height: var(--ci-field-height, 52px);
+    padding: 0 12px;
     background: var(--ci-bg);
-    border: 1.5px solid var(--ci-border);
+    border: none;
+    border-bottom: var(--ci-underline) solid var(--ci-border);
     border-radius: var(--ci-border-radius);
-    transition: border-color var(--ci-transition) ease,
-      background var(--ci-transition) ease;
+    transition:
+      border-color var(--ci-transition) ease,
+      background-color var(--ci-transition) ease,
+      border-radius var(--ci-transition) ease;
     box-sizing: border-box;
   }
 
@@ -135,14 +143,25 @@
     }
   }
 
-  &:not(.disabled) .custom-input__field:hover {
-    border-color: var(--ci-border-hover);
+  // Hover fill only when unfocused — otherwise leaving the field while focused
+  // looked darker because :hover (lighter) outranked .focused (stronger fill).
+  &:not(.disabled):not(.focused) .custom-input__field:hover {
+    background: var(--ci-hover-bg);
+    border-bottom-color: var(--ci-border-hover);
+    border-top-left-radius: var(--ci-field-radius-top);
+    border-top-right-radius: var(--ci-field-radius-top);
   }
 
   &.focused .custom-input__field {
-    border-color: var(--ci-accent);
-    background: var(--ci-bg);
+    background: var(--ci-focus-bg);
+    border-bottom-color: var(--ci-accent);
+    border-top-left-radius: var(--ci-field-radius-top);
+    border-top-right-radius: var(--ci-field-radius-top);
     outline: none;
+  }
+
+  &.focused .custom-input__label:not(.custom-input__label--floating) {
+    color: var(--ci-accent);
   }
 
   .custom-input__control:focus-visible {
@@ -154,12 +173,16 @@
   }
 
   &.has-error .custom-input__field {
-    border-color: var(--ci-error);
+    border-bottom-color: var(--ci-error);
     background: var(--ci-error-bg);
   }
 
   &.has-error.focused .custom-input__field {
-    border-color: var(--ci-error);
+    border-bottom-color: var(--ci-error);
+  }
+
+  &.has-error .custom-input__label:not(.custom-input__label--floating) {
+    color: var(--ci-error);
   }
 
   &.disabled .custom-input__field {
@@ -169,9 +192,10 @@
   }
 
   &.appearance-outlined {
-    --ci-label-scale-float: 0.733;
-    --ci-label-rest-y: calc((var(--ci-field-height, 44px) - 1em) / 2);
-    --ci-label-float-y: calc(-0.5em * var(--ci-label-scale-float));
+    --ci-label-scale-float: 0.75;
+    --ci-label-rest-y: calc((var(--ci-field-height, 52px) - 1em) / 2);
+    // Space from the field top to the floated label.
+    --ci-label-float-y: 0.55rem;
 
     .custom-input__field {
       position: relative;
@@ -180,11 +204,11 @@
     .custom-input__label--floating {
       position: absolute;
       top: 0;
-      left: 14px;
+      left: 12px;
       z-index: 1;
       margin: 0;
-      padding: 0 4px;
-      max-width: calc(100% - 28px);
+      padding: 0;
+      max-width: calc(100% - 24px);
       overflow: hidden;
       font-size: var(--ci-font-size);
       font-weight: 400;
@@ -197,29 +221,30 @@
       transform: translate3d(0, var(--ci-label-rest-y), 0) scale(1);
       transform-origin: left top;
       backface-visibility: hidden;
-      transition: transform var(--ci-transition) cubic-bezier(0.4, 0, 0.2, 1),
-        color var(--ci-transition) cubic-bezier(0.4, 0, 0.2, 1),
-        background-color var(--ci-transition) cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform var(--ci-label-transition) cubic-bezier(0.4, 0, 0.2, 1),
+        color var(--ci-label-transition) cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .custom-input__field:has(.custom-input__prefix) .custom-input__label--floating {
-      left: calc(14px + 18px + 8px);
-      max-width: calc(100% - 14px - 18px - 8px - 14px);
+      left: calc(12px + 18px + 8px);
+      max-width: calc(100% - 12px - 18px - 8px - 12px);
     }
 
     &.label-floated .custom-input__label--floating {
       color: var(--ci-text-muted);
-      background-color: var(--ci-bg);
       transform: translate3d(0, var(--ci-label-float-y), 0) scale(var(--ci-label-scale-float));
+    }
+
+    &.label-floated .custom-input__control {
+      padding-top: 1.35rem;
+    }
+
+    &.focused.label-floated .custom-input__label--floating {
+      color: var(--ci-accent);
     }
 
     &.has-error.label-floated .custom-input__label--floating {
       color: var(--ci-error);
-      background-color: var(--ci-error-bg);
-    }
-
-    &.disabled.label-floated .custom-input__label--floating {
-      background-color: var(--ci-disabled-bg);
     }
 
     .custom-input__control::placeholder {
@@ -228,7 +253,15 @@
   }
 }
 
+:host-context(html[data-theme='dark']) .custom-input {
+  --ci-hover-bg: rgb(255 255 255 / 5%);
+  --ci-focus-bg: rgb(255 255 255 / 9%);
+  --ci-accent: #ff6200;
+  --ci-disabled-bg: var(--color-surface-elevated, #333333);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .custom-input__label,
   .custom-input__label--floating,
   .custom-input__field,
   .custom-input__clear {

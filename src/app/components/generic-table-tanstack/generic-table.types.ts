@@ -69,6 +69,12 @@ export interface ColumnDef<T = unknown> {
   /** When true the header becomes sortable. Defaults to `false`. */
   sortable?: boolean;
   /**
+   * When true, a live text filter for this column is shown in the left-hand
+   * filter rail. Filtering is case-insensitive and matches the formatted cell
+   * text (and the raw value). Defaults to `false`.
+   */
+  searchable?: boolean;
+  /**
    * Built-in cell presentation when no custom `appGenericTableCell` template and
    * no `cellComponent` is set: `'text'` (default), `'uuid'` (monospace), or
    * `'date'` (`Date`, `YYYY-MM-DD`, or ISO datetimes like

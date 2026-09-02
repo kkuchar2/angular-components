@@ -34,8 +34,13 @@ import { injectVirtualizer } from '@tanstack/angular-virtual';
 
 import { ContextMenuComponent, type ContextMenuItem } from '../context-menu';
 import type { ContextMenuDetailField, ContextMenuVariant } from '../context-menu';
+import { CustomInputComponent } from '../custom-input/custom-input';
 import { GenericTableCellDirective } from './generic-table-cell.directive';
-import { resolveCellRawValue, resolveSortValue } from './generic-table-cell-format';
+import {
+  columnMatchesFilter,
+  resolveCellRawValue,
+  resolveSortValue,
+} from './generic-table-cell-format';
 import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
 import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
 import {
@@ -68,6 +73,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
     MatChipsModule,
     MatPaginatorModule,
     ContextMenuComponent,
+    CustomInputComponent,
     GenericTableHeaderInfoComponent,
     GenericTableCellValueComponent,
   ],
@@ -153,6 +159,12 @@ export class GenericTableTanstackComponent<T = unknown> {
    */
   readonly maxHeight = input<string | null>(null);
   readonly minHeight = input<string | null>(null);
+  /**
+   * When set, the left filter rail uses this as its own height (independent of
+   * the table) and scrolls internally when filters overflow. Omit to keep the
+   * rail stretched to the table height.
+   */
+  readonly filterMinHeight = input<string | null>(null);
   readonly trackBy = input<TrackByFunction<T>>((_index, row) => row);
 
   readonly rowClick = output<T>();
@@ -300,6 +312,51 @@ export class GenericTableTanstackComponent<T = unknown> {
       (column) => column.hideable === false || this.visibleKeys().has(column.key),
     ),
   );
+
+  readonly searchableColumns = computed(() =>
+    this.columns().filter((column) => column.searchable === true),
+  );
+
+  readonly hasSearchableColumns = computed(() => this.searchableColumns().length > 0);
+
+  /** Filter rail sized by `filterMinHeight` instead of matching the table. */
+  readonly hasIndependentFilterHeight = computed(
+    () => this.hasSearchableColumns() && this.filterMinHeight() != null,
+  );
+
+  /** Per-column filter query keyed by `ColumnDef.key`. Empty strings are omitted. */
+  readonly columnFilterValues = signal<Readonly<Record<string, string>>>({});
+
+  readonly hasActiveFilters = computed(() =>
+    this.searchableColumns().some(
+      (column) => (this.columnFilterValues()[column.key] ?? '').trim().length > 0,
+    ),
+  );
+
+  /** `data` after live column filters (AND across searchable columns). */
+  readonly filteredRows = computed((): T[] => {
+    const rows = this.data();
+    const values = this.columnFilterValues();
+    const active = this.searchableColumns().filter(
+      (column) => (values[column.key] ?? '').trim().length > 0,
+    );
+
+    if (active.length === 0) {
+      return [...rows];
+    }
+
+    return rows.filter((row) =>
+      active.every((column) => columnMatchesFilter(column, row, values[column.key] ?? '')),
+    );
+  });
+
+  readonly tableEmptyMessage = computed(() => {
+    if (this.hasActiveFilters() && this.data().length > 0 && this.filteredRows().length === 0) {
+      return 'No rows match the current filters.';
+    }
+
+    return this.emptyMessage();
+  });
 
   readonly hasRowActions = computed(
     () =>
@@ -462,7 +519,7 @@ export class GenericTableTanstackComponent<T = unknown> {
   }));
 
   readonly paginatorLength = computed(() =>
-    this.isServerSidePagination() ? this.totalCount() : this.data().length,
+    this.isServerSidePagination() ? this.totalCount() : this.filteredRows().length,
   );
 
   readonly paginatorPageIndex = computed(() =>
@@ -495,8 +552,20 @@ export class GenericTableTanstackComponent<T = unknown> {
     });
 
     effect(() => {
-      this.tableData.set([...this.data()]);
+      this.tableData.set(this.filteredRows());
       this.tableColumnDefs.set(this.tanstackColumns());
+    });
+
+    effect(() => {
+      this.columnFilterValues();
+
+      untracked(() => {
+        const current = this.clientPagination();
+
+        if (current.pageIndex !== 0) {
+          this.clientPagination.set({ ...current, pageIndex: 0 });
+        }
+      });
     });
 
     effect(() => {
@@ -523,6 +592,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       this.showPaginator();
       this.showColumnToggle();
       this.hideableColumns();
+      this.hasSearchableColumns();
       this.data();
       this.virtualized();
 
@@ -621,6 +691,30 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   isColumnVisible(key: string): boolean {
     return this.visibleKeys().has(key);
+  }
+
+  onColumnFilterValue(key: string, value: string): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    this.columnFilterValues.update((current) => {
+      if (!value) {
+        if (!(key in current)) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[key];
+        return next;
+      }
+
+      if (current[key] === value) {
+        return current;
+      }
+
+      return { ...current, [key]: value };
+    });
   }
 
   onToggleColumns(event: MatChipListboxChange): void {
@@ -739,7 +833,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       return;
     }
 
-    this.downloadCsv(rows ?? this.exportData() ?? this.data(), fileName);
+    this.downloadCsv(rows ?? this.exportData() ?? this.filteredRows(), fileName);
   }
 
   onExportClick(): void {
@@ -757,7 +851,7 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.exportRequest.emit({ fileName: resolvedName, complete });
 
     if (!this.isServerSidePagination() || this.exportData() != null) {
-      complete(this.exportData() ?? this.data());
+      complete(this.exportData() ?? this.filteredRows());
     }
   }
 

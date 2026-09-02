@@ -105,6 +105,19 @@ export class GenericTableTanstackDemoComponent {
     },
   ];
 
+  /** Same as `columns`, with live text filters on name / email / department. */
+  readonly filterColumns: ColumnDef<DemoUser>[] = this.columns.map((column) =>
+    column.key === 'name' || column.key === 'email' || column.key === 'department'
+      ? { ...column, searchable: true }
+      : column,
+  );
+
+  /** Every column searchable — used to demo a scrollable filter rail. */
+  readonly overflowFilterColumns: ColumnDef<DemoUser>[] = this.columns.map((column) => ({
+    ...column,
+    searchable: true,
+  }));
+
   /** Catalog cells: person, mailto, status badge, boolean. */
   readonly catalogColumns: ColumnDef<DemoUser>[] = [
     {
@@ -367,6 +380,7 @@ export class GenericTableTanstackDemoComponent {
             key: 'name',
             header: 'Name',
             sortable: true,
+            searchable: true,
             minWidth: '80px',
             width: '140px',
           },
@@ -374,6 +388,7 @@ export class GenericTableTanstackDemoComponent {
             key: 'email',
             header: 'Email',
             sortable: true,
+            searchable: true,
             copyable: true,
             minWidth: '120px',
             width: '220px',
@@ -382,6 +397,7 @@ export class GenericTableTanstackDemoComponent {
             key: 'department',
             header: 'Department',
             sortable: true,
+            searchable: true,
             minWidth: '80px',
             width: '140px',
           },
@@ -412,6 +428,41 @@ export class GenericTableTanstackDemoComponent {
         ];
       `,
       cells: tanstackCellTabs('StatusBadge'),
+    },
+    columnFilters: {
+      html: code`
+        <app-generic-table-tanstack
+          [columns]="columns"
+          [data]="rows()"
+          [paginated]="true"
+          [pageSize]="5"
+          filterMinHeight="280px"
+          [trackBy]="trackById"
+        />
+      `,
+      ts: code`
+        import { signal } from '@angular/core';
+        import { ColumnDef, GenericTableTanstackComponent } from './components/generic-table-tanstack';
+
+        readonly rows = signal<DemoUser[]>([/* ... */]);
+
+        trackById(_index: number, row: DemoUser): number {
+          return row.id;
+        }
+      `,
+      columnsTs: code`
+        import { ColumnDef } from './components/generic-table-tanstack';
+
+        readonly columns: ColumnDef<DemoUser>[] = [
+          { key: 'uuid', header: 'UUID', searchable: true, cellType: 'uuid' },
+          { key: 'name', header: 'Name', searchable: true, sortable: true },
+          { key: 'email', header: 'Email', searchable: true, sortable: true },
+          { key: 'department', header: 'Department', searchable: true, sortable: true },
+          { key: 'status', header: 'Status', searchable: true, sortable: true },
+          { key: 'createdAt', header: 'Created', searchable: true, cellType: 'date' },
+          { key: 'lastSeen', header: 'Last seen', searchable: true, cellType: 'date' },
+        ];
+      `,
     },
     rowDetails: {
       html: code`

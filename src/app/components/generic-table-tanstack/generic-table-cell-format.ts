@@ -80,6 +80,45 @@ export function resolveSortValue<T>(column: ColumnDef<T>, row: T): string | numb
   return '';
 }
 
+/**
+ * Text used for column filter matching: formatted display plus the raw value
+ * so both "Jul 2026" and "2026-07-21" can match a date cell.
+ */
+export function resolveFilterText<T>(column: ColumnDef<T>, row: T): string {
+  const formatted = formatColumnCell(column, row);
+  const raw = resolveCellRawValue(column, row);
+  let rawText = '';
+
+  if (raw == null) {
+    rawText = '';
+  } else if (raw instanceof Date) {
+    rawText = Number.isNaN(raw.getTime()) ? '' : raw.toISOString();
+  } else {
+    rawText = String(raw);
+  }
+
+  if (!rawText || rawText === formatted) {
+    return formatted;
+  }
+
+  return `${formatted} ${rawText}`;
+}
+
+/** Case-insensitive substring match against {@link resolveFilterText}. */
+export function columnMatchesFilter<T>(
+  column: ColumnDef<T>,
+  row: T,
+  query: string,
+): boolean {
+  const needle = query.trim().toLocaleLowerCase();
+
+  if (!needle) {
+    return true;
+  }
+
+  return resolveFilterText(column, row).toLocaleLowerCase().includes(needle);
+}
+
 export function formatTextCell(raw: unknown): string {
   if (raw == null) {
     return '';
