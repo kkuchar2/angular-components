@@ -634,12 +634,9 @@ export class GenericTableTanstackComponent<T = unknown> {
     });
 
     effect(() => {
-      if (!this.virtualized()) {
-        return;
-      }
-
       this.displayedColumns();
       this.data();
+      this.virtualized();
       this.virtualShell();
       this.headerTrack();
       this.scrollElement();
@@ -1201,9 +1198,11 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.scrollContentWidthPx.set(viewport.clientWidth);
     this.measureBoundedLayout();
 
-    // Flex sizing may have just given the viewport a real height — remeasure so
-    // getVirtualItems() is not stuck on an empty range from a 0px first paint.
-    this.virtualizer.measure();
+    if (this.virtualized()) {
+      // Flex sizing may have just given the viewport a real height — remeasure so
+      // getVirtualItems() is not stuck on an empty range from a 0px first paint.
+      this.virtualizer.measure();
+    }
   }
 
   private measureBoundedLayout(): void {
@@ -1227,16 +1226,23 @@ export class GenericTableTanstackComponent<T = unknown> {
     );
 
     const tableRoot = host.querySelector('.generic-table-tanstack');
-    // Virtual: measure chrome outside the shell (toolbar/gaps). Header lives inside
-    // the shell and is subtracted separately via headerHeightPx.
+    // Shell includes header + body viewport. Chrome is toolbar/gaps/paginator.
+    // Header is outside the scrollport so rows clip below a transparent header.
     const scrollBody = this.virtualized()
       ? host.querySelector('.generic-table-tanstack__virtual-shell')
-      : host.querySelector('.generic-table-tanstack__scroll');
+      : host.querySelector('.generic-table-tanstack__static-shell');
 
     if (tableRoot instanceof HTMLElement && scrollBody instanceof HTMLElement) {
       this.boundedChromeHeightPx.set(
         Math.max(0, tableRoot.clientHeight - scrollBody.clientHeight),
       );
+    }
+
+    const header = this.headerTrack()?.nativeElement;
+    const headerHeight = header?.offsetHeight ?? 0;
+
+    if (headerHeight > 0 && headerHeight !== this.headerHeightPx()) {
+      this.headerHeightPx.set(headerHeight);
     }
   }
 

@@ -268,6 +268,23 @@
   min-height: var(--gtt-min-height, 0);
 }
 
+.generic-table-tanstack__static-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border: none;
+  border-radius: 0;
+  max-height: var(--gtt-max-height);
+}
+
+.generic-table-tanstack__static-shell--bounded {
+  flex: 1 1 0;
+  height: auto;
+  max-height: 100%;
+  min-height: var(--gtt-min-height, 0);
+}
+
 .generic-table-tanstack__scroll {
   position: relative;
   overflow: auto;
@@ -279,6 +296,13 @@
   border: none;
   border-radius: 0;
   background: var(--gtt-row-bg);
+}
+
+.generic-table-tanstack__scroll--static-body {
+  // Header lives outside this viewport; clip rows below the transparent header.
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
 }
 
 .generic-table-tanstack__scroll--fill {
@@ -304,7 +328,8 @@
   max-height: none;
 }
 
-.generic-table-tanstack__scroll--virtual.generic-table-tanstack__scroll--bounded {
+.generic-table-tanstack__scroll--virtual.generic-table-tanstack__scroll--bounded,
+.generic-table-tanstack__scroll--static-body.generic-table-tanstack__scroll--bounded {
   flex: 1 1 0;
   min-height: 0;
 }
