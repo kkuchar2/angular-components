@@ -127,10 +127,9 @@ export interface ColumnDef<T = unknown> {
  * - `'fill'`: sizes to its rows up to the remaining flex-column space, then scrolls.
  *   Virtualized tables ignore `maxHeight` and use the full allocation.
  * - `'parent'`: fills the parent's height (`height: 100%` / flex stretch, including
- *   `flex: 1` parents). Scrolls when rows exceed that space. When `height` is set,
- *   that value is a floor — the table will not size shorter than it. Ignores
- *   `maxHeight`. Virtualized tables use the full parent allocation, floored by
- *   `height`.
+ *   `flex: 1` parents). Scrolls when rows exceed that space. `height` is a floor
+ *   (never shorter); `maxHeight` is a cap (never taller). Virtualized tables use
+ *   the same clamped parent allocation.
  *
  * `'fill'` and `'parent'` both scroll the body once rows exceed the available
  * height, and both require the parent to resolve a height (see the README).

@@ -147,6 +147,10 @@ export class GenericTableTanstackComponent<T = unknown> {
    * minimum instead: the table fills the parent unless that would be shorter.
    */
   readonly height = input<string | null>(null);
+  /**
+   * Caps the scroll body in `'auto'` / `'fill'`. In `'parent'` mode caps the
+   * filled parent height so the table will not grow taller than this value.
+   */
   readonly maxHeight = input<string | null>(null);
   readonly minHeight = input<string | null>(null);
   readonly trackBy = input<TrackByFunction<T>>((_index, row) => row);
@@ -189,10 +193,10 @@ export class GenericTableTanstackComponent<T = unknown> {
       return null;
     }
 
-    // Parent mode fills via CSS (`height: 100%`). A pixel max-height cap here
-    // is what kept flex:1 parents from stretching past the 480px fallback.
+    // Parent mode fills via CSS (`height: 100%`). Only an explicit `maxHeight`
+    // may cap it — never the 480px auto-mode fallback.
     if (this.isParentMode()) {
-      return null;
+      return this.resolveExplicitMaxHeightPx();
     }
 
     const available = this.boundedAvailableHeightPx();
@@ -1028,6 +1032,19 @@ export class GenericTableTanstackComponent<T = unknown> {
     return parsed > 0 ? parsed : 0;
   }
 
+  /** Parent allocation: fill measured space, floored by `height`, capped by `maxHeight`. */
+  private clampParentAvailableHeightPx(measured: number): number {
+    const floor = this.resolveHeightInputPx();
+    const cap = this.resolveExplicitMaxHeightPx();
+    let size = Math.max(measured, floor);
+
+    if (cap != null) {
+      size = Math.min(size, Math.max(cap, floor));
+    }
+
+    return size;
+  }
+
   private resolveBoundedAvailableFallbackPx(): number {
     const maxBody = this.resolveExplicitMaxHeightPx() ?? DEFAULT_MAX_HEIGHT_PX;
     const chrome = this.boundedChromeHeightPx();
@@ -1112,7 +1129,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       : this.measureParentAvailableHeight(host, parent);
 
     this.boundedAvailableHeightPx.set(
-      this.isParentMode() ? Math.max(measured, this.resolveHeightInputPx()) : measured,
+      this.isParentMode() ? this.clampParentAvailableHeightPx(measured) : measured,
     );
 
     const tableRoot = host.querySelector('.generic-table-tanstack');
