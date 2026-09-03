@@ -89,7 +89,11 @@
                     @for (option of facet.options; track option.value) {
                       <label
                         class="generic-table-tanstack__toggle-option"
-                        [class.generic-table-tanstack__toggle-option--disabled]="disabled()"
+                        [class.generic-table-tanstack__toggle-option--disabled]="
+                          disabled() ||
+                          (option.count === 0 &&
+                            !isToggleValueSelected(col.key, facet.group.id, option.value))
+                        "
                         [attr.for]="toggleOptionId(col.key, facet.group.id, option.value)"
                       >
                         <input
@@ -99,7 +103,15 @@
                           [checked]="
                             isToggleValueSelected(col.key, facet.group.id, option.value)
                           "
-                          [disabled]="disabled()"
+                          [disabled]="
+                            disabled() ||
+                            (option.count === 0 &&
+                              !isToggleValueSelected(
+                                col.key,
+                                facet.group.id,
+                                option.value
+                              ))
+                          "
                           (change)="
                             onToggleFilterInput(col.key, facet.group.id, option.value, $event)
                           "

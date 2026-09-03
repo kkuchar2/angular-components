@@ -320,31 +320,39 @@ export class GenericTableTanstackComponent<T = unknown> {
       (column) => (textValues[column.key] ?? '').trim().length > 0,
     );
 
+    const textFilteredRows = rows.filter((row) =>
+      activeText.every((textColumn) =>
+        columnMatchesFilter(
+          textColumn,
+          row,
+          textValues[textColumn.key] ?? '',
+        ),
+      ),
+    );
+
     for (const column of this.toggleableColumns()) {
       for (const group of resolveToggleGroups(column)) {
         const selfKey = toggleSelectionKey(column.key, group.id);
 
-        const baseRows = rows.filter(
-          (row) =>
-            activeText.every((textColumn) =>
-              columnMatchesFilter(textColumn, row, textValues[textColumn.key] ?? ''),
-            ) &&
-            this.toggleableColumns().every((toggleColumn) =>
-              resolveToggleGroups(toggleColumn).every((otherGroup) => {
-                const otherKey = toggleSelectionKey(toggleColumn.key, otherGroup.id);
+        const baseRows = textFilteredRows.filter((row) =>
+          this.toggleableColumns().every((toggleColumn) =>
+            resolveToggleGroups(toggleColumn).every((otherGroup) => {
+              const otherKey = toggleSelectionKey(toggleColumn.key, otherGroup.id);
 
-                if (otherKey === selfKey) {
-                  return true;
-                }
+              // Ignore current group's selection when computing its siblings' counts.
+              if (otherKey === selfKey) {
+                return true;
+              }
 
-                return rowMatchesToggleGroup(otherGroup, row, toggleValues[otherKey]);
-              }),
-            ),
+              return rowMatchesToggleGroup(otherGroup, row, toggleValues[otherKey]);
+            }),
+          ),
         );
 
         const counted = collectToggleGroupOptions(group, baseRows);
         const countByValue = new Map(counted.map((option) => [option.value, option.count]));
-        const values = new Set(countByValue.keys());
+        const universe = collectToggleGroupOptions(group, textFilteredRows);
+        const values = new Set(universe.map((option) => option.value));
         const selected = toggleValues[selfKey];
 
         if (selected?.size) {

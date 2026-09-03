@@ -807,7 +807,26 @@ export class GenericTableTanstackDemoComponent {
   }
 
   private buildVirtualRows(count: number): DemoUser[] {
-    const departments = ['Engineering', 'Design', 'Product', 'Support', 'Finance'];
+    const departments = [
+      'Engineering',
+      'Design',
+      'Product',
+      'Support',
+      'Finance',
+      'HR',
+      'Legal',
+      'QA',
+      'Ops',
+      'Marketing',
+      'Sales',
+      'Customer Success',
+      'IT',
+      'Security',
+      'Research',
+      'Data',
+      'UX',
+      'DevRel',
+    ];
     const statuses: DemoUser['status'][] = ['Active', 'Inactive', 'Pending'];
     const presences: DemoUser['presence'][] = ['online', 'away', 'offline'];
     const trends = [12, -4, 0, 8, -15, 3, -1, 22];
