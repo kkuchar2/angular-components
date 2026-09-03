@@ -164,7 +164,7 @@ export function normalizeToggleValues(
   return list.map((value) => String(value).trim());
 }
 
-function sortToggleOptions(options: GenericTableToggleOption[]): GenericTableToggleOption[] {
+export function sortToggleOptions(options: GenericTableToggleOption[]): GenericTableToggleOption[] {
   return [...options].sort((a, b) => {
     if (a.value === '' && b.value !== '') {
       return 1;

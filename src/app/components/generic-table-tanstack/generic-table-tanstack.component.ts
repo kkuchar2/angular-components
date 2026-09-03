@@ -45,6 +45,7 @@ import {
   resolveSortValue,
   resolveToggleGroups,
   rowMatchesToggleGroup,
+  sortToggleOptions,
   toggleSelectionKey,
   type GenericTableToggleFacet,
 } from './generic-table-cell-format';
@@ -310,15 +311,58 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   readonly toggleFacets = computed((): GenericTableToggleFacet<T>[] => {
     const rows = this.data();
+    const textValues = this.columnFilterValues();
+    const toggleValues = this.columnToggleSelections();
+    const searchable = this.searchableColumns();
     const facets: GenericTableToggleFacet<T>[] = [];
+
+    const activeText = searchable.filter(
+      (column) => (textValues[column.key] ?? '').trim().length > 0,
+    );
 
     for (const column of this.toggleableColumns()) {
       for (const group of resolveToggleGroups(column)) {
+        const selfKey = toggleSelectionKey(column.key, group.id);
+
+        const baseRows = rows.filter(
+          (row) =>
+            activeText.every((textColumn) =>
+              columnMatchesFilter(textColumn, row, textValues[textColumn.key] ?? ''),
+            ) &&
+            this.toggleableColumns().every((toggleColumn) =>
+              resolveToggleGroups(toggleColumn).every((otherGroup) => {
+                const otherKey = toggleSelectionKey(toggleColumn.key, otherGroup.id);
+
+                if (otherKey === selfKey) {
+                  return true;
+                }
+
+                return rowMatchesToggleGroup(otherGroup, row, toggleValues[otherKey]);
+              }),
+            ),
+        );
+
+        const counted = collectToggleGroupOptions(group, baseRows);
+        const countByValue = new Map(counted.map((option) => [option.value, option.count]));
+        const values = new Set(countByValue.keys());
+        const selected = toggleValues[selfKey];
+
+        if (selected?.size) {
+          for (const value of selected) {
+            values.add(value);
+          }
+        }
+
         facets.push({
           columnKey: column.key,
           group,
           label: group.label ?? column.header,
-          options: collectToggleGroupOptions(group, rows),
+          options: sortToggleOptions(
+            [...values].map((value) => ({
+              value,
+              count: countByValue.get(value) ?? 0,
+            })),
+          ),
         });
       }
     }
@@ -353,12 +397,17 @@ export class GenericTableTanstackComponent<T = unknown> {
       (column) => (textValues[column.key] ?? '').trim().length > 0,
     );
 
-    const activeFacets = this.toggleFacets().filter((facet) => {
-      const key = toggleSelectionKey(facet.columnKey, facet.group.id);
-      return (toggleValues[key]?.size ?? 0) > 0;
-    });
+    const activeToggleGroups = this.toggleableColumns().flatMap((column) =>
+      resolveToggleGroups(column)
+        .map((group) => ({
+          columnKey: column.key,
+          group,
+          key: toggleSelectionKey(column.key, group.id),
+        }))
+        .filter((entry) => (toggleValues[entry.key]?.size ?? 0) > 0),
+    );
 
-    if (activeText.length === 0 && activeFacets.length === 0) {
+    if (activeText.length === 0 && activeToggleGroups.length === 0) {
       return [...rows];
     }
 
@@ -367,12 +416,8 @@ export class GenericTableTanstackComponent<T = unknown> {
         activeText.every((column) =>
           columnMatchesFilter(column, row, textValues[column.key] ?? ''),
         ) &&
-        activeFacets.every((facet) =>
-          rowMatchesToggleGroup(
-            facet.group,
-            row,
-            toggleValues[toggleSelectionKey(facet.columnKey, facet.group.id)],
-          ),
+        activeToggleGroups.every((entry) =>
+          rowMatchesToggleGroup(entry.group, row, toggleValues[entry.key]),
         ),
     );
   });
