@@ -119,6 +119,54 @@ export function columnMatchesFilter<T>(
   return resolveFilterText(column, row).toLocaleLowerCase().includes(needle);
 }
 
+/**
+ * Display value used for toggleable checkbox filters (formatted cell text).
+ * Empty / missing values become `''`.
+ */
+export function resolveToggleValue<T>(column: ColumnDef<T>, row: T): string {
+  return formatColumnCell(column, row).trim();
+}
+
+/** Sorted unique toggle values for a column across `rows`. */
+export function collectUniqueToggleValues<T>(
+  column: ColumnDef<T>,
+  rows: readonly T[],
+): string[] {
+  const unique = new Set<string>();
+
+  for (const row of rows) {
+    unique.add(resolveToggleValue(column, row));
+  }
+
+  return [...unique].sort((a, b) => {
+    if (a === '' && b !== '') {
+      return 1;
+    }
+
+    if (b === '' && a !== '') {
+      return -1;
+    }
+
+    return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
+  });
+}
+
+/**
+ * When `selected` is empty, every row matches. Otherwise the row matches if its
+ * toggle value is one of the selected strings.
+ */
+export function columnMatchesToggleFilter<T>(
+  column: ColumnDef<T>,
+  row: T,
+  selected: ReadonlySet<string> | undefined,
+): boolean {
+  if (!selected || selected.size === 0) {
+    return true;
+  }
+
+  return selected.has(resolveToggleValue(column, row));
+}
+
 export function formatTextCell(raw: unknown): string {
   if (raw == null) {
     return '';

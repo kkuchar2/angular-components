@@ -7,8 +7,9 @@
       cells with optional copy, plus reusable <code>cellComponent</code> cells
       (status badge). Pass <code>[rowActions]</code> for a rightmost ⋮ context menu
       (<code>app-context-menu</code>). Projected templates still work for one-offs.
-      Columns with <code>searchable: true</code> open a full-height filter rail on
-      the left; typing filters the table live.
+      Columns with <code>searchable: true</code> open a text field in the left
+      filter rail; <code>toggleable: true</code> lists unique values as
+      checkboxes. Text and toggle filters combine with AND.
     </p>
 
     <app-generic-table-tanstack
@@ -39,9 +40,10 @@
   <article class="demo__card">
     <h2 class="demo__title">2. Scrollable column filters</h2>
     <p class="demo__hint">
-      Every column is <code>searchable</code>. With
-      <code>filterMinHeight</code>, the rail keeps its own height instead of
-      matching the table, and scrolls when filters overflow that size.
+      Searchable columns show a text field; toggleable columns list unique
+      values as checkboxes. With <code>filterMinHeight</code>, the rail keeps
+      its own height and scrolls when filters overflow. Text + toggles AND
+      together; multiple checks within a column OR.
     </p>
 
     <app-generic-table-tanstack

@@ -75,6 +75,12 @@ export interface ColumnDef<T = unknown> {
    */
   searchable?: boolean;
   /**
+   * When true, the filter rail lists unique values for this column as
+   * checkboxes. Selecting one or more filters rows to those values (OR within
+   * the column). Combines with `searchable` filters via AND. Defaults to `false`.
+   */
+  toggleable?: boolean;
+  /**
    * Built-in cell presentation when no custom `appGenericTableCell` template and
    * no `cellComponent` is set: `'text'` (default), `'uuid'` (monospace), or
    * `'date'` (`Date`, `YYYY-MM-DD`, or ISO datetimes like

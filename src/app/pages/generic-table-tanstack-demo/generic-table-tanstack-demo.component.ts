@@ -105,18 +105,27 @@ export class GenericTableTanstackDemoComponent {
     },
   ];
 
-  /** Same as `columns`, with live text filters on name / email / department. */
-  readonly filterColumns: ColumnDef<DemoUser>[] = this.columns.map((column) =>
-    column.key === 'name' || column.key === 'email' || column.key === 'department'
-      ? { ...column, searchable: true }
-      : column,
-  );
+  /** Name/email text search + department/status value toggles. */
+  readonly filterColumns: ColumnDef<DemoUser>[] = this.columns.map((column) => {
+    if (column.key === 'name' || column.key === 'email') {
+      return { ...column, searchable: true };
+    }
 
-  /** Every column searchable — used to demo a scrollable filter rail. */
-  readonly overflowFilterColumns: ColumnDef<DemoUser>[] = this.columns.map((column) => ({
-    ...column,
-    searchable: true,
-  }));
+    if (column.key === 'department' || column.key === 'status') {
+      return { ...column, toggleable: true };
+    }
+
+    return column;
+  });
+
+  /** Mix of searchable + toggleable columns for a scrollable filter rail. */
+  readonly overflowFilterColumns: ColumnDef<DemoUser>[] = this.columns.map((column) => {
+    if (column.key === 'status' || column.key === 'department') {
+      return { ...column, searchable: true, toggleable: true };
+    }
+
+    return { ...column, searchable: true };
+  });
 
   /** Catalog cells: person, mailto, status badge, boolean. */
   readonly catalogColumns: ColumnDef<DemoUser>[] = [
@@ -397,7 +406,7 @@ export class GenericTableTanstackDemoComponent {
             key: 'department',
             header: 'Department',
             sortable: true,
-            searchable: true,
+            toggleable: true,
             minWidth: '80px',
             width: '140px',
           },
@@ -405,6 +414,7 @@ export class GenericTableTanstackDemoComponent {
             key: 'status',
             header: 'Status',
             sortable: true,
+            toggleable: true,
             minWidth: '72px',
             width: '110px',
             cellComponent: StatusBadgeCellComponent,
@@ -457,8 +467,8 @@ export class GenericTableTanstackDemoComponent {
           { key: 'uuid', header: 'UUID', searchable: true, cellType: 'uuid' },
           { key: 'name', header: 'Name', searchable: true, sortable: true },
           { key: 'email', header: 'Email', searchable: true, sortable: true },
-          { key: 'department', header: 'Department', searchable: true, sortable: true },
-          { key: 'status', header: 'Status', searchable: true, sortable: true },
+          { key: 'department', header: 'Department', searchable: true, toggleable: true },
+          { key: 'status', header: 'Status', searchable: true, toggleable: true },
           { key: 'createdAt', header: 'Created', searchable: true, cellType: 'date' },
           { key: 'lastSeen', header: 'Last seen', searchable: true, cellType: 'date' },
         ];

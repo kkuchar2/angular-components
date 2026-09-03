@@ -37,7 +37,9 @@ import type { ContextMenuDetailField, ContextMenuVariant } from '../context-menu
 import { CustomInputComponent } from '../custom-input/custom-input';
 import { GenericTableCellDirective } from './generic-table-cell.directive';
 import {
+  collectUniqueToggleValues,
   columnMatchesFilter,
+  columnMatchesToggleFilter,
   resolveCellRawValue,
   resolveSortValue,
 } from './generic-table-cell-format';
@@ -317,36 +319,91 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.columns().filter((column) => column.searchable === true),
   );
 
-  readonly hasSearchableColumns = computed(() => this.searchableColumns().length > 0);
-
-  /** Filter rail sized by `filterMinHeight` instead of matching the table. */
-  readonly hasIndependentFilterHeight = computed(
-    () => this.hasSearchableColumns() && this.filterMinHeight() != null,
+  readonly toggleableColumns = computed(() =>
+    this.columns().filter((column) => column.toggleable === true),
   );
 
-  /** Per-column filter query keyed by `ColumnDef.key`. Empty strings are omitted. */
-  readonly columnFilterValues = signal<Readonly<Record<string, string>>>({});
-
-  readonly hasActiveFilters = computed(() =>
-    this.searchableColumns().some(
-      (column) => (this.columnFilterValues()[column.key] ?? '').trim().length > 0,
+  /** Columns that contribute a section to the left filter rail. */
+  readonly filterColumns = computed(() =>
+    this.columns().filter(
+      (column) => column.searchable === true || column.toggleable === true,
     ),
   );
 
-  /** `data` after live column filters (AND across searchable columns). */
-  readonly filteredRows = computed((): T[] => {
+  readonly hasFilterColumns = computed(() => this.filterColumns().length > 0);
+
+  /** Filter rail sized by `filterMinHeight` instead of matching the table. */
+  readonly hasIndependentFilterHeight = computed(
+    () => this.hasFilterColumns() && this.filterMinHeight() != null,
+  );
+
+  /** Per-column text filter query keyed by `ColumnDef.key`. Empty strings are omitted. */
+  readonly columnFilterValues = signal<Readonly<Record<string, string>>>({});
+
+  /**
+   * Per-column selected toggle values. Missing / empty set = no toggle filter
+   * for that column (all values allowed).
+   */
+  readonly columnToggleSelections = signal<Readonly<Record<string, ReadonlySet<string>>>>(
+    {},
+  );
+
+  /** Unique formatted values per toggleable column (from full `data`). */
+  readonly toggleOptionsByColumn = computed(() => {
     const rows = this.data();
-    const values = this.columnFilterValues();
-    const active = this.searchableColumns().filter(
-      (column) => (values[column.key] ?? '').trim().length > 0,
+    const map = new Map<string, string[]>();
+
+    for (const column of this.toggleableColumns()) {
+      map.set(column.key, collectUniqueToggleValues(column, rows));
+    }
+
+    return map;
+  });
+
+  readonly hasActiveFilters = computed(() => {
+    const textValues = this.columnFilterValues();
+    const hasText = this.searchableColumns().some(
+      (column) => (textValues[column.key] ?? '').trim().length > 0,
     );
 
-    if (active.length === 0) {
+    if (hasText) {
+      return true;
+    }
+
+    const toggles = this.columnToggleSelections();
+    return this.toggleableColumns().some(
+      (column) => (toggles[column.key]?.size ?? 0) > 0,
+    );
+  });
+
+  /**
+   * `data` after live filters: each searchable query ANDs, each toggleable
+   * selection ANDs across columns, and selected values OR within a column.
+   */
+  readonly filteredRows = computed((): T[] => {
+    const rows = this.data();
+    const textValues = this.columnFilterValues();
+    const toggleValues = this.columnToggleSelections();
+
+    const activeText = this.searchableColumns().filter(
+      (column) => (textValues[column.key] ?? '').trim().length > 0,
+    );
+    const activeToggles = this.toggleableColumns().filter(
+      (column) => (toggleValues[column.key]?.size ?? 0) > 0,
+    );
+
+    if (activeText.length === 0 && activeToggles.length === 0) {
       return [...rows];
     }
 
-    return rows.filter((row) =>
-      active.every((column) => columnMatchesFilter(column, row, values[column.key] ?? '')),
+    return rows.filter(
+      (row) =>
+        activeText.every((column) =>
+          columnMatchesFilter(column, row, textValues[column.key] ?? ''),
+        ) &&
+        activeToggles.every((column) =>
+          columnMatchesToggleFilter(column, row, toggleValues[column.key]),
+        ),
     );
   });
 
@@ -558,6 +615,7 @@ export class GenericTableTanstackComponent<T = unknown> {
 
     effect(() => {
       this.columnFilterValues();
+      this.columnToggleSelections();
 
       untracked(() => {
         const current = this.clientPagination();
@@ -592,7 +650,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       this.showPaginator();
       this.showColumnToggle();
       this.hideableColumns();
-      this.hasSearchableColumns();
+      this.hasFilterColumns();
       this.data();
       this.virtualized();
 
@@ -712,6 +770,54 @@ export class GenericTableTanstackComponent<T = unknown> {
 
       return { ...current, [key]: value };
     });
+  }
+
+  isToggleValueSelected(columnKey: string, value: string): boolean {
+    return this.columnToggleSelections()[columnKey]?.has(value) === true;
+  }
+
+  onToggleFilterInput(columnKey: string, value: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.onToggleFilterChange(columnKey, value, checked);
+  }
+
+  onToggleFilterChange(columnKey: string, value: string, checked: boolean): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    this.columnToggleSelections.update((current) => {
+      const existing = current[columnKey] ?? new Set<string>();
+      const nextSet = new Set(existing);
+
+      if (checked) {
+        nextSet.add(value);
+      } else {
+        nextSet.delete(value);
+      }
+
+      if (nextSet.size === 0) {
+        if (!(columnKey in current)) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[columnKey];
+        return next;
+      }
+
+      return { ...current, [columnKey]: nextSet };
+    });
+  }
+
+  toggleFilterLabel(value: string): string {
+    return value === '' ? '(Empty)' : value;
+  }
+
+  toggleOptionId(columnKey: string, value: string): string {
+    const safe =
+      value === '' ? '__empty' : encodeURIComponent(value).replaceAll('%', '_');
+    return `gtt-toggle-${columnKey}-${safe}`;
   }
 
   onToggleColumns(event: MatChipListboxChange): void {

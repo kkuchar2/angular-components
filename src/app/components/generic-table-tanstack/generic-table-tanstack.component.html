@@ -5,7 +5,7 @@
   [class.generic-table-tanstack--bounded]="isBoundedHeightMode()"
   [class.generic-table-tanstack--virtualized]="virtualized()"
   [class.generic-table-tanstack--disabled]="disabled()"
-  [class.generic-table-tanstack--filters]="hasSearchableColumns()"
+  [class.generic-table-tanstack--filters]="hasFilterColumns()"
   [attr.aria-disabled]="disabled() || null"
   [style.--gtt-max-height]="isBoundedHeightMode() ? null : maxHeight()"
   [style.--gtt-min-height]="minHeight()"
@@ -45,26 +45,57 @@
 
   <div
     class="generic-table-tanstack__layout"
-    [class.generic-table-tanstack__layout--filters]="hasSearchableColumns()"
+    [class.generic-table-tanstack__layout--filters]="hasFilterColumns()"
     [class.generic-table-tanstack__layout--filters-independent]="hasIndependentFilterHeight()"
     [style.--gtt-filter-min-height]="filterMinHeight()"
   >
-    @if (hasSearchableColumns()) {
+    @if (hasFilterColumns()) {
       <aside class="generic-table-tanstack__filters" aria-label="Table filters">
         <div class="generic-table-tanstack__filters-inner">
-          @for (col of searchableColumns(); track col.key) {
+          @for (col of filterColumns(); track col.key) {
             <div class="generic-table-tanstack__filter">
               <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
-              <app-custom-input
-                [label]="'Search on ' + col.header"
-                appearance="outlined"
-                type="search"
-                [disabled]="disabled()"
-                [placeholder]="'Search on ' + col.header"
-                autocomplete="off"
-                [spellcheck]="false"
-                (valueChange)="onColumnFilterValue(col.key, $event)"
-              />
+
+              @if (col.searchable) {
+                <app-custom-input
+                  [label]="'Search on ' + col.header"
+                  appearance="outlined"
+                  type="search"
+                  [disabled]="disabled()"
+                  [placeholder]="'Search on ' + col.header"
+                  autocomplete="off"
+                  [spellcheck]="false"
+                  (valueChange)="onColumnFilterValue(col.key, $event)"
+                />
+              }
+
+              @if (col.toggleable) {
+                <div
+                  class="generic-table-tanstack__toggle-list"
+                  role="group"
+                  [attr.aria-label]="col.header + ' values'"
+                >
+                  @for (option of toggleOptionsByColumn().get(col.key) ?? []; track option) {
+                    <label
+                      class="generic-table-tanstack__toggle-option"
+                      [class.generic-table-tanstack__toggle-option--disabled]="disabled()"
+                      [attr.for]="toggleOptionId(col.key, option)"
+                    >
+                      <input
+                        class="generic-table-tanstack__toggle-checkbox"
+                        type="checkbox"
+                        [id]="toggleOptionId(col.key, option)"
+                        [checked]="isToggleValueSelected(col.key, option)"
+                        [disabled]="disabled()"
+                        (change)="onToggleFilterInput(col.key, option, $event)"
+                      />
+                      <span class="generic-table-tanstack__toggle-value">
+                        {{ toggleFilterLabel(option) }}
+                      </span>
+                    </label>
+                  }
+                </div>
+              }
             </div>
           }
         </div>
