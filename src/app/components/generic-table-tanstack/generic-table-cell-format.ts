@@ -1,4 +1,4 @@
-import type { ColumnDef } from './generic-table.types';
+import type { ColumnDef, ColumnToggleConfig, ColumnToggleGroup } from './generic-table.types';
 import type { GenericTableDateDisplay } from './generic-table-cell.types';
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -120,7 +120,7 @@ export function columnMatchesFilter<T>(
 }
 
 /**
- * Display value used for toggleable checkbox filters (formatted cell text).
+ * Display value used for default toggleable filters (formatted cell text).
  * Empty / missing values become `''`.
  */
 export function resolveToggleValue<T>(column: ColumnDef<T>, row: T): string {
@@ -133,34 +133,124 @@ export interface GenericTableToggleOption {
   count: number;
 }
 
-/** Sorted unique toggle values with counts for a column across `rows`. */
-export function collectUniqueToggleValues<T>(
-  column: ColumnDef<T>,
+/** Resolved toggle group bound to its parent column for the filter rail. */
+export interface GenericTableToggleFacet<T = unknown> {
+  columnKey: string;
+  group: ColumnToggleGroup<T>;
+  label: string;
+  options: GenericTableToggleOption[];
+}
+
+export function isColumnToggleConfig<T>(
+  value: ColumnDef<T>['toggleable'],
+): value is ColumnToggleConfig<T> {
+  return typeof value === 'object' && value != null && Array.isArray(value.groups);
+}
+
+export function isColumnToggleable<T>(column: ColumnDef<T>): boolean {
+  return column.toggleable === true || isColumnToggleConfig(column.toggleable);
+}
+
+/** Implicit single-group config when `toggleable: true`. */
+export function resolveToggleGroups<T>(column: ColumnDef<T>): ColumnToggleGroup<T>[] {
+  if (column.toggleable === true) {
+    return [
+      {
+        id: 'value',
+        label: column.header,
+        getValues: (row) => resolveToggleValue(column, row),
+      },
+    ];
+  }
+
+  if (isColumnToggleConfig(column.toggleable)) {
+    return column.toggleable.groups;
+  }
+
+  return [];
+}
+
+export function toggleSelectionKey(columnKey: string, groupId: string): string {
+  return `${columnKey}::${groupId}`;
+}
+
+/** Normalize extractor output to trimmed string values (may include `''`). */
+export function normalizeToggleValues(
+  raw: string | readonly string[] | null | undefined,
+): string[] {
+  if (raw == null) {
+    return [];
+  }
+
+  const list = typeof raw === 'string' ? [raw] : [...raw];
+  return list.map((value) => String(value).trim());
+}
+
+function sortToggleOptions(options: GenericTableToggleOption[]): GenericTableToggleOption[] {
+  return [...options].sort((a, b) => {
+    if (a.value === '' && b.value !== '') {
+      return 1;
+    }
+
+    if (b.value === '' && a.value !== '') {
+      return -1;
+    }
+
+    return a.value.localeCompare(b.value, undefined, {
+      sensitivity: 'base',
+      numeric: true,
+    });
+  });
+}
+
+/** Sorted unique toggle values with counts for a group across `rows`. */
+export function collectToggleGroupOptions<T>(
+  group: ColumnToggleGroup<T>,
   rows: readonly T[],
 ): GenericTableToggleOption[] {
   const counts = new Map<string, number>();
 
   for (const row of rows) {
-    const value = resolveToggleValue(column, row);
-    counts.set(value, (counts.get(value) ?? 0) + 1);
+    const values = new Set(normalizeToggleValues(group.getValues(row)));
+
+    // Count the row once per distinct extracted value.
+    for (const value of values) {
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
   }
 
-  return [...counts.entries()]
-    .map(([value, count]) => ({ value, count }))
-    .sort((a, b) => {
-      if (a.value === '' && b.value !== '') {
-        return 1;
-      }
+  return sortToggleOptions(
+    [...counts.entries()].map(([value, count]) => ({ value, count })),
+  );
+}
 
-      if (b.value === '' && a.value !== '') {
-        return -1;
-      }
+/**
+ * @deprecated Prefer {@link collectToggleGroupOptions} with {@link resolveToggleGroups}.
+ * Kept for default whole-cell uniqueness.
+ */
+export function collectUniqueToggleValues<T>(
+  column: ColumnDef<T>,
+  rows: readonly T[],
+): GenericTableToggleOption[] {
+  const [group] = resolveToggleGroups(column);
+  return group ? collectToggleGroupOptions(group, rows) : [];
+}
 
-      return a.value.localeCompare(b.value, undefined, {
-        sensitivity: 'base',
-        numeric: true,
-      });
-    });
+/**
+ * When `selected` is empty, every row matches. Otherwise the row matches if any
+ * of its extracted group values is selected.
+ */
+export function rowMatchesToggleGroup<T>(
+  group: ColumnToggleGroup<T>,
+  row: T,
+  selected: ReadonlySet<string> | undefined,
+): boolean {
+  if (!selected || selected.size === 0) {
+    return true;
+  }
+
+  const values = normalizeToggleValues(group.getValues(row));
+  return values.some((value) => selected.has(value));
 }
 
 /**

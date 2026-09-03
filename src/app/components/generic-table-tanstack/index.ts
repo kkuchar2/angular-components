@@ -11,6 +11,8 @@ export { PresencePulseCellComponent } from './cells/presence-pulse-cell.componen
 export { TrendCellComponent } from './cells/trend-cell.component';
 export type {
   ColumnDef,
+  ColumnToggleConfig,
+  ColumnToggleGroup,
   GenericTableCellComponentInputs,
   GenericTableCellContext,
   GenericTableExportRequest,
@@ -19,6 +21,10 @@ export type {
   GenericTableRowActionEvent,
 } from './generic-table.types';
 export type { GenericTableCellType, GenericTableDateDisplay } from './generic-table-cell.types';
+export type {
+  GenericTableToggleFacet,
+  GenericTableToggleOption,
+} from './generic-table-cell-format';
 export {
   ContextMenuComponent,
   ContextMenuPanelDirective,

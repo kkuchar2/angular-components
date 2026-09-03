@@ -63,9 +63,8 @@
 
           @for (col of filterColumns(); track col.key) {
             <div class="generic-table-tanstack__filter">
-              <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
-
               @if (col.searchable) {
+                <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
                 <app-custom-input
                   [label]="'Search on ' + col.header"
                   appearance="outlined"
@@ -79,36 +78,43 @@
                 />
               }
 
-              @if (col.toggleable) {
-                <div
-                  class="generic-table-tanstack__toggle-list"
-                  role="group"
-                  [attr.aria-label]="col.header + ' values'"
-                >
-                  @for (option of toggleOptionsByColumn().get(col.key) ?? []; track option.value) {
-                    <label
-                      class="generic-table-tanstack__toggle-option"
-                      [class.generic-table-tanstack__toggle-option--disabled]="disabled()"
-                      [attr.for]="toggleOptionId(col.key, option.value)"
-                    >
-                      <input
-                        class="generic-table-tanstack__toggle-checkbox"
-                        type="checkbox"
-                        [id]="toggleOptionId(col.key, option.value)"
-                        [checked]="isToggleValueSelected(col.key, option.value)"
-                        [disabled]="disabled()"
-                        (change)="onToggleFilterInput(col.key, option.value, $event)"
-                      />
-                      <span class="generic-table-tanstack__toggle-value">
-                        <span class="generic-table-tanstack__toggle-name">
-                          {{ toggleFilterName(option.value) }}
+              @for (facet of toggleFacetsForColumn(col.key); track facet.group.id) {
+                <div class="generic-table-tanstack__toggle-group">
+                  <span class="generic-table-tanstack__filter-label">{{ facet.label }}</span>
+                  <div
+                    class="generic-table-tanstack__toggle-list"
+                    role="group"
+                    [attr.aria-label]="facet.label + ' values'"
+                  >
+                    @for (option of facet.options; track option.value) {
+                      <label
+                        class="generic-table-tanstack__toggle-option"
+                        [class.generic-table-tanstack__toggle-option--disabled]="disabled()"
+                        [attr.for]="toggleOptionId(col.key, facet.group.id, option.value)"
+                      >
+                        <input
+                          class="generic-table-tanstack__toggle-checkbox"
+                          type="checkbox"
+                          [id]="toggleOptionId(col.key, facet.group.id, option.value)"
+                          [checked]="
+                            isToggleValueSelected(col.key, facet.group.id, option.value)
+                          "
+                          [disabled]="disabled()"
+                          (change)="
+                            onToggleFilterInput(col.key, facet.group.id, option.value, $event)
+                          "
+                        />
+                        <span class="generic-table-tanstack__toggle-value">
+                          <span class="generic-table-tanstack__toggle-name">
+                            {{ toggleFilterName(option.value) }}
+                          </span>
+                          <span class="generic-table-tanstack__toggle-count">
+                            ({{ option.count }})
+                          </span>
                         </span>
-                        <span class="generic-table-tanstack__toggle-count">
-                          ({{ option.count }})
-                        </span>
-                      </span>
-                    </label>
-                  }
+                      </label>
+                    }
+                  </div>
                 </div>
               }
             </div>

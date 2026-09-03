@@ -52,6 +52,32 @@ export interface GenericTableCellComponentInputs<T = unknown> {
 }
 
 /**
+ * One facet group extracted from a toggleable column (checkbox list in the rail).
+ *
+ * @typeParam T - The row model the table renders.
+ */
+export interface ColumnToggleGroup<T = unknown> {
+  /** Stable id within the column (selection state key). */
+  id: string;
+  /** Label above this group's checkboxes. Defaults to the column header. */
+  label?: string;
+  /**
+   * Extract facet value(s) from the row. A row matches when any extracted
+   * value is in the selected set (OR within the group).
+   */
+  getValues: (row: T) => string | readonly string[] | null | undefined;
+}
+
+/**
+ * Custom toggle splitting for a column — e.g. multiple facets from one string.
+ *
+ * @typeParam T - The row model the table renders.
+ */
+export interface ColumnToggleConfig<T = unknown> {
+  groups: ColumnToggleGroup<T>[];
+}
+
+/**
  * Definition of a single table column.
  *
  * @typeParam T - The row model the table renders.
@@ -75,11 +101,12 @@ export interface ColumnDef<T = unknown> {
    */
   searchable?: boolean;
   /**
-   * When true, the filter rail lists unique values for this column as
-   * checkboxes. Selecting one or more filters rows to those values (OR within
-   * the column). Combines with `searchable` filters via AND. Defaults to `false`.
+   * When true, the filter rail lists unique formatted cell values as checkboxes.
+   * Pass a {@link ColumnToggleConfig} to split one column into multiple toggle
+   * groups (e.g. extract "value" and "process" facets from a template string).
+   * Within a group selected values OR; groups/search filters AND. Defaults off.
    */
-  toggleable?: boolean;
+  toggleable?: boolean | ColumnToggleConfig<T>;
   /**
    * Built-in cell presentation when no custom `appGenericTableCell` template and
    * no `cellComponent` is set: `'text'` (default), `'uuid'` (monospace), or

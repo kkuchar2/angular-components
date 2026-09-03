@@ -38,12 +38,15 @@ import type { ContextMenuDetailField, ContextMenuVariant } from '../context-menu
 import { CustomInputComponent } from '../custom-input/custom-input';
 import { GenericTableCellDirective } from './generic-table-cell.directive';
 import {
-  collectUniqueToggleValues,
+  collectToggleGroupOptions,
   columnMatchesFilter,
-  columnMatchesToggleFilter,
+  isColumnToggleable,
   resolveCellRawValue,
   resolveSortValue,
-  type GenericTableToggleOption,
+  resolveToggleGroups,
+  rowMatchesToggleGroup,
+  toggleSelectionKey,
+  type GenericTableToggleFacet,
 } from './generic-table-cell-format';
 import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
 import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
@@ -323,13 +326,13 @@ export class GenericTableTanstackComponent<T = unknown> {
   );
 
   readonly toggleableColumns = computed(() =>
-    this.columns().filter((column) => column.toggleable === true),
+    this.columns().filter((column) => isColumnToggleable(column)),
   );
 
   /** Columns that contribute a section to the left filter rail. */
   readonly filterColumns = computed(() =>
     this.columns().filter(
-      (column) => column.searchable === true || column.toggleable === true,
+      (column) => column.searchable === true || isColumnToggleable(column),
     ),
   );
 
@@ -344,24 +347,36 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly columnFilterValues = signal<Readonly<Record<string, string>>>({});
 
   /**
-   * Per-column selected toggle values. Missing / empty set = no toggle filter
-   * for that column (all values allowed).
+   * Selected toggle values keyed by `${columnKey}::${groupId}`.
+   * Missing / empty set = no filter for that group.
    */
   readonly columnToggleSelections = signal<Readonly<Record<string, ReadonlySet<string>>>>(
     {},
   );
 
-  /** Unique formatted values per toggleable column (from full `data`). */
-  readonly toggleOptionsByColumn = computed(() => {
+  /** All toggle facets (one per group) with unique values + counts from full `data`. */
+  readonly toggleFacets = computed((): GenericTableToggleFacet<T>[] => {
     const rows = this.data();
-    const map = new Map<string, GenericTableToggleOption[]>();
+    const facets: GenericTableToggleFacet<T>[] = [];
 
     for (const column of this.toggleableColumns()) {
-      map.set(column.key, collectUniqueToggleValues(column, rows));
+      for (const group of resolveToggleGroups(column)) {
+        facets.push({
+          columnKey: column.key,
+          group,
+          label: group.label ?? column.header,
+          options: collectToggleGroupOptions(group, rows),
+        });
+      }
     }
 
-    return map;
+    return facets;
   });
+
+  /** Facets for one column (for template grouping under that column's filter block). */
+  toggleFacetsForColumn(columnKey: string): GenericTableToggleFacet<T>[] {
+    return this.toggleFacets().filter((facet) => facet.columnKey === columnKey);
+  }
 
   readonly hasActiveFilters = computed(() => {
     const textValues = this.columnFilterValues();
@@ -374,14 +389,12 @@ export class GenericTableTanstackComponent<T = unknown> {
     }
 
     const toggles = this.columnToggleSelections();
-    return this.toggleableColumns().some(
-      (column) => (toggles[column.key]?.size ?? 0) > 0,
-    );
+    return Object.values(toggles).some((selected) => (selected?.size ?? 0) > 0);
   });
 
   /**
-   * `data` after live filters: each searchable query ANDs, each toggleable
-   * selection ANDs across columns, and selected values OR within a column.
+   * `data` after live filters: searchable queries AND toggle groups AND;
+   * selected values within a group OR.
    */
   readonly filteredRows = computed((): T[] => {
     const rows = this.data();
@@ -391,11 +404,13 @@ export class GenericTableTanstackComponent<T = unknown> {
     const activeText = this.searchableColumns().filter(
       (column) => (textValues[column.key] ?? '').trim().length > 0,
     );
-    const activeToggles = this.toggleableColumns().filter(
-      (column) => (toggleValues[column.key]?.size ?? 0) > 0,
-    );
 
-    if (activeText.length === 0 && activeToggles.length === 0) {
+    const activeFacets = this.toggleFacets().filter((facet) => {
+      const key = toggleSelectionKey(facet.columnKey, facet.group.id);
+      return (toggleValues[key]?.size ?? 0) > 0;
+    });
+
+    if (activeText.length === 0 && activeFacets.length === 0) {
       return [...rows];
     }
 
@@ -404,8 +419,12 @@ export class GenericTableTanstackComponent<T = unknown> {
         activeText.every((column) =>
           columnMatchesFilter(column, row, textValues[column.key] ?? ''),
         ) &&
-        activeToggles.every((column) =>
-          columnMatchesToggleFilter(column, row, toggleValues[column.key]),
+        activeFacets.every((facet) =>
+          rowMatchesToggleGroup(
+            facet.group,
+            row,
+            toggleValues[toggleSelectionKey(facet.columnKey, facet.group.id)],
+          ),
         ),
     );
   });
@@ -788,22 +807,37 @@ export class GenericTableTanstackComponent<T = unknown> {
     return this.columnFilterValues()[key] ?? '';
   }
 
-  isToggleValueSelected(columnKey: string, value: string): boolean {
-    return this.columnToggleSelections()[columnKey]?.has(value) === true;
+  isToggleValueSelected(columnKey: string, groupId: string, value: string): boolean {
+    return (
+      this.columnToggleSelections()[toggleSelectionKey(columnKey, groupId)]?.has(value) ===
+      true
+    );
   }
 
-  onToggleFilterInput(columnKey: string, value: string, event: Event): void {
+  onToggleFilterInput(
+    columnKey: string,
+    groupId: string,
+    value: string,
+    event: Event,
+  ): void {
     const checked = (event.target as HTMLInputElement).checked;
-    this.onToggleFilterChange(columnKey, value, checked);
+    this.onToggleFilterChange(columnKey, groupId, value, checked);
   }
 
-  onToggleFilterChange(columnKey: string, value: string, checked: boolean): void {
+  onToggleFilterChange(
+    columnKey: string,
+    groupId: string,
+    value: string,
+    checked: boolean,
+  ): void {
     if (this.disabled()) {
       return;
     }
 
+    const selectionKey = toggleSelectionKey(columnKey, groupId);
+
     this.columnToggleSelections.update((current) => {
-      const existing = current[columnKey] ?? new Set<string>();
+      const existing = current[selectionKey] ?? new Set<string>();
       const nextSet = new Set(existing);
 
       if (checked) {
@@ -813,16 +847,16 @@ export class GenericTableTanstackComponent<T = unknown> {
       }
 
       if (nextSet.size === 0) {
-        if (!(columnKey in current)) {
+        if (!(selectionKey in current)) {
           return current;
         }
 
         const next = { ...current };
-        delete next[columnKey];
+        delete next[selectionKey];
         return next;
       }
 
-      return { ...current, [columnKey]: nextSet };
+      return { ...current, [selectionKey]: nextSet };
     });
   }
 
@@ -830,10 +864,10 @@ export class GenericTableTanstackComponent<T = unknown> {
     return value === '' ? '(Empty)' : value;
   }
 
-  toggleOptionId(columnKey: string, value: string): string {
+  toggleOptionId(columnKey: string, groupId: string, value: string): string {
     const safe =
       value === '' ? '__empty' : encodeURIComponent(value).replaceAll('%', '_');
-    return `gtt-toggle-${columnKey}-${safe}`;
+    return `gtt-toggle-${columnKey}-${groupId}-${safe}`;
   }
 
   onToggleColumns(event: MatChipListboxChange): void {
