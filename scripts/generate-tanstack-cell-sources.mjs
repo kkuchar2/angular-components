@@ -43,16 +43,7 @@ function bundleCell(baseName) {
   const ts = readPart(baseName, 'ts');
   const html = readPart(baseName, 'html');
   const scss = readPart(baseName, 'scss');
-  return [
-    `// ${baseName}.ts`,
-    ts,
-    '',
-    `// ${baseName}.html`,
-    html,
-    '',
-    `// ${baseName}.scss`,
-    scss,
-  ].join('\n');
+  return [ts, '', html, '', scss].join('\n');
 }
 
 const entries = Object.entries(files).map(([key, baseName]) => {
@@ -60,13 +51,7 @@ const entries = Object.entries(files).map(([key, baseName]) => {
   return `  ${key}: \`\n${toTemplateLiteral(source)}\n\`,`;
 });
 
-const contents = `/**
- * Source of shared tanstack table cell components for demo code tabs.
- *
- * Regenerate after editing cells:
- *   node scripts/generate-tanstack-cell-sources.mjs
- */
-import type { DemoCodeCellTab } from '../../shared/demo-code-block/demo-code.util';
+const contents = `import type { DemoCodeCellTab } from '../../shared/demo-code-block/demo-code.util';
 
 export const tanstackCellSources = {
 ${entries.join('\n')}
@@ -74,7 +59,6 @@ ${entries.join('\n')}
 
 export type TanstackCellSourceKey = keyof typeof tanstackCellSources;
 
-/** Build demo code tabs for the given cell component keys (order preserved). */
 export function tanstackCellTabs(
   ...keys: TanstackCellSourceKey[]
 ): DemoCodeCellTab[] {

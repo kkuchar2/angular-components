@@ -7,7 +7,6 @@ import { filter, map, startWith } from 'rxjs';
 import { COMPONENT_NAV_ITEMS } from '../../navigation';
 import { ThemeService } from '../../services/theme.service';
 
-/** Sidebar + topbar shell for the component showcase routes. */
 @Component({
   selector: 'app-components-shell',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideDynamicIcon],

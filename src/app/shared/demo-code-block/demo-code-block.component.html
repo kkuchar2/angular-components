@@ -42,7 +42,7 @@
   </div>
 
   @if (expanded() && activeTab()) {
-    <!-- Keep <pre><code> flush — whitespace inside <pre> becomes leading indent. -->
+
     <pre
       class="demo-code__pre"
       [class.demo-code__pre--pending]="highlightPending() && !highlightedHtml()"

@@ -30,7 +30,7 @@ export class StarryNightService {
       return toHtml(night.highlight(value, scope));
     } catch (error) {
       console.error('[starry-night] highlight failed', error);
-      // Escape so the fallback can safely go through innerHTML if needed.
+
       return value
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
@@ -57,7 +57,7 @@ export class StarryNightService {
 
   private getHighlighter(): Promise<StarryNightInstance> {
     this.highlighterPromise ??= this.createHighlighter().catch((error) => {
-      // Allow a later retry if WASM/assets were not ready yet.
+
       this.highlighterPromise = null;
       throw error;
     });
@@ -65,8 +65,7 @@ export class StarryNightService {
   }
 
   private async createHighlighter(): Promise<StarryNightInstance> {
-    // Load only the grammars we need — avoid importing `@wooorm/starry-night`'s
-    // `all` / `common` barrels, which are multi‑MB.
+
     const [sourceJs, sourceTs, sourceTsx, textHtml] = await Promise.all([
       import('@wooorm/starry-night/source.js'),
       import('@wooorm/starry-night/source.ts'),
@@ -82,7 +81,7 @@ export class StarryNightService {
     ] as Grammar[];
 
     return createStarryNight(grammars, {
-      // Served from /public/onig.wasm (also listed in angular.json assets).
+
       getOnigurumaUrlFetch: async () =>
         new URL('/onig.wasm', globalThis.location.origin),
     });

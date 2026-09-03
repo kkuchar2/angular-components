@@ -1,13 +1,9 @@
-// Self-contained styling. Every look-and-feel value is exposed as a `--gt-*`
-// custom property (with a sensible fallback), so the component works when
-// pasted into any project and can be themed from the outside if desired.
 :host {
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
-// Fill remaining flex space but shrink to row content when rows need less room.
 :host(.generic-table-host--fill) {
   flex: 0 1 auto;
   min-height: 0;
@@ -16,7 +12,6 @@
   overflow: hidden;
 }
 
-// Sizes to row content up to the parent height; scrolls when rows exceed that space.
 :host(.generic-table-host--parent) {
   flex: 0 1 auto;
   min-height: 0;
@@ -26,7 +21,7 @@
 }
 
 .generic-table {
-  // Default cap for the scroll body — grows with rows up to this height, then scrolls.
+
   --gt-max-height: 480px;
   --gt-gap: var(--spacing-md, 1rem);
   --gt-toggle-gap: var(--spacing-sm, 0.5rem);
@@ -46,7 +41,6 @@
   flex-direction: column;
   gap: var(--gt-gap);
 
-  // Consumed by Material for the built-in cell dividers.
   --mat-table-row-item-outline-color: var(--gt-row-divider);
   --gt-disabled-opacity: 0.55;
 }
@@ -93,7 +87,6 @@
   opacity: var(--gt-disabled-opacity);
 }
 
-// When filling, cap at the measured flex/parent allocation and shrink to rows.
 .generic-table--fill,
 .generic-table--parent,
 .generic-table--bounded {
@@ -108,8 +101,7 @@
   overflow: auto;
   border-radius: var(--gt-radius);
   max-height: var(--gt-max-height);
-  // Reserve vertical scrollbar space up front so clientWidth stays stable when
-  // a horizontal scrollbar appears — prevents horizontal↔vertical scrollbar flicker.
+
   scrollbar-gutter: stable;
 }
 
@@ -125,7 +117,7 @@
 }
 
 table {
-  // Fill the container when columns fit; grow only when min column widths require it.
+
   width: 100%;
   min-width: max-content;
   table-layout: fixed;
@@ -138,7 +130,7 @@ table {
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: middle;
-  // Let fixed-width / flex cell content shrink below its intrinsic size.
+
   min-width: 0;
 }
 
@@ -147,14 +139,11 @@ table {
 }
 
 .mat-mdc-header-cell {
-  // Keep table-cell display — do not set flex on the <th> itself (that raises
-  // plain headers relative to mat-sort-header cells in the same row).
+
   background: var(--gt-header-bg);
   font-weight: 600;
   color: var(--gt-header-text);
-  // Collapsed borders are shared with the first body row and scroll away when
-  // sticky. A positioned ::after stays pinned with the sticky header cell and
-  // captures the seam so first-row hover cannot flicker the accent line.
+
   border-bottom: none;
 
   &::after {
@@ -169,7 +158,6 @@ table {
   }
 }
 
-// Label + optional info icon as one flex unit (inside sort content or plain th).
 .generic-table__header-inner {
   display: inline-flex;
   align-items: center;
@@ -199,7 +187,6 @@ table {
   background: var(--gt-row-even-bg);
 }
 
-// Virtual scroll: pin the header outside the transformed content wrapper.
 .generic-table__virtual-shell {
   display: flex;
   flex-direction: column;
@@ -223,7 +210,7 @@ table {
 .generic-table__virtual-header {
   flex-shrink: 0;
   overflow: hidden;
-  // Match the viewport content box so flexible columns distribute identically.
+
   width: calc(100% - var(--gt-virtual-scrollbar-gutter, 0px));
   box-sizing: border-box;
 }
@@ -233,11 +220,7 @@ table {
   overflow-anchor: none;
   scroll-behavior: auto;
   scrollbar-gutter: stable;
-  // CDK positions every virtual row at `index * itemSize` (itemSize = rowHeight),
-  // so the real row height must equal rowHeight. Material's density gives native
-  // rows this token (52px by default); left unchanged it drifts against the itemSize
-  // and lands on the wrong rows — worst at the bottom / after a fast scrollbar drag
-  // (see angular/components#32715). Resolve the token to rowHeight instead.
+
   --mat-table-row-item-container-height: var(--gt-row-height, 48px);
 }
 
@@ -254,14 +237,12 @@ table {
     max-width: none;
   }
 
-  // Keep header/body text inset identical in the split-table layout.
   .generic-table__virtual-header .mat-mdc-header-cell,
   .generic-table__scroll--virtual .mat-mdc-cell {
     padding-inline: 16px;
     box-sizing: border-box;
   }
 
-  // Virtual header cells are not sticky; still need a containing block for ::after.
   .generic-table__virtual-header .mat-mdc-header-cell {
     position: relative;
   }
@@ -283,10 +264,6 @@ table {
     }
   }
 
-  // Pin the row box (not just its cells) to rowHeight. Material's `.mat-mdc-row`
-  // height wins over the cell height below, so without this the DOM row stays 52px
-  // while CDK advances by the 48px itemSize — the drift that renders the wrong rows
-  // at the bottom on a fast scroll. This guarantees DOM row height == itemSize.
   .generic-table__scroll--virtual .mat-mdc-row {
     height: var(--gt-row-height, 48px);
     min-height: var(--gt-row-height, 48px);
@@ -299,13 +276,11 @@ table {
   }
 }
 
-// Reserve sort-arrow space on non-sortable headers in single-table mode only.
 .generic-table:not(.generic-table--virtualized) {
   .generic-table__header--plain {
     padding-inline-end: 18px;
   }
 
-  // Keep the accent line and header background above scrolling body rows.
   .mat-mdc-header-row .mat-mdc-header-cell {
     z-index: 2;
   }
@@ -319,7 +294,6 @@ table {
   flex-shrink: 0;
 }
 
-// Constrains projected custom templates to the column width so overflow/ellipsis work.
 .generic-table__cell-content {
   min-width: 0;
   max-width: 100%;
@@ -336,8 +310,6 @@ table {
   cursor: pointer;
 }
 
-// Suppress hover while scrolling so fast wheel/trackpad movement does not
-// flash highlight across rows under a stationary cursor.
 .generic-table__scroll:not(.generic-table__scroll--scrolling) {
   .generic-table__row--clickable:hover .mat-mdc-cell {
     background: var(--gt-row-hover-bg);

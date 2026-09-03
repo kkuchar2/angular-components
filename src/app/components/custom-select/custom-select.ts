@@ -28,9 +28,9 @@ export interface SelectOption<T = string | number> {
   value: T;
   label: string;
   disabled?: boolean;
-  /** Emoji or short text prefix shown beside the option label. */
+
   icon?: string;
-  /** Lucide icon shown beside the option label (takes precedence over `icon`). */
+
   lucideIcon?: LucideIconInput;
 }
 
@@ -71,7 +71,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
   readonly clearable = input(false);
   readonly searchable = input(false);
   readonly width = input('100%');
-  /** Trigger field height (e.g. `44px`, `2.75rem`). */
+
   readonly height = input('44px');
   readonly compareWith = input<(a: T, b: T) => boolean>((a, b) => a === b);
 
@@ -228,8 +228,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
     this.focusedIndex.set(-1);
     this.destroyOverlay();
     this.onTouched();
-    // `preventScroll` avoids a jarring scroll jump when the panel is dismissed by
-    // an outside scroll and focus returns to the trigger.
+
     this.triggerRef().nativeElement.focus({ preventScroll: true });
   }
 
@@ -354,7 +353,7 @@ export class CustomSelectComponent<T = string | number> implements ControlValueA
         break;
 
       case ' ':
-        // Space activates from the trigger, but must stay typeable in the search field.
+
         if (event.target instanceof HTMLInputElement) {
           break;
         }

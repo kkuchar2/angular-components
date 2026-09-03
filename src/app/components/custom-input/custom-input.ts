@@ -48,7 +48,7 @@ export class CustomInputComponent implements ControlValueAccessor {
   readonly hint = input('');
   readonly error = input('');
   readonly width = input('100%');
-  /** Field height (e.g. `52px`, `3.25rem`). */
+
   readonly height = input('52px');
   readonly autocomplete = input<string | null>(null);
   readonly spellcheck = input<boolean | null>(null);

@@ -2,10 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Numeric delta / trend cell with a slide-in arrow.
- * Positive → up, negative → down, zero → flat.
- */
 @Component({
   selector: 'app-generic-table-trend-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,

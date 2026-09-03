@@ -2,9 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Mailto link cell. `value` should be an email address.
- */
 @Component({
   selector: 'app-generic-table-mailto-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,

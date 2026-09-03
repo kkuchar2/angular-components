@@ -286,7 +286,6 @@
   }
 }
 
-// CDK Overlay renders outside the host DOM tree — re-declare tokens on the panel root.
 .link-card__overlay-panel {
   @include link-card-tokens;
 

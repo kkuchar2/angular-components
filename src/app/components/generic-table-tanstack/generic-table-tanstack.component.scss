@@ -12,8 +12,6 @@
   overflow: hidden;
 }
 
-// Fill the parent (`height: 100%` + flex grow) so a `flex: 1` parent is used.
-// `height` is a min-height floor; `maxHeight` is an optional cap.
 :host(.generic-table-tanstack-host--parent) {
   flex: 1 1 0;
   align-self: stretch;
@@ -24,8 +22,6 @@
   overflow: hidden;
 }
 
-// Virtual + parent/fill: fill the parent so the viewport gets a real height.
-// Without this the shell collapses to the header and TanStack renders no rows.
 :host(.generic-table-tanstack-host--virtualized.generic-table-tanstack-host--fill),
 :host(.generic-table-tanstack-host--virtualized.generic-table-tanstack-host--parent) {
   flex: 1 1 0;
@@ -62,7 +58,6 @@
   container-name: gtt;
 }
 
-// Soften dark contrast: dimmer text, quieter borders / accent / hover.
 :host-context(html[data-theme='dark']) .generic-table-tanstack {
   --gtt-header-bg: transparent;
   --gtt-header-text: #c4c4c4;
@@ -381,7 +376,7 @@
 }
 
 .generic-table-tanstack__scroll--static-body {
-  // Header lives outside this viewport; clip rows below the transparent header.
+
   flex: 1 1 auto;
   max-height: none;
   min-height: 0;
@@ -437,8 +432,6 @@
   top: 0;
   z-index: 2;
 
-  // Full-row accent above cell hover backgrounds. Keep pointer-events so the
-  // 1px seam does not fall through to the first body row (that caused flicker).
   &::after {
     content: '';
     position: absolute;
@@ -499,8 +492,6 @@
   gap: 0.35rem;
 }
 
-// Centered columns: only the label is in-flow so it lines up with centered cell
-// content. Info / sort hang to the right without shifting the label.
 .generic-table-tanstack__header-cell--center {
   .generic-table-tanstack__header-cluster {
     gap: 0;
@@ -534,8 +525,6 @@
   text-overflow: ellipsis;
 }
 
-// Material mat-sort-header-style pointer (not Lucide / not unicode).
-// Polygon points down; rotate 180° for the default/asc "up" orientation.
 .generic-table-tanstack__sort {
   display: inline-flex;
   flex-shrink: 0;
@@ -639,7 +628,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   background: var(--gtt-row-bg);
-  // Row separators instead of striped backgrounds.
+
   box-shadow: inset 0 -1px 0 var(--gtt-row-divider);
 }
 

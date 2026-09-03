@@ -35,17 +35,12 @@ export class DemoCodeBlockComponent {
   private readonly starryNight = inject(StarryNightService);
   private readonly sanitizer = inject(DomSanitizer);
 
-  /**
-   * Preferred API: HTML + TypeScript (+ optional Columns / cell) panes for a
-   * usage example. When multiple panes are set, the toolbar shows tabs.
-   */
   readonly snippet = input<DemoCodeSnippet | null>(null);
 
-  /** Legacy single-pane code (no tabs). Prefer `snippet` when possible. */
   readonly code = input<string>('');
   readonly label = input('Usage');
   readonly language = input<DemoCodeLanguage>('auto');
-  /** When false, the block starts collapsed (click header to expand). */
+
   readonly initiallyExpanded = input(true);
 
   private readonly expandedOverride = signal<boolean | null>(null);
@@ -139,7 +134,6 @@ export class DemoCodeBlockComponent {
   readonly highlightedHtml = computed(() => this.highlightedResource.value() ?? null);
   readonly highlightPending = computed(() => this.highlightedResource.isLoading());
 
-  /** Always SafeHtml so `<pre><code>` can stay whitespace-free. */
   readonly displayHtml = computed((): SafeHtml => {
     const highlighted = this.highlightedHtml();
 
@@ -172,7 +166,7 @@ export class DemoCodeBlockComponent {
       this.copied.set(true);
       window.setTimeout(() => this.copied.set(false), 1600);
     } catch {
-      // Clipboard may be unavailable in insecure contexts.
+
     }
   }
 }

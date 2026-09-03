@@ -1,4 +1,3 @@
-/* Shared chrome + PrettyLights token slots — filled per theme below. */
 .demo-code {
   margin-top: var(--spacing-sm);
   border: 1px solid var(--demo-code-border);
@@ -138,7 +137,6 @@
   color: inherit;
 }
 
-/* Light page → light Monokai-inspired preview */
 .demo-code {
   --demo-code-scheme: light;
   --demo-code-bg: #fafaf6;
@@ -181,7 +179,6 @@
   --color-prettylights-syntax-sublimelinter-gutter-mark: #c8c8b8;
 }
 
-/* Dark page → classic Monokai preview */
 :host-context([data-theme='dark']) .demo-code {
   --demo-code-scheme: dark;
   --demo-code-bg: #272822;

@@ -199,7 +199,7 @@ export class DropdownLinkCardDemoComponent {
           DropdownLinkCardIcon,
         } from './components/dropdown-link-card/dropdown-link-card';
 
-        readonly cardIcon: DropdownLinkCardIcon = { /* ... */ };
+        readonly cardIcon: DropdownLinkCardIcon = { ... };
         readonly flatLinks: DropdownLink[] = [
           { label: 'Angular', url: 'https://angular.dev' },
           { label: 'GitHub', url: 'https://github.com' },
@@ -221,8 +221,8 @@ export class DropdownLinkCardDemoComponent {
           DropdownLinkCardIcon,
         } from './components/dropdown-link-card/dropdown-link-card';
 
-        readonly cardIcon: DropdownLinkCardIcon = { /* ... */ };
-        readonly links: DropdownLink[] = [/* ... */];
+        readonly cardIcon: DropdownLinkCardIcon = { ... };
+        readonly links: DropdownLink[] = [...];
       `,
     },
   };

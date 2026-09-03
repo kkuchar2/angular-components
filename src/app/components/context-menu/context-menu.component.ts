@@ -27,13 +27,6 @@ import type {
   ContextMenuVariant,
 } from './context-menu.types';
 
-/**
- * Accessible kebab menu backed by CDK Overlay.
- *
- * - `variant="actions"` (default): list of {@link ContextMenuItem}s; emits `(itemSelect)`.
- * - `variant="details"`: larger panel with optional `title`, structured `[details]`
- *   fields, or a projected `<ng-template appContextMenuPanel>`.
- */
 @Component({
   selector: 'app-context-menu',
   imports: [NgTemplateOutlet, LucideDynamicIcon],
@@ -56,12 +49,12 @@ export class ContextMenuComponent {
 
   readonly variant = input<ContextMenuVariant>('actions');
   readonly items = input<ContextMenuItem[]>([]);
-  /** Structured fields for the details variant (ignored when a panel template is projected). */
+
   readonly details = input<ContextMenuDetailField[]>([]);
-  /** Optional heading shown above details content. */
+
   readonly title = input<string | null>(null);
   readonly disabled = input(false);
-  /** Accessible name for the trigger button. */
+
   readonly ariaLabel = input('Open menu');
 
   readonly itemSelect = output<ContextMenuItem>();

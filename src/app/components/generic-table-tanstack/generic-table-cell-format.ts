@@ -5,7 +5,6 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_DATE_TIME_RE =
   /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/i;
 
-/** Read `row[key]` as a displayable primitive (or Date). */
 export function readCellRawValue<T>(row: T, key: string): unknown {
   if (typeof row !== 'object' || row === null || !(key in row)) {
     return '';
@@ -14,7 +13,6 @@ export function readCellRawValue<T>(row: T, key: string): unknown {
   return (row as Record<string, unknown>)[key];
 }
 
-/** Resolve the cell value: `cell` accessor when set, otherwise `row[key]`. */
 export function resolveCellRawValue<T>(column: ColumnDef<T>, row: T): unknown {
   if (column.cell) {
     return column.cell(row);
@@ -23,7 +21,6 @@ export function resolveCellRawValue<T>(column: ColumnDef<T>, row: T): unknown {
   return readCellRawValue(row, column.key);
 }
 
-/** Value used for clipboard copy (raw string form, not the pretty display). */
 export function resolveCopyValue<T>(column: ColumnDef<T>, row: T): string {
   const raw = resolveCellRawValue(column, row);
 
@@ -38,7 +35,6 @@ export function resolveCopyValue<T>(column: ColumnDef<T>, row: T): string {
   return String(raw);
 }
 
-/** Formatted text shown in the cell (`cellType` still applies when `cell` is set). */
 export function formatColumnCell<T>(column: ColumnDef<T>, row: T): string {
   const raw = resolveCellRawValue(column, row);
 
@@ -52,11 +48,6 @@ export function formatColumnCell<T>(column: ColumnDef<T>, row: T): string {
   }
 }
 
-/**
- * Value used for client-side sorting.
- * When `sortAccessor` is unset, uses the raw `row[key]` value (not `cell`).
- * Date columns (and raw `Date` values) sort by timestamp.
- */
 export function resolveSortValue<T>(column: ColumnDef<T>, row: T): string | number {
   if (column.sortAccessor) {
     return column.sortAccessor(row);
@@ -80,10 +71,6 @@ export function resolveSortValue<T>(column: ColumnDef<T>, row: T): string | numb
   return '';
 }
 
-/**
- * Text used for column filter matching: formatted display plus the raw value
- * so both "Jul 2026" and "2026-07-21" can match a date cell.
- */
 export function resolveFilterText<T>(column: ColumnDef<T>, row: T): string {
   const formatted = formatColumnCell(column, row);
   const raw = resolveCellRawValue(column, row);
@@ -104,7 +91,6 @@ export function resolveFilterText<T>(column: ColumnDef<T>, row: T): string {
   return `${formatted} ${rawText}`;
 }
 
-/** Case-insensitive substring match against {@link resolveFilterText}. */
 export function columnMatchesFilter<T>(
   column: ColumnDef<T>,
   row: T,
@@ -119,21 +105,15 @@ export function columnMatchesFilter<T>(
   return resolveFilterText(column, row).toLocaleLowerCase().includes(needle);
 }
 
-/**
- * Display value used for default toggleable filters (formatted cell text).
- * Empty / missing values become `''`.
- */
 export function resolveToggleValue<T>(column: ColumnDef<T>, row: T): string {
   return formatColumnCell(column, row).trim();
 }
 
-/** One unique value and how many rows carry it. */
 export interface GenericTableToggleOption {
   value: string;
   count: number;
 }
 
-/** Resolved toggle group bound to its parent column for the filter rail. */
 export interface GenericTableToggleFacet<T = unknown> {
   columnKey: string;
   group: ColumnToggleGroup<T>;
@@ -151,7 +131,6 @@ export function isColumnToggleable<T>(column: ColumnDef<T>): boolean {
   return column.toggleable === true || isColumnToggleConfig(column.toggleable);
 }
 
-/** Implicit single-group config when `toggleable: true`. */
 export function resolveToggleGroups<T>(column: ColumnDef<T>): ColumnToggleGroup<T>[] {
   if (column.toggleable === true) {
     return [
@@ -174,7 +153,6 @@ export function toggleSelectionKey(columnKey: string, groupId: string): string {
   return `${columnKey}::${groupId}`;
 }
 
-/** Normalize extractor output to trimmed string values (may include `''`). */
 export function normalizeToggleValues(
   raw: string | readonly string[] | null | undefined,
 ): string[] {
@@ -203,7 +181,6 @@ function sortToggleOptions(options: GenericTableToggleOption[]): GenericTableTog
   });
 }
 
-/** Sorted unique toggle values with counts for a group across `rows`. */
 export function collectToggleGroupOptions<T>(
   group: ColumnToggleGroup<T>,
   rows: readonly T[],
@@ -213,7 +190,6 @@ export function collectToggleGroupOptions<T>(
   for (const row of rows) {
     const values = new Set(normalizeToggleValues(group.getValues(row)));
 
-    // Count the row once per distinct extracted value.
     for (const value of values) {
       counts.set(value, (counts.get(value) ?? 0) + 1);
     }
@@ -224,10 +200,6 @@ export function collectToggleGroupOptions<T>(
   );
 }
 
-/**
- * @deprecated Prefer {@link collectToggleGroupOptions} with {@link resolveToggleGroups}.
- * Kept for default whole-cell uniqueness.
- */
 export function collectUniqueToggleValues<T>(
   column: ColumnDef<T>,
   rows: readonly T[],
@@ -236,10 +208,6 @@ export function collectUniqueToggleValues<T>(
   return group ? collectToggleGroupOptions(group, rows) : [];
 }
 
-/**
- * When `selected` is empty, every row matches. Otherwise the row matches if any
- * of its extracted group values is selected.
- */
 export function rowMatchesToggleGroup<T>(
   group: ColumnToggleGroup<T>,
   row: T,
@@ -253,10 +221,6 @@ export function rowMatchesToggleGroup<T>(
   return values.some((value) => selected.has(value));
 }
 
-/**
- * When `selected` is empty, every row matches. Otherwise the row matches if its
- * toggle value is one of the selected strings.
- */
 export function columnMatchesToggleFilter<T>(
   column: ColumnDef<T>,
   row: T,
@@ -334,7 +298,6 @@ export function parseCellDate(raw: unknown): Date | null {
     return null;
   }
 
-  // Date-only: parse as local calendar date to avoid UTC day-shift.
   if (DATE_ONLY_RE.test(text)) {
     const [year, month, day] = text.split('-').map(Number);
     const local = new Date(year, month - 1, day);

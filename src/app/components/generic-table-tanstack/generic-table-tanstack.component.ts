@@ -60,18 +60,8 @@ import {
   GenericTableRowActionEvent,
 } from './generic-table.types';
 
-/** Default scroll-body cap; mirrored by `--gtt-max-height` in the stylesheet. */
 const DEFAULT_MAX_HEIGHT_PX = 480;
 
-/**
- * Feature-parity sibling of `app-generic-table`, backed by TanStack Table +
- * TanStack Virtual (no CDK virtual scroll / mat-table recycle path).
- *
- * Supports the same public API: column chips, sorting, client/server pagination,
- * optional virtualization, custom cells, CSV export, and height modes.
- *
- * @typeParam T - The row model. Inferred from the `data` / `columns` inputs.
- */
 @Component({
   selector: 'app-generic-table-tanstack',
   imports: [
@@ -111,74 +101,49 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly data = input.required<readonly T[]>();
-  /** Show a paginator. Ignored when `virtualized`. */
+
   readonly paginated = input(false);
-  /**
-   * Server-side pagination: pass only the current page in `data`, set `totalCount`,
-   * and fetch new rows in `(pageChange)`. Requires `paginated`.
-   */
+
   readonly serverSide = input(false);
   readonly totalCount = input(0);
   readonly pageIndex = input(0);
-  /**
-   * Virtual scroll via TanStack Virtual. Requires a bounded height and `rowHeight`.
-   * Mutually exclusive with `paginated`.
-   */
+
   readonly virtualized = input(false);
   readonly rowHeight = input(40);
-  /** Extra rows rendered above/below the viewport when virtualized. */
+
   readonly overscan = input(12);
   readonly pageSize = input(10);
   readonly pageSizeOptions = input<number[]>([5, 10, 25, 50]);
-  /** Chip list that toggles hideable columns (same as Material table). */
+
   readonly showColumnToggle = input(true);
   readonly emptyMessage = input('No data available');
   readonly rowClickable = input(false);
-  /**
-   * Row ⋮ menu mode. `'actions'` uses `rowActions`; `'details'` uses
-   * `rowDetails` / `rowDetailsTitle` for a larger read-only panel.
-   */
+
   readonly rowMenuVariant = input<ContextMenuVariant>('actions');
-  /**
-   * When `rowMenuVariant` is `'actions'` and this is non-empty, appends a
-   * rightmost ⋮ column that opens an actions context menu.
-   */
+
   readonly rowActions = input<GenericTableRowAction<T>[]>([]);
-  /**
-   * When `rowMenuVariant` is `'details'`, builds the detail fields for each
-   * row's larger context panel.
-   */
+
   readonly rowDetails = input<((row: T) => ContextMenuDetailField[]) | null>(null);
-  /** Optional title for the details panel (string or per-row resolver). */
+
   readonly rowDetailsTitle = input<string | ((row: T) => string) | null>(null);
   readonly disabled = input(false);
   readonly showExport = input(false);
   readonly exportFileName = input('table-export.csv');
   readonly exportData = input<readonly T[] | null>(null);
   readonly heightMode = input<GenericTableHeightMode>('auto');
-  /**
-   * Exact scroll-body height (e.g. `'320px'`). In `'parent'` mode this is a
-   * minimum instead: the table fills the parent unless that would be shorter.
-   */
+
   readonly height = input<string | null>(null);
-  /**
-   * Caps the scroll body in `'auto'` / `'fill'`. In `'parent'` mode caps the
-   * filled parent height so the table will not grow taller than this value.
-   */
+
   readonly maxHeight = input<string | null>(null);
   readonly minHeight = input<string | null>(null);
-  /**
-   * When set, the left filter rail uses this as its own height (independent of
-   * the table) and scrolls internally when filters overflow. Omit to keep the
-   * rail stretched to the table height.
-   */
+
   readonly filterMinHeight = input<string | null>(null);
   readonly trackBy = input<TrackByFunction<T>>((_index, row) => row);
 
   readonly rowClick = output<T>();
-  /** Emitted when a row context-menu action is chosen. */
+
   readonly rowAction = output<GenericTableRowActionEvent<T>>();
-  /** Material-compatible sort payload for drop-in parent handlers. */
+
   readonly sortChange = output<Sort>();
   readonly pageChange = output<PageEvent>();
   readonly exportRequest = output<GenericTableExportRequest<T>>();
@@ -190,7 +155,7 @@ export class GenericTableTanstackComponent<T = unknown> {
   private readonly cellContextCache = new WeakMap<object, GenericTableCellContext<T>>();
 
   readonly sorting = signal<SortingState>([]);
-  /** Client-side paginator state (ignored when `serverSide`). */
+
   readonly clientPagination = signal<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
   readonly isParentMode = computed(() => this.heightMode() === 'parent');
@@ -198,7 +163,7 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly isFillMode = computed(() => !this.isFixed() && this.heightMode() === 'fill');
   readonly isBoundedHeightMode = computed(() => this.isParentMode() || this.isFillMode());
   readonly scrollBodyHeight = computed(() => (this.isParentMode() ? null : this.height()));
-  /** CSS length used as the host min-height floor in `'parent'` mode. */
+
   readonly parentMinHeight = computed(() => (this.isParentMode() ? this.height() : null));
   readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
   readonly isServerSidePagination = computed(() => this.serverSide() && this.showPaginator());
@@ -213,8 +178,6 @@ export class GenericTableTanstackComponent<T = unknown> {
       return null;
     }
 
-    // Parent mode fills via CSS (`height: 100%`). Only an explicit `maxHeight`
-    // may cap it — never the 480px auto-mode fallback.
     if (this.isParentMode()) {
       return this.resolveExplicitMaxHeightPx();
     }
@@ -257,7 +220,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       const available = this.boundedAvailableHeightPx();
 
       if (available == null) {
-        // Let CSS flex size the viewport until the parent has been measured.
+
         return null;
       }
 
@@ -266,8 +229,6 @@ export class GenericTableTanstackComponent<T = unknown> {
         available - this.boundedChromeHeightPx() - this.headerHeightPx(),
       );
 
-      // Never force height: 0 — that leaves only the header visible and TanStack
-      // Virtual reports zero visible items. Fall back to flex sizing instead.
       if (fillHeight < this.rowHeight()) {
         return null;
       }
@@ -329,7 +290,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.columns().filter((column) => isColumnToggleable(column)),
   );
 
-  /** Columns that contribute a section to the left filter rail. */
   readonly filterColumns = computed(() =>
     this.columns().filter(
       (column) => column.searchable === true || isColumnToggleable(column),
@@ -338,23 +298,16 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   readonly hasFilterColumns = computed(() => this.filterColumns().length > 0);
 
-  /** Filter rail sized by `filterMinHeight` instead of matching the table. */
   readonly hasIndependentFilterHeight = computed(
     () => this.hasFilterColumns() && this.filterMinHeight() != null,
   );
 
-  /** Per-column text filter query keyed by `ColumnDef.key`. Empty strings are omitted. */
   readonly columnFilterValues = signal<Readonly<Record<string, string>>>({});
 
-  /**
-   * Selected toggle values keyed by `${columnKey}::${groupId}`.
-   * Missing / empty set = no filter for that group.
-   */
   readonly columnToggleSelections = signal<Readonly<Record<string, ReadonlySet<string>>>>(
     {},
   );
 
-  /** All toggle facets (one per group) with unique values + counts from full `data`. */
   readonly toggleFacets = computed((): GenericTableToggleFacet<T>[] => {
     const rows = this.data();
     const facets: GenericTableToggleFacet<T>[] = [];
@@ -373,7 +326,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return facets;
   });
 
-  /** Facets for one column (for template grouping under that column's filter block). */
   toggleFacetsForColumn(columnKey: string): GenericTableToggleFacet<T>[] {
     return this.toggleFacets().filter((facet) => facet.columnKey === columnKey);
   }
@@ -392,10 +344,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return Object.values(toggles).some((selected) => (selected?.size ?? 0) > 0);
   });
 
-  /**
-   * `data` after live filters: searchable queries AND toggle groups AND;
-   * selected values within a group OR.
-   */
   readonly filteredRows = computed((): T[] => {
     const rows = this.data();
     const textValues = this.columnFilterValues();
@@ -461,7 +409,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return tracks.join(' ');
   });
 
-  /** Minimum table width so fixed/min columns can overflow horizontally instead of crushing. */
   readonly gridMinWidthPx = computed(() => {
     const reference =
       this.scrollContentWidthPx() || this.hostEl.nativeElement.clientWidth || globalThis.innerWidth;
@@ -478,17 +425,10 @@ export class GenericTableTanstackComponent<T = unknown> {
     return Math.ceil(total);
   });
 
-  /**
-   * Forced pixel width for header/rows when column floors exceed the viewport
-   * (horizontal overflow). `null` when content fits — CSS `width: 100%` fills the
-   * scrollport. Locking to `clientWidth` in that case causes scrollbar flicker on
-   * resize (width ↔ scrollbar ↔ clientWidth feedback loop).
-   */
   readonly gridLayoutWidthPx = computed((): number | null => {
     const min = this.gridMinWidthPx();
     const viewport = this.scrollContentWidthPx();
 
-    // 1px epsilon avoids subpixel/rounding oscillation at the fit boundary.
     if (viewport > 0 && min > viewport + 1) {
       return min;
     }
@@ -496,7 +436,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return null;
   });
 
-  /** Scrollport content width (excludes scrollbar); updated on layout/resize. */
   readonly scrollContentWidthPx = signal(0);
 
   private readonly tanstackColumns = computed((): TanstackColumnDef<T, unknown>[] =>
@@ -510,8 +449,7 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   private readonly paginationState = computed((): PaginationState => {
     if (this.isServerSidePagination()) {
-      // `data` is already one page; keep TanStack at index 0. The Material
-      // paginator owns the real pageIndex via `paginatorPageIndex()`.
+
       return { pageIndex: 0, pageSize: this.pageSize() };
     }
 
@@ -522,11 +460,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     };
   });
 
-  /**
-   * Bridges for `createAngularTable`: its `lazyInit` schedules a microtask that
-   * can run before `input.required` values are bound (NG0950 on `data`/`columns`).
-   * Effects sync the real inputs once they are available.
-   */
   private readonly tableData = signal<T[]>([]);
   private readonly tableColumnDefs = signal<TanstackColumnDef<T, unknown>[]>([]);
 
@@ -564,10 +497,8 @@ export class GenericTableTanstackComponent<T = unknown> {
     };
   });
 
-  /** Sorted rows across the full dataset (used by virtual mode). */
   readonly sortedRows = computed(() => this.table.getSortedRowModel().rows);
 
-  /** Rows currently shown in the body (page slice when paginated; all when not). */
   readonly bodyRows = computed((): Row<T>[] => {
     if (this.virtualized()) {
       return this.sortedRows();
@@ -576,12 +507,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return this.table.getRowModel().rows;
   });
 
-  /**
-   * When paginated with rows, keep the body tall enough for a full page even if
-   * the last page has fewer rows — only real rows are rendered; the rest is empty
-   * space. Not applied to the empty state (that would bury the message in a tall
-   * centered box and force pointless scrolling).
-   */
   readonly paginatedBodyMinHeightPx = computed(() => {
     if (!this.showPaginator() || this.bodyRows().length === 0) {
       return null;
@@ -725,7 +650,6 @@ export class GenericTableTanstackComponent<T = unknown> {
       untracked(() => this.queueLayoutSync());
     });
 
-    // Keep column min-widths honest on resize even outside parent/fill modes.
     effect(() => {
       const viewportEl = this.scrollElement()?.nativeElement;
 
@@ -757,7 +681,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return context;
   }
 
-  /** Inputs passed to `ColumnDef.cellComponent` via `NgComponentOutlet`. */
   cellComponentInputs(column: ColumnDef<T>, row: T): Record<string, unknown> {
     return {
       value: resolveCellRawValue(column, row),
@@ -934,7 +857,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.rowClick.emit(row);
   }
 
-  /** Resolve per-row menu items (applies `hidden` / `disabled` predicates). */
   rowMenuItems(row: T): ContextMenuItem[] {
     return this.rowActions()
       .filter((action) => !this.resolveRowActionFlag(action.hidden, row))
@@ -1145,16 +1067,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return String(value);
   }
 
-  /**
-   * CSS grid track for a column.
-   *
-   * - `width` + `minWidth`: preferred `width`, can shrink down to `minWidth`
-   * - `width` only: fixed track
-   * - `minWidth` only: fixed at the floor (no free-space growth)
-   * - neither: `minmax(0, 1fr)` shares free space (avoid `max-content` — header
-   *   and body are separate grids, so per-row max-content misaligns columns)
-   * - stretch (last column only): `minmax(floor, 1fr)` fills leftover container width
-   */
   private resolveColumnTrack(
     column: ColumnDef<T>,
     options: { stretch?: boolean } = {},
@@ -1180,7 +1092,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return 'minmax(0, 1fr)';
   }
 
-  /** CSS length used as the track/content floor (`minWidth` wins over `width`). */
   private columnFloorLength(column: ColumnDef<T>): string {
     if (column.minWidth != null && column.minWidth !== '') {
       return column.minWidth;
@@ -1193,12 +1104,10 @@ export class GenericTableTanstackComponent<T = unknown> {
     return '0px';
   }
 
-  /** Lowest pixel width a column may occupy (for layout min-width sum). */
   private columnFloorPx(column: ColumnDef<T>, referenceWidth: number): number {
     return Math.max(0, this.parseLengthToPx(this.columnFloorLength(column), referenceWidth));
   }
 
-  /** Inline min-width for cells — the shrink floor, not the preferred `width`. */
   columnMinWidth(column: ColumnDef<T>): string | null {
     if (column.minWidth != null && column.minWidth !== '') {
       return column.minWidth;
@@ -1207,9 +1116,8 @@ export class GenericTableTanstackComponent<T = unknown> {
     return column.width ?? null;
   }
 
-  /** Inline max-width when `width` caps the column (lets `minWidth` still shrink). */
   columnMaxWidth(column: ColumnDef<T>, stretch = false): string | null {
-    // Last column uses `1fr` — never cap it or the row/header stops short of the edge.
+
     if (stretch) {
       return null;
     }
@@ -1263,7 +1171,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return Math.min(contentHeight, fillHeight);
   }
 
-  /** Parsed `height` input in px; `0` when unset or not a positive length. */
   private resolveHeightInputPx(): number {
     const value = this.height();
 
@@ -1279,7 +1186,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     return parsed > 0 ? parsed : 0;
   }
 
-  /** Parent allocation: fill measured space, floored by `height`, capped by `maxHeight`. */
   private clampParentAvailableHeightPx(measured: number): number {
     const floor = this.resolveHeightInputPx();
     const cap = this.resolveExplicitMaxHeightPx();
@@ -1355,8 +1261,7 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.measureBoundedLayout();
 
     if (this.virtualized()) {
-      // Flex sizing may have just given the viewport a real height — remeasure so
-      // getVirtualItems() is not stuck on an empty range from a 0px first paint.
+
       this.virtualizer.measure();
     }
   }
@@ -1382,8 +1287,7 @@ export class GenericTableTanstackComponent<T = unknown> {
     );
 
     const tableRoot = host.querySelector('.generic-table-tanstack');
-    // Shell includes header + body viewport. Chrome is toolbar/gaps/paginator.
-    // Header is outside the scrollport so rows clip below a transparent header.
+
     const scrollBody = this.virtualized()
       ? host.querySelector('.generic-table-tanstack__virtual-shell')
       : host.querySelector('.generic-table-tanstack__static-shell');

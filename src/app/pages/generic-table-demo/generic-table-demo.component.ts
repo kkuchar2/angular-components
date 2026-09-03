@@ -124,7 +124,6 @@ export class GenericTableDemoComponent {
     },
   ];
 
-  /** Slimmer columns for virtual-scroll demos. */
   readonly scrollColumns: ColumnDef<DemoUser>[] = [
     {
       key: 'name',
@@ -274,21 +273,16 @@ export class GenericTableDemoComponent {
   readonly showcaseRows = signal<DemoUser[]>(this.rows().slice(0, 5));
   readonly emptyRows = signal<DemoUser[]>([]);
 
-  /** Always empty — used to remount a fresh virtual table instance (cold start). */
   readonly virtualColdEmptyRows: DemoUser[] = [];
 
-  /** Populated reference for column-width comparison. */
   readonly virtualReferenceRows = this.buildVirtualRows(250);
 
-  /** Increment to destroy and recreate the cold-start table. */
   readonly virtualColdMount = signal(0);
 
-  /** Large dataset for the virtual-scroll demo (10 000 rows). */
   readonly virtualRows = signal<DemoUser[]>(this.buildVirtualRows(10_000));
 
   readonly selectedRow = signal<DemoUser | null>(null);
 
-  /** Simulated server-side dataset (87 rows); only one page is exposed at a time. */
   private readonly serverSideDataset = this.buildVirtualRows(87);
 
   readonly serverSideTotal = this.serverSideDataset.length;
@@ -306,7 +300,7 @@ export class GenericTableDemoComponent {
   }
 
   onServerSideExport(request: GenericTableExportRequest<DemoUser>): void {
-    // Simulate fetching every page, then finish the download.
+
     setTimeout(() => request.complete(this.serverSideDataset), 350);
   }
 
@@ -391,7 +385,7 @@ export class GenericTableDemoComponent {
           { key: 'lastSeen', header: 'Last seen', sortable: true, cellType: 'date' },
         ];
 
-        readonly rows = signal<DemoUser[]>([/* ... */]);
+        readonly rows = signal<DemoUser[]>([...]);
 
         trackById(_index: number, row: DemoUser): number {
           return row.id;
@@ -429,7 +423,7 @@ export class GenericTableDemoComponent {
           GenericTableExportRequest,
         } from './components/generic-table';
 
-        readonly columns: ColumnDef<DemoUser>[] = [/* ... */];
+        readonly columns: ColumnDef<DemoUser>[] = [...];
         readonly totalCount = 87;
         readonly pageIndex = signal(0);
         readonly pageSize = signal(5);
@@ -508,7 +502,7 @@ export class GenericTableDemoComponent {
         import { signal } from '@angular/core';
         import { ColumnDef } from './components/generic-table';
 
-        readonly columns: ColumnDef<DemoUser>[] = [/* ... */];
+        readonly columns: ColumnDef<DemoUser>[] = [...];
         readonly rows = signal<DemoUser[]>(this.buildRows(10_000));
 
         trackById(_index: number, row: DemoUser): number {
@@ -527,7 +521,7 @@ export class GenericTableDemoComponent {
       ts: code`
         import { ColumnDef } from './components/generic-table';
 
-        readonly columns: ColumnDef<DemoUser>[] = [/* ... */];
+        readonly columns: ColumnDef<DemoUser>[] = [...];
       `,
     },
     virtualEmpty: {
@@ -546,7 +540,7 @@ export class GenericTableDemoComponent {
         import { signal } from '@angular/core';
         import { ColumnDef } from './components/generic-table';
 
-        readonly columns: ColumnDef<DemoUser>[] = [/* ... */];
+        readonly columns: ColumnDef<DemoUser>[] = [...];
         readonly rows = signal<DemoUser[]>([]);
 
         trackById(_index: number, row: DemoUser): number {
@@ -559,7 +553,6 @@ export class GenericTableDemoComponent {
   private loadServerSidePage(pageIndex: number, pageSize: number): void {
     this.serverSideLoading.set(true);
 
-    // Simulate network latency.
     setTimeout(() => {
       const start = pageIndex * pageSize;
       this.serverSideRows.set(this.serverSideDataset.slice(start, start + pageSize));

@@ -2,9 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Boolean / truthy chip cell. Renders Yes/No from boolean or common string values.
- */
 @Component({
   selector: 'app-generic-table-boolean-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -2,9 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Person cell: initials avatar + display name from `value`.
- */
 @Component({
   selector: 'app-generic-table-person-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,

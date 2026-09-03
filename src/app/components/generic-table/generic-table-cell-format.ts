@@ -5,7 +5,6 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_DATE_TIME_RE =
   /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/i;
 
-/** Read `row[key]` as a displayable primitive (or Date). */
 export function readCellRawValue<T>(row: T, key: string): unknown {
   if (typeof row !== 'object' || row === null || !(key in row)) {
     return '';
@@ -14,7 +13,6 @@ export function readCellRawValue<T>(row: T, key: string): unknown {
   return (row as Record<string, unknown>)[key];
 }
 
-/** Resolve the cell value: `cell` accessor when set, otherwise `row[key]`. */
 export function resolveCellRawValue<T>(column: ColumnDef<T>, row: T): unknown {
   if (column.cell) {
     return column.cell(row);
@@ -23,7 +21,6 @@ export function resolveCellRawValue<T>(column: ColumnDef<T>, row: T): unknown {
   return readCellRawValue(row, column.key);
 }
 
-/** Value used for clipboard copy (raw string form, not the pretty display). */
 export function resolveCopyValue<T>(column: ColumnDef<T>, row: T): string {
   const raw = resolveCellRawValue(column, row);
 
@@ -38,7 +35,6 @@ export function resolveCopyValue<T>(column: ColumnDef<T>, row: T): string {
   return String(raw);
 }
 
-/** Formatted text shown in the cell (`cellType` still applies when `cell` is set). */
 export function formatColumnCell<T>(column: ColumnDef<T>, row: T): string {
   const raw = resolveCellRawValue(column, row);
 
@@ -52,11 +48,6 @@ export function formatColumnCell<T>(column: ColumnDef<T>, row: T): string {
   }
 }
 
-/**
- * Value used for client-side sorting.
- * When `sortAccessor` is unset, uses the raw `row[key]` value (not `cell`).
- * Date columns (and raw `Date` values) sort by timestamp.
- */
 export function resolveSortValue<T>(column: ColumnDef<T>, row: T): string | number {
   if (column.sortAccessor) {
     return column.sortAccessor(row);
@@ -145,7 +136,6 @@ export function parseCellDate(raw: unknown): Date | null {
     return null;
   }
 
-  // Date-only: parse as local calendar date to avoid UTC day-shift.
   if (DATE_ONLY_RE.test(text)) {
     const [year, month, day] = text.split('-').map(Number);
     const local = new Date(year, month - 1, day);

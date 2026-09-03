@@ -10,10 +10,6 @@ import { LucideCheck, LucideCopy, LucideDynamicIcon } from '@lucide/angular';
 import { formatColumnCell, resolveCopyValue } from './generic-table-cell-format';
 import type { ColumnDef } from './generic-table.types';
 
-/**
- * Built-in cell renderer for text / uuid / date columns, with optional copy.
- * Used when no custom `appGenericTableCell` template and no `cellComponent` are set.
- */
 @Component({
   selector: 'app-generic-table-cell-value',
   imports: [LucideDynamicIcon],
@@ -64,7 +60,7 @@ export class GenericTableCellValueComponent<T = unknown> {
         this.copiedTimer = null;
       }, 1200);
     } catch {
-      // Clipboard can fail without permission — keep UI quiet.
+
     }
   }
 }

@@ -133,7 +133,7 @@ export class MultiFilterDemoComponent {
           type MultiFilterField,
         } from './components/multi-filter';
 
-        readonly fields: MultiFilterField[] = [/* ... */];
+        readonly fields: MultiFilterField[] = [...];
 
         readonly filters = signal([
           createEmptyFilterRule({
@@ -159,7 +159,7 @@ export class MultiFilterDemoComponent {
           type MultiFilterRule,
         } from './components/multi-filter';
 
-        readonly fields: MultiFilterField[] = [/* ... */];
+        readonly fields: MultiFilterField[] = [...];
         readonly filters = signal<MultiFilterRule[]>([]);
       `,
     },
@@ -178,7 +178,7 @@ export class MultiFilterDemoComponent {
           type MultiFilterRule,
         } from './components/multi-filter';
 
-        readonly fields: MultiFilterField[] = [/* ... */];
+        readonly fields: MultiFilterField[] = [...];
         readonly filters = signal<MultiFilterRule[]>([]);
       `,
     },

@@ -57,7 +57,7 @@ export const routes: Routes = [
       },
     ],
   },
-  // Legacy top-level paths → components shell
+
   { path: 'generic-table', redirectTo: 'components/generic-table' },
   { path: 'generic-table-tanstack', redirectTo: 'components/generic-table-tanstack' },
   { path: 'custom-select', redirectTo: 'components/custom-select' },

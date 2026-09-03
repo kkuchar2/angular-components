@@ -2,9 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Animated progress bar cell. `value` is a number 0–100 (or coercible string).
- */
 @Component({
   selector: 'app-generic-table-progress-bar-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,

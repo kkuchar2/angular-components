@@ -2,10 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Shared status-badge cell for `ColumnDef.cellComponent`.
- * Styles known values (`active` / `inactive` / `pending`); unknown values still render.
- */
 @Component({
   selector: 'app-generic-table-status-badge-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -13,11 +9,11 @@ import type { ColumnDef } from '../generic-table.types';
   styleUrl: './status-badge-cell.component.scss',
 })
 export class StatusBadgeCellComponent<T = unknown> {
-  /** Resolved cell value (`cell?.(row) ?? row[key]`). */
+
   readonly value = input.required<unknown>();
-  /** Full row — accepted so `NgComponentOutlet` inputs bind cleanly. */
+
   readonly row = input<T>();
-  /** Column def — accepted so `NgComponentOutlet` inputs bind cleanly. */
+
   readonly column = input<ColumnDef<T>>();
 
   readonly label = computed(() => {

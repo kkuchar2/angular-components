@@ -108,7 +108,7 @@ export class CustomSelectDemoComponent {
           SelectOption,
         } from './components/custom-select/custom-select';
 
-        readonly options: SelectOption[] = [/* ... */];
+        readonly options: SelectOption[] = [...];
         readonly value = signal<string | number | null>(null);
 
         onSelectionChange(option: SelectOption | null): void {
@@ -195,7 +195,7 @@ export class CustomSelectDemoComponent {
         import { signal } from '@angular/core';
         import { SelectOption } from './components/custom-select/custom-select';
 
-        readonly options: SelectOption[] = [/* ... */];
+        readonly options: SelectOption[] = [...];
         readonly value = signal<string | number | null>(null);
       `,
     },
@@ -212,7 +212,7 @@ export class CustomSelectDemoComponent {
         import { signal } from '@angular/core';
         import { SelectOption } from './components/custom-select/custom-select';
 
-        readonly options: SelectOption[] = [/* ... */];
+        readonly options: SelectOption[] = [...];
         readonly value = signal<string | number | null>(null);
       `,
     },
@@ -229,7 +229,7 @@ export class CustomSelectDemoComponent {
         import { signal } from '@angular/core';
         import { SelectOption } from './components/custom-select/custom-select';
 
-        readonly options: SelectOption[] = [/* ... */];
+        readonly options: SelectOption[] = [...];
         readonly value = signal<string | number | null>(null);
       `,
     },
@@ -244,7 +244,7 @@ export class CustomSelectDemoComponent {
       ts: code`
         import { SelectOption } from './components/custom-select/custom-select';
 
-        readonly options: SelectOption[] = [/* ... */];
+        readonly options: SelectOption[] = [...];
       `,
     },
   };

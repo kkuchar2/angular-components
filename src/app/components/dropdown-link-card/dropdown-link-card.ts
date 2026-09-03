@@ -242,8 +242,6 @@ export class DropdownLinkCardComponent {
     this.watchTriggerResize();
     this.watchWindowResize();
 
-    // Route overlay key events through `onKeyDown` so roving focus keeps working
-    // once DOM focus has moved onto a link inside the overlay.
     this.overlaySubscriptions.push(
       this.overlayRef.backdropClick().subscribe(() => this.close()),
       this.overlayRef.keydownEvents().subscribe((event) => this.onKeyDown(event)),
@@ -263,8 +261,7 @@ export class DropdownLinkCardComponent {
     this.focusedSubIndex.set(-1);
     this.itemLayouts.set({});
     this.destroyOverlay();
-    // `preventScroll` avoids a jarring scroll jump when the menu is dismissed by
-    // an outside scroll and focus returns to the trigger.
+
     this.triggerRef().nativeElement.focus({ preventScroll: true });
   }
 

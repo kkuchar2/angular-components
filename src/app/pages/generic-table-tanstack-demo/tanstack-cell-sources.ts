@@ -1,22 +1,11 @@
-/**
- * Source of shared tanstack table cell components for demo code tabs.
- *
- * Regenerate after editing cells:
- *   node scripts/generate-tanstack-cell-sources.mjs
- */
 import type { DemoCodeCellTab } from '../../shared/demo-code-block/demo-code.util';
 
 export const tanstackCellSources = {
   StatusBadge: `
-// status-badge-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Shared status-badge cell for \`ColumnDef.cellComponent\`.
- * Styles known values (\`active\` / \`inactive\` / \`pending\`); unknown values still render.
- */
 @Component({
   selector: 'app-generic-table-status-badge-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,11 +13,11 @@ import type { ColumnDef } from '../generic-table.types';
   styleUrl: './status-badge-cell.component.scss',
 })
 export class StatusBadgeCellComponent<T = unknown> {
-  /** Resolved cell value (\`cell?.(row) ?? row[key]\`). */
+
   readonly value = input.required<unknown>();
-  /** Full row — accepted so \`NgComponentOutlet\` inputs bind cleanly. */
+
   readonly row = input<T>();
-  /** Column def — accepted so \`NgComponentOutlet\` inputs bind cleanly. */
+
   readonly column = input<ColumnDef<T>>();
 
   readonly label = computed(() => {
@@ -43,10 +32,8 @@ export class StatusBadgeCellComponent<T = unknown> {
   });
 }
 
-// status-badge-cell.component.html
 <span [class]="badgeClass()">{{ label() }}</span>
 
-// status-badge-cell.component.scss
 :host {
   display: inline-flex;
   max-width: 100%;
@@ -105,14 +92,10 @@ export class StatusBadgeCellComponent<T = unknown> {
 }
 `,
   Person: `
-// person-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Person cell: initials avatar + display name from \`value\`.
- */
 @Component({
   selector: 'app-generic-table-person-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -141,13 +124,11 @@ export class PersonCellComponent<T = unknown> {
   });
 }
 
-// person-cell.component.html
 <span class="gt-person-cell">
   <span class="gt-person-cell__avatar" aria-hidden="true">{{ initials() }}</span>
   <span class="gt-person-cell__name">{{ label() }}</span>
 </span>
 
-// person-cell.component.scss
 :host {
   display: inline-flex;
   max-width: 100%;
@@ -196,14 +177,10 @@ export class PersonCellComponent<T = unknown> {
 }
 `,
   Mailto: `
-// mailto-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Mailto link cell. \`value\` should be an email address.
- */
 @Component({
   selector: 'app-generic-table-mailto-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -225,7 +202,6 @@ export class MailtoCellComponent<T = unknown> {
   });
 }
 
-// mailto-cell.component.html
 @if (email(); as address) {
   <a
     class="gt-mailto-cell"
@@ -237,7 +213,6 @@ export class MailtoCellComponent<T = unknown> {
   </a>
 }
 
-// mailto-cell.component.scss
 :host {
   display: inline-flex;
   max-width: 100%;
@@ -258,14 +233,10 @@ export class MailtoCellComponent<T = unknown> {
 }
 `,
   Boolean: `
-// boolean-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Boolean / truthy chip cell. Renders Yes/No from boolean or common string values.
- */
 @Component({
   selector: 'app-generic-table-boolean-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -298,10 +269,8 @@ export class BooleanCellComponent<T = unknown> {
   );
 }
 
-// boolean-cell.component.html
 <span class="gt-boolean-cell" [class]="chipClass()">{{ label() }}</span>
 
-// boolean-cell.component.scss
 :host {
   display: inline-flex;
   max-width: 100%;
@@ -340,17 +309,12 @@ export class BooleanCellComponent<T = unknown> {
 }
 `,
   PresencePulse: `
-// presence-pulse-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
 
 type Presence = 'online' | 'away' | 'offline';
 
-/**
- * Presence cell with a softly pulsing status dot.
- * \`value\` accepts \`online\` | \`away\` | \`offline\` (case-insensitive).
- */
 @Component({
   selector: 'app-generic-table-presence-pulse-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -381,13 +345,11 @@ export class PresencePulseCellComponent<T = unknown> {
   readonly label = computed(() => this.presence());
 }
 
-// presence-pulse-cell.component.html
 <span class="gt-presence" [class]="'gt-presence gt-presence--' + presence()">
   <span class="gt-presence__dot" aria-hidden="true"></span>
   <span class="gt-presence__label">{{ label() }}</span>
 </span>
 
-// presence-pulse-cell.component.scss
 :host {
   display: inline-flex;
   max-width: 100%;
@@ -483,14 +445,10 @@ export class PresencePulseCellComponent<T = unknown> {
 }
 `,
   ProgressBar: `
-// progress-bar-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Animated progress bar cell. \`value\` is a number 0–100 (or coercible string).
- */
 @Component({
   selector: 'app-generic-table-progress-bar-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -512,7 +470,6 @@ export class ProgressBarCellComponent<T = unknown> {
   });
 }
 
-// progress-bar-cell.component.html
 <div class="gt-progress" [attr.title]="percent() + '%'" [attr.aria-label]="percent() + ' percent'">
   <div class="gt-progress__track">
     <div class="gt-progress__fill" [style.width.%]="percent()"></div>
@@ -520,7 +477,6 @@ export class ProgressBarCellComponent<T = unknown> {
   <span class="gt-progress__label">{{ percent() }}%</span>
 </div>
 
-// progress-bar-cell.component.scss
 :host {
   display: block;
   min-width: 0;
@@ -582,15 +538,10 @@ export class ProgressBarCellComponent<T = unknown> {
 }
 `,
   Trend: `
-// trend-cell.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { ColumnDef } from '../generic-table.types';
 
-/**
- * Numeric delta / trend cell with a slide-in arrow.
- * Positive → up, negative → down, zero → flat.
- */
 @Component({
   selector: 'app-generic-table-trend-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -644,13 +595,11 @@ export class TrendCellComponent<T = unknown> {
   });
 }
 
-// trend-cell.component.html
 <span class="gt-trend" [class]="'gt-trend gt-trend--' + direction()">
   <span class="gt-trend__arrow" aria-hidden="true">{{ arrow() }}</span>
   <span class="gt-trend__value">{{ formatted() }}</span>
 </span>
 
-// trend-cell.component.scss
 :host {
   display: inline-flex;
   max-width: 100%;
@@ -749,7 +698,6 @@ export class TrendCellComponent<T = unknown> {
 
 export type TanstackCellSourceKey = keyof typeof tanstackCellSources;
 
-/** Build demo code tabs for the given cell component keys (order preserved). */
 export function tanstackCellTabs(
   ...keys: TanstackCellSourceKey[]
 ): DemoCodeCellTab[] {

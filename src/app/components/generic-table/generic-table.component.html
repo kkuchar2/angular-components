@@ -43,19 +43,8 @@
     </div>
   }
 
-  <!--
-    The table must be a direct lexical child of its scroll container. When it sits
-    inside a `cdk-virtual-scroll-viewport`, `mat-table` detects the viewport via
-    `inject(CDK_VIRTUAL_SCROLL_VIEWPORT, { host: true })` and enables virtual
-    scrolling. Rendering it through `ngTemplateOutlet` would resolve that injection
-    from the template's declaration site (this component root) instead of the
-    viewport, silently disabling virtualization and rendering every row.
-  -->
   @if (virtualized()) {
-    <!--
-      Keep the header outside the virtual scroll viewport. Sticky positioning inside
-      CDK's transformed content wrapper flickers and can vanish during fast scrolling.
-    -->
+
     <div
       class="generic-table__virtual-shell"
       #virtualShell
@@ -139,15 +128,7 @@
         [maxBufferPx]="virtualMaxBufferPx()"
         (scroll)="onVirtualScroll($event)"
       >
-        <!--
-          A `mat-table` inside a virtual-scroll viewport is always driven by CDK's
-          recycle view-repeater strategy (the `recycleRows` input is ignored here):
-          it caches detached row views and reuses them, only reassigning each row's
-          `$implicit` without re-running the cell templates. On its own that leaves
-          reused rows showing another row's stale content or blank while scrolling,
-          especially in a zoneless/OnPush app. `(contentChanged)` marks the view for
-          check after every range render so the visible rows repaint immediately.
-        -->
+
         <table
           mat-table
           [dataSource]="dataSource"

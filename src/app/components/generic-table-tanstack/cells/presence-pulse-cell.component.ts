@@ -4,10 +4,6 @@ import type { ColumnDef } from '../generic-table.types';
 
 type Presence = 'online' | 'away' | 'offline';
 
-/**
- * Presence cell with a softly pulsing status dot.
- * `value` accepts `online` | `away` | `offline` (case-insensitive).
- */
 @Component({
   selector: 'app-generic-table-presence-pulse-cell',
   changeDetection: ChangeDetectionStrategy.OnPush,

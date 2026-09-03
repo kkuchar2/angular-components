@@ -105,7 +105,6 @@ export class GenericTableTanstackDemoComponent {
     },
   ];
 
-  /** Name/email text search + department/status value toggles. */
   readonly filterColumns: ColumnDef<DemoUser>[] = this.columns.map((column) => {
     if (column.key === 'name' || column.key === 'email') {
       return { ...column, searchable: true };
@@ -118,7 +117,6 @@ export class GenericTableTanstackDemoComponent {
     return column;
   });
 
-  /** Mix of searchable + toggleable columns for a scrollable filter rail. */
   readonly overflowFilterColumns: ColumnDef<DemoUser>[] = this.columns.map((column) => {
     if (column.key === 'status' || column.key === 'department') {
       return { ...column, searchable: true, toggleable: true };
@@ -127,7 +125,6 @@ export class GenericTableTanstackDemoComponent {
     return { ...column, searchable: true };
   });
 
-  /** Catalog cells: person, mailto, status badge, boolean. */
   readonly catalogColumns: ColumnDef<DemoUser>[] = [
     {
       key: 'name',
@@ -170,7 +167,6 @@ export class GenericTableTanstackDemoComponent {
     },
   ];
 
-  /** Animated / richer cells: presence pulse, progress bar, trend delta. */
   readonly animatedColumns: ColumnDef<DemoUser>[] = [
     {
       key: 'name',
@@ -338,7 +334,7 @@ export class GenericTableTanstackDemoComponent {
           GenericTableTanstackComponent,
         } from './components/generic-table-tanstack';
 
-        readonly rows = signal<DemoUser[]>([/* ... */]);
+        readonly rows = signal<DemoUser[]>([...]);
 
         readonly rowActions: GenericTableRowAction<DemoUser>[] = [
           { id: 'edit', label: 'Edit', icon: LucidePencil },
@@ -454,7 +450,7 @@ export class GenericTableTanstackDemoComponent {
         import { signal } from '@angular/core';
         import { ColumnDef, GenericTableTanstackComponent } from './components/generic-table-tanstack';
 
-        readonly rows = signal<DemoUser[]>([/* ... */]);
+        readonly rows = signal<DemoUser[]>([...]);
 
         trackById(_index: number, row: DemoUser): number {
           return row.id;
@@ -559,9 +555,6 @@ export class GenericTableTanstackDemoComponent {
           PersonCellComponent,
           StatusBadgeCellComponent,
         } from './components/generic-table-tanstack';
-
-        // Library cell catalog — set cellComponent on ColumnDef.
-        // Each cell receives value / row / column inputs.
       `,
       columnsTs: code`
         import {
@@ -624,8 +617,6 @@ export class GenericTableTanstackDemoComponent {
           ProgressBarCellComponent,
           TrendCellComponent,
         } from './components/generic-table-tanstack';
-
-        // Animated cells respect prefers-reduced-motion.
       `,
       columnsTs: code`
         import {

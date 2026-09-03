@@ -40,7 +40,6 @@
   opacity: 0.45;
 }
 
-// Panel lives in a CDK overlay; tokens are redeclared on the panel root.
 .context-menu__panel {
   --cm-bg: var(--color-surface, #ffffff);
   --cm-border: var(--color-border, #e0e0e0);

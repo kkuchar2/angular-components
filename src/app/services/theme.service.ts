@@ -18,7 +18,7 @@ export class ThemeService {
       try {
         localStorage.setItem(STORAGE_KEY, theme);
       } catch {
-        // Ignore storage errors (private browsing, etc.).
+
       }
     });
   }

@@ -3,202 +3,103 @@ import type { LucideIconInput } from '@lucide/angular';
 
 import type { GenericTableCellType, GenericTableDateDisplay } from './generic-table-cell.types';
 
-/**
- * Action shown in the row ⋮ context menu when `rowActions` is set on the table.
- *
- * @typeParam T - The row model the table renders.
- */
 export interface GenericTableRowAction<T = unknown> {
-  /** Stable id emitted via `(rowAction)`. */
+
   id: string;
-  /** Visible label in the menu. */
+
   label: string;
-  /** Optional Lucide icon before the label. */
+
   icon?: LucideIconInput;
-  /** Static or per-row disabled state. */
+
   disabled?: boolean | ((row: T) => boolean);
-  /** Danger / destructive styling (e.g. Delete). */
+
   danger?: boolean;
-  /** When true (or the predicate returns true) the action is omitted for that row. */
+
   hidden?: boolean | ((row: T) => boolean);
-  /** Render a separator line above this item. */
+
   dividerBefore?: boolean;
 }
 
-/**
- * Payload for `(rowAction)` when a row context-menu item is chosen.
- *
- * @typeParam T - The row model the table renders.
- */
 export interface GenericTableRowActionEvent<T = unknown> {
-  /** `GenericTableRowAction.id` of the selected item. */
+
   actionId: string;
-  /** Row the menu was opened for. */
+
   row: T;
 }
 
-/**
- * Documented NgComponentOutlet inputs for `ColumnDef.cellComponent`.
- *
- * @typeParam T - The row model the table renders.
- */
 export interface GenericTableCellComponentInputs<T = unknown> {
-  /** Resolved via `cell?.(row) ?? row[key]`. */
+
   value: unknown;
-  /** Full row for the current cell. */
+
   row: T;
-  /** Column definition for the current cell. */
+
   column: ColumnDef<T>;
 }
 
-/**
- * One facet group extracted from a toggleable column (checkbox list in the rail).
- *
- * @typeParam T - The row model the table renders.
- */
 export interface ColumnToggleGroup<T = unknown> {
-  /** Stable id within the column (selection state key). */
+
   id: string;
-  /** Label above this group's checkboxes. Defaults to the column header. */
+
   label?: string;
-  /**
-   * Extract facet value(s) from the row. A row matches when any extracted
-   * value is in the selected set (OR within the group).
-   */
+
   getValues: (row: T) => string | readonly string[] | null | undefined;
 }
 
-/**
- * Custom toggle splitting for a column — e.g. multiple facets from one string.
- *
- * @typeParam T - The row model the table renders.
- */
 export interface ColumnToggleConfig<T = unknown> {
   groups: ColumnToggleGroup<T>[];
 }
 
-/**
- * Definition of a single table column.
- *
- * @typeParam T - The row model the table renders.
- */
 export interface ColumnDef<T = unknown> {
-  /** Unique column id. Also used as the default property accessor on each row. */
+
   key: string;
-  /** Text rendered in the header cell. */
+
   header: string;
-  /**
-   * Optional help text. When set, a small info icon appears to the right of the
-   * header label and shows this description in a tooltip.
-   */
+
   description?: string;
-  /** When true the header becomes sortable. Defaults to `false`. */
+
   sortable?: boolean;
-  /**
-   * When true, a live text filter for this column is shown in the left-hand
-   * filter rail. Filtering is case-insensitive and matches the formatted cell
-   * text (and the raw value). Defaults to `false`.
-   */
+
   searchable?: boolean;
-  /**
-   * When true, the filter rail lists unique formatted cell values as checkboxes.
-   * Pass a {@link ColumnToggleConfig} to split one column into multiple toggle
-   * groups (e.g. extract "value" and "process" facets from a template string).
-   * Within a group selected values OR; groups/search filters AND. Defaults off.
-   */
+
   toggleable?: boolean | ColumnToggleConfig<T>;
-  /**
-   * Built-in cell presentation when no custom `appGenericTableCell` template and
-   * no `cellComponent` is set: `'text'` (default), `'uuid'` (monospace), or
-   * `'date'` (`Date`, `YYYY-MM-DD`, or ISO datetimes like
-   * `2026-07-21T18:30:00.123456Z`).
-   */
+
   cellType?: GenericTableCellType;
-  /**
-   * When `cellType` is `'date'`, controls date vs date+time formatting.
-   * Defaults to `'auto'`.
-   */
+
   dateDisplay?: GenericTableDateDisplay;
-  /**
-   * Show a small Lucide copy control that copies the cell value to the clipboard.
-   * Works with built-in cell types and plain text (not custom templates or
-   * `cellComponent`).
-   */
+
   copyable?: boolean;
-  /**
-   * Value accessor for the cell (e.g. nested fields). Defaults to `row[key]`.
-   * Used by built-in formatters, copy, and as the `value` input for
-   * `cellComponent`. Projected templates and `cellComponent` still win for display.
-   */
+
   cell?: (row: T) => unknown;
-  /**
-   * Reusable cell component rendered via `NgComponentOutlet`.
-   * Receives `value`, `row`, and `column` inputs (see {@link GenericTableCellComponentInputs}).
-   * Ignored when a projected `appGenericTableCell` template exists for this key.
-   * `copyable` / built-in `cellType` do not apply — the component owns presentation.
-   */
+
   cellComponent?: Type<unknown>;
-  /**
-   * Custom sort key from the row. When unset, sorts by the raw `row[key]`
-   * value (dates → timestamp). Provide this for nested fields or computed keys.
-   */
+
   sortAccessor?: (row: T) => string | number;
-  /** When `false` the column is always visible and hidden from the toggle. Defaults to `true`. */
+
   hideable?: boolean;
-  /** Initial visibility of the column. Defaults to `true`. */
+
   visible?: boolean;
-  /** Fixed preferred width, e.g. `'120px'` or `'20%'`. With `minWidth`, acts as a max. */
+
   width?: string;
-  /**
-   * Minimum column width, e.g. `'50px'` or `'0px'`. The column never shrinks below
-   * this. With `width`, the track is `minmax(minWidth, width)` so it can shrink.
-   * Only the last column grows to fill leftover container width.
-   */
+
   minWidth?: string;
-  /** Horizontal alignment of header and cells. Defaults to `'left'`. */
+
   align?: 'left' | 'center' | 'right';
 }
 
-/**
- * How the table sizes itself vertically.
- *
- * - `'auto'`: the body grows with its rows up to the default max height (480px), then scrolls.
- * - `'fill'`: sizes to its rows up to the remaining flex-column space, then scrolls.
- *   Virtualized tables ignore `maxHeight` and use the full allocation.
- * - `'parent'`: fills the parent's height (`height: 100%` / flex stretch, including
- *   `flex: 1` parents). Scrolls when rows exceed that space. `height` is a floor
- *   (never shorter); `maxHeight` is a cap (never taller). Virtualized tables use
- *   the same clamped parent allocation.
- *
- * `'fill'` and `'parent'` both scroll the body once rows exceed the available
- * height, and both require the parent to resolve a height (see the README).
- */
 export type GenericTableHeightMode = 'auto' | 'fill' | 'parent';
 
-/**
- * Context passed to a custom cell template projected with `appGenericTableCell`.
- *
- * @typeParam T - The row model the table renders.
- */
 export interface GenericTableCellContext<T = unknown> {
-  /** The row for the current cell (default template variable). */
+
   $implicit: T;
-  /** Alias of `$implicit` for readability: `let-row="row"`. */
+
   row: T;
 }
 
-/**
- * Payload for `(exportRequest)`. Use when rows live on the server and the parent
- * must load the full dataset before the CSV can be built.
- *
- * @typeParam T - The row model the table renders.
- */
 export interface GenericTableExportRequest<T = unknown> {
-  /** Filename that will be used for the download (includes `.csv` when applicable). */
+
   fileName: string;
-  /** Call with the full row set to download the CSV. */
+
   complete: (rows: readonly T[]) => void;
 }
 
-/** Fixed CSS track width for the optional row-actions column. */
 export const GENERIC_TABLE_ROW_ACTIONS_TRACK = '48px';

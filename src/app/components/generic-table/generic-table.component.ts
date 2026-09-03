@@ -33,18 +33,8 @@ import { GenericTableHeaderInfoComponent } from './generic-table-header-info.com
 import { resolveSortValue } from './generic-table-cell-format';
 import { ColumnDef, GenericTableCellContext, GenericTableExportRequest, GenericTableHeightMode } from './generic-table.types';
 
-/** Default scroll-body cap; mirrored by `--gt-max-height` in the component stylesheet. */
 const DEFAULT_MAX_HEIGHT_PX = 480;
 
-/**
- * A configurable, signal-based table built on Angular Material's `mat-table`.
- *
- * Features: per-column sorting, optional pagination (or a scrollable body),
- * a chip-based column visibility toggle, custom cell templates, optional row
- * click, and a centered empty state.
- *
- * @typeParam T - The row model. Inferred from the `data`/`columns` inputs.
- */
 @Component({
   selector: 'app-generic-table',
   imports: [
@@ -83,89 +73,65 @@ export class GenericTableComponent<T = unknown> {
   private observedVirtualViewport: HTMLElement | null = null;
   private observedBoundedTargets = new Set<HTMLElement>();
 
-  /** True while the scroll body is moving; suppresses row hover styling. */
   readonly isScrolling = signal(false);
 
-  /** Column definitions in display order. */
   readonly columns = input.required<ColumnDef<T>[]>();
-  /** Row data for the current view. Client-side when `serverSide` is false. */
+
   readonly data = input.required<readonly T[]>();
-  /** Show a paginator. When `false` the table body scrolls instead. Ignored when `virtualized`. */
+
   readonly paginated = input(false);
-  /**
-   * Server-side pagination: pass only the current page in `data`, set `totalCount` to the
-   * full result size, and fetch new rows in `(pageChange)`. Requires `paginated`.
-   * Sorting remains client-side over the current page unless you handle `(sortChange)`.
-   */
+
   readonly serverSide = input(false);
-  /** Total row count on the server (used when `serverSide` is true). */
+
   readonly totalCount = input(0);
-  /** Current page index, zero-based (used when `serverSide` is true). */
+
   readonly pageIndex = input(0);
-  /**
-   * Render rows with CDK virtual scroll (only visible rows in the DOM).
-   * Requires a bounded scroll height (`height`, `maxHeight`, or `heightMode` `'fill'`/`'parent'`)
-   * and a fixed `rowHeight`. Mutually exclusive with `paginated`.
-   */
+
   readonly virtualized = input(false);
-  /** Fixed row height in pixels. Required when `virtualized` is true. Defaults to `48`. */
+
   readonly rowHeight = input(48);
-  /** Initial page size (used when `paginated` is true). */
+
   readonly pageSize = input(10);
-  /** Page size options offered by the paginator. */
+
   readonly pageSizeOptions = input<number[]>([5, 10, 25, 50]);
-  /** Show the chip list that toggles hideable columns. */
+
   readonly showColumnToggle = input(true);
-  /** Message shown when there are no rows. */
+
   readonly emptyMessage = input('No data available');
-  /** Emit `rowClick` and apply hover styling when true. */
+
   readonly rowClickable = input(false);
-  /** Fade the table and block all interaction (sort, pagination, column toggle, row click). */
+
   readonly disabled = input(false);
-  /**
-   * Show an "Export CSV" control. Exports every column and every row in `data`
-   * (or `exportData` when provided) — not just the current page / virtual window.
-   */
+
   readonly showExport = input(false);
-  /** Download filename for CSV export. Defaults to `'table-export.csv'`. */
+
   readonly exportFileName = input('table-export.csv');
-  /**
-   * Optional full dataset used only for CSV export. Use with server-side pagination
-   * when `data` holds a single page but you still want to export every row.
-   */
+
   readonly exportData = input<readonly T[] | null>(null);
-  /**
-   * How the table sizes vertically:
-   * - `'auto'` (default): grows with content up to the default max height (480px), then scrolls.
-   * - `'fill'`: sizes to row content up to the remaining flex-column space; scrolls
-   *   when rows exceed that space. Honors `minHeight` when the allocation is shorter.
-   * - `'parent'`: sizes to row content up to the parent's height; scrolls when rows
-   *   exceed that space. Ignores `height` and `maxHeight`. Honors `minHeight` when
-   *   the parent is shorter than that floor.
-   */
+
   readonly heightMode = input<GenericTableHeightMode>('auto');
-  /** Exact, fixed height for the scroll body, e.g. `'320px'`. Ignored when `heightMode` is `'parent'`. */
+
   readonly height = input<string | null>(null);
-  /** Caps the scroll body height in `'auto'` mode (default 480px). Ignored when virtualized with `'fill'` / `'parent'`. */
+
   readonly maxHeight = input<string | null>(null);
-  /** Minimum scroll body height, e.g. `'200px'`. In `'fill'` / `'parent'` modes, never shrinks below this when the available space is shorter. */
+
   readonly minHeight = input<string | null>(null);
 
   readonly isParentMode = computed(() => this.heightMode() === 'parent');
   readonly isFixed = computed(() => !this.isParentMode() && this.height() != null);
   readonly isFillMode = computed(() => !this.isFixed() && this.heightMode() === 'fill');
   readonly isBoundedHeightMode = computed(() => this.isParentMode() || this.isFillMode());
-  /** Fixed scroll-body height; suppressed in `'parent'` mode. */
+
   readonly scrollBodyHeight = computed(() => (this.isParentMode() ? null : this.height()));
   readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
   readonly isServerSidePagination = computed(() => this.serverSide() && this.showPaginator());
   readonly virtualMinBufferPx = computed(() => this.rowHeight() * 10);
   readonly virtualMaxBufferPx = computed(() => this.rowHeight() * 20);
-  /** Measured header track height for virtual viewport sizing. */
+
   readonly virtualHeaderHeightPx = signal(56);
-  /** Available vertical space for `'fill'` / `'parent'` modes. */
+
   readonly boundedAvailableHeightPx = signal<number | null>(null);
-  /** Non-scroll chrome (toggle, paginator, gaps) for bounded height modes. */
+
   readonly boundedChromeHeightPx = signal(0);
   readonly boundedMaxHeightPx = computed(() => {
     if (!this.isBoundedHeightMode()) {
@@ -178,7 +144,6 @@ export class GenericTableComponent<T = unknown> {
       return this.virtualized() ? null : this.resolveBoundedAvailableFallbackPx();
     }
 
-    // Virtual fill/parent fills the measured allocation — maxHeight does not apply.
     if (this.virtualized()) {
       return available;
     }
@@ -194,10 +159,7 @@ export class GenericTableComponent<T = unknown> {
 
     return Math.min(available, maxBodyCap + chrome + header);
   });
-  /**
-   * Virtual viewport height when not fixed: content height capped by max height (auto)
-   * or bounded allocation (`fill` / `parent`). `null` lets CSS flex sizing take over.
-   */
+
   readonly virtualViewportHeightPx = computed(() => {
     if (this.isFixed()) {
       return null;
@@ -233,12 +195,7 @@ export class GenericTableComponent<T = unknown> {
   readonly rowClick = output<T>();
   readonly sortChange = output<Sort>();
   readonly pageChange = output<PageEvent>();
-  /**
-   * Emitted when the user starts a CSV export and the parent should supply rows
-   * (typical for server-side pagination). Call `complete(rows)` after fetching.
-   * For client-side data the table also downloads immediately from `data` /
-   * `exportData`; for server-side without `exportData`, only this event runs.
-   */
+
   readonly exportRequest = output<GenericTableExportRequest<T>>();
 
   readonly dataSource = new MatTableDataSource<T>();
@@ -405,7 +362,6 @@ export class GenericTableComponent<T = unknown> {
 
       this.queueVirtualLayoutSync();
 
-      // Virtual rows can render a frame after the shell; retry once layout settles.
       untracked(() => {
         setTimeout(() => this.queueVirtualLayoutSync(), 0);
         setTimeout(() => this.queueVirtualLayoutSync(), 100);
@@ -482,11 +438,6 @@ export class GenericTableComponent<T = unknown> {
     this.rowClick.emit(row);
   }
 
-  /**
-   * Download a CSV of the given rows (or `exportData` / `data` when omitted).
-   * Includes every column definition and raw `row[key]` values — ignores
-   * pagination, virtualization, cell formatters, and templates.
-   */
   exportToCsv(fileName = this.exportFileName(), rows?: readonly T[]): void {
     if (this.disabled()) {
       return;
@@ -495,17 +446,10 @@ export class GenericTableComponent<T = unknown> {
     this.downloadCsv(rows ?? this.exportData() ?? this.data(), fileName);
   }
 
-  /** Start an export from the toolbar button (may emit `exportRequest`). */
   onExportClick(): void {
     this.requestCsvExport();
   }
 
-  /**
-   * Start a CSV export. Always emits `(exportRequest)` with a `complete` callback.
-   * When data is already local (`!serverSide` or `exportData` is set), also downloads
-   * immediately. With server-side pagination and no `exportData`, the parent must
-   * fetch all rows and call `complete(rows)`.
-   */
   requestCsvExport(fileName = this.exportFileName()): void {
     if (this.disabled()) {
       return;
@@ -532,7 +476,6 @@ export class GenericTableComponent<T = unknown> {
       ),
     ];
 
-    // BOM helps Excel open UTF-8 correctly.
     const blob = new Blob(['\uFEFF' + lines.join('\n')], {
       type: 'text/csv;charset=utf-8;',
     });
@@ -576,21 +519,6 @@ export class GenericTableComponent<T = unknown> {
     }
   }
 
-  /**
-   * Runs after the virtualized `mat-table` re-renders its row range (CDK emits
-   * `contentChanged` at the end of every `renderRows()`).
-   *
-   * A `mat-table` hosted in a `cdk-virtual-scroll-viewport` is forced onto CDK's
-   * recycle view-repeater strategy, which reuses cached row views and only
-   * reassigns each row's `$implicit` — it does not re-run the cell templates.
-   * In a zoneless + OnPush app the range update happens inside a
-   * requestAnimationFrame-audited stream that does not schedule change detection
-   * for those reused rows, so their cells keep another row's stale content and
-   * fresh rows show blank until an unrelated event finally ticks CD (the source
-   * of the "wrong rows at the bottom" and "blank rows filled after a delay"
-   * glitches while scrolling). Marking for check here repaints the rendered
-   * range immediately after it changes.
-   */
   onVirtualContentRendered(): void {
     this.changeDetectorRef.markForCheck();
   }
@@ -600,7 +528,6 @@ export class GenericTableComponent<T = unknown> {
       cancelAnimationFrame(this.layoutSyncFrame);
     }
 
-    // Two frames lets mat-table finish applying column widths before we measure.
     this.layoutSyncFrame = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         this.layoutSyncFrame = null;
@@ -650,7 +577,7 @@ export class GenericTableComponent<T = unknown> {
 
     this.resetSyncedColumnWidths(headerTable, headerTrack, bodyTable);
     this.setShellStyle(shell, '--gt-virtual-table-width', `${contentWidth}px`);
-    // Flush layout so body cells reflect the cleared widths before we measure.
+
     void bodyTable.offsetWidth;
 
     const widths = this.syncVirtualColumnWidths(headerTable, bodyTable, viewport, headerTrack);
@@ -665,7 +592,6 @@ export class GenericTableComponent<T = unknown> {
     this.measureBoundedLayout();
   }
 
-  /** Avoid sub-pixel false positives from scrollWidth / padding when columns still fit. */
   private resolveVirtualTableWidth(contentWidth: number, summedWidths: number): number {
     if (summedWidths <= contentWidth + 1) {
       return contentWidth;
@@ -785,7 +711,6 @@ export class GenericTableComponent<T = unknown> {
     return parsed > 0 ? parsed : 0;
   }
 
-  /** Shrinks to row content, caps at available space, floors at minHeight when space is short. */
   private resolveBoundedScrollBodyHeightPx(contentHeight: number, fillHeight: number): number {
     const minHeight = this.resolveMinScrollHeightPx();
 
@@ -841,10 +766,6 @@ export class GenericTableComponent<T = unknown> {
     return fillAvailable;
   }
 
-  /**
-   * Resolves vertical space for `'parent'` mode without feeding host growth back into
-   * the measurement (which would expand a content-sized parent in a loop).
-   */
   private measureParentAvailableHeight(host: HTMLElement, parent: HTMLElement): number {
     const parentStyle = getComputedStyle(parent);
     const parsedHeight = this.parseLengthToPx(parentStyle.height, parent.clientWidth);
@@ -859,8 +780,7 @@ export class GenericTableComponent<T = unknown> {
     }
 
     if (hostHeight > 0 && parentHeight - hostHeight <= 2) {
-      // Parent tracks our content — use current host size so we shrink to rows
-      // without feeding unconstrained virtual content height back into the parent.
+
       return hostHeight;
     }
 
@@ -880,7 +800,6 @@ export class GenericTableComponent<T = unknown> {
     return parsed > 0 ? parsed : null;
   }
 
-  /** Host-level cap for non-virtual bounded modes while layout is pending. */
   private resolveBoundedAvailableFallbackPx(): number {
     const maxBody = this.resolveExplicitMaxHeightPx() ?? DEFAULT_MAX_HEIGHT_PX;
     const chrome = this.boundedChromeHeightPx();

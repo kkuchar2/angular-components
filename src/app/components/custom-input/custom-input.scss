@@ -1,5 +1,3 @@
-// Self-contained styling. Every look-and-feel value is exposed as a `--ci-*`
-// custom property (with a sensible fallback), mirroring the custom-select pattern.
 :host {
   display: block;
   position: relative;
@@ -143,8 +141,6 @@
     }
   }
 
-  // Hover fill only when unfocused — otherwise leaving the field while focused
-  // looked darker because :hover (lighter) outranked .focused (stronger fill).
   &:not(.disabled):not(.focused) .custom-input__field:hover {
     background: var(--ci-hover-bg);
     border-bottom-color: var(--ci-border-hover);
@@ -194,7 +190,7 @@
   &.appearance-outlined {
     --ci-label-scale-float: 0.75;
     --ci-label-rest-y: calc((var(--ci-field-height, 52px) - 1em) / 2);
-    // Space from the field top to the floated label.
+
     --ci-label-float-y: 0.55rem;
 
     .custom-input__field {

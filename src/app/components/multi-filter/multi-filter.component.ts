@@ -91,7 +91,7 @@ export class MultiFilterComponent implements ControlValueAccessor {
   readonly addLabel = input('Add filter');
   readonly clearLabel = input('Clear all');
   readonly emptyMessage = input('No filters yet. Add one to narrow results.');
-  /** Max height of the scrollable rules list. Pass `null` or `'none'` to disable. */
+
   readonly maxHeight = input<string | null>('16rem');
 
   readonly filtersChange = output<MultiFilterRule[]>();
@@ -224,7 +224,7 @@ export class MultiFilterComponent implements ControlValueAccessor {
   }
 
   private scrollRulesToBottom(): void {
-    // Wait for the new row to render, then bring it into view.
+
     queueMicrotask(() => {
       requestAnimationFrame(() => {
         const list = this.rulesListRef()?.nativeElement;
