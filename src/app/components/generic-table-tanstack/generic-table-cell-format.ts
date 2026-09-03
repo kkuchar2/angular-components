@@ -127,28 +127,40 @@ export function resolveToggleValue<T>(column: ColumnDef<T>, row: T): string {
   return formatColumnCell(column, row).trim();
 }
 
-/** Sorted unique toggle values for a column across `rows`. */
+/** One unique value and how many rows carry it. */
+export interface GenericTableToggleOption {
+  value: string;
+  count: number;
+}
+
+/** Sorted unique toggle values with counts for a column across `rows`. */
 export function collectUniqueToggleValues<T>(
   column: ColumnDef<T>,
   rows: readonly T[],
-): string[] {
-  const unique = new Set<string>();
+): GenericTableToggleOption[] {
+  const counts = new Map<string, number>();
 
   for (const row of rows) {
-    unique.add(resolveToggleValue(column, row));
+    const value = resolveToggleValue(column, row);
+    counts.set(value, (counts.get(value) ?? 0) + 1);
   }
 
-  return [...unique].sort((a, b) => {
-    if (a === '' && b !== '') {
-      return 1;
-    }
+  return [...counts.entries()]
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => {
+      if (a.value === '' && b.value !== '') {
+        return 1;
+      }
 
-    if (b === '' && a !== '') {
-      return -1;
-    }
+      if (b.value === '' && a.value !== '') {
+        return -1;
+      }
 
-    return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
-  });
+      return a.value.localeCompare(b.value, undefined, {
+        sensitivity: 'base',
+        numeric: true,
+      });
+    });
 }
 
 /**

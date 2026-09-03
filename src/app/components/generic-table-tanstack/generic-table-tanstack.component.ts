@@ -17,6 +17,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatChipListboxChange, MatChipsModule } from '@angular/material/chips';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Sort } from '@angular/material/sort';
@@ -42,6 +43,7 @@ import {
   columnMatchesToggleFilter,
   resolveCellRawValue,
   resolveSortValue,
+  type GenericTableToggleOption,
 } from './generic-table-cell-format';
 import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
 import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
@@ -72,6 +74,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
   imports: [
     NgComponentOutlet,
     NgTemplateOutlet,
+    FormsModule,
     MatChipsModule,
     MatPaginatorModule,
     ContextMenuComponent,
@@ -351,7 +354,7 @@ export class GenericTableTanstackComponent<T = unknown> {
   /** Unique formatted values per toggleable column (from full `data`). */
   readonly toggleOptionsByColumn = computed(() => {
     const rows = this.data();
-    const map = new Map<string, string[]>();
+    const map = new Map<string, GenericTableToggleOption[]>();
 
     for (const column of this.toggleableColumns()) {
       map.set(column.key, collectUniqueToggleValues(column, rows));
@@ -772,6 +775,19 @@ export class GenericTableTanstackComponent<T = unknown> {
     });
   }
 
+  clearAllFilters(): void {
+    if (this.disabled() || !this.hasActiveFilters()) {
+      return;
+    }
+
+    this.columnFilterValues.set({});
+    this.columnToggleSelections.set({});
+  }
+
+  columnFilterDisplayValue(key: string): string {
+    return this.columnFilterValues()[key] ?? '';
+  }
+
   isToggleValueSelected(columnKey: string, value: string): boolean {
     return this.columnToggleSelections()[columnKey]?.has(value) === true;
   }
@@ -810,8 +826,9 @@ export class GenericTableTanstackComponent<T = unknown> {
     });
   }
 
-  toggleFilterLabel(value: string): string {
-    return value === '' ? '(Empty)' : value;
+  toggleFilterLabel(option: GenericTableToggleOption): string {
+    const name = option.value === '' ? '(Empty)' : option.value;
+    return `${name} (${option.count})`;
   }
 
   toggleOptionId(columnKey: string, value: string): string {

@@ -52,6 +52,15 @@
     @if (hasFilterColumns()) {
       <aside class="generic-table-tanstack__filters" aria-label="Table filters">
         <div class="generic-table-tanstack__filters-inner">
+          <button
+            type="button"
+            class="generic-table-tanstack__clear-filters"
+            [disabled]="disabled() || !hasActiveFilters()"
+            (click)="clearAllFilters()"
+          >
+            Clear filter
+          </button>
+
           @for (col of filterColumns(); track col.key) {
             <div class="generic-table-tanstack__filter">
               <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
@@ -65,7 +74,8 @@
                   [placeholder]="'Search on ' + col.header"
                   autocomplete="off"
                   [spellcheck]="false"
-                  (valueChange)="onColumnFilterValue(col.key, $event)"
+                  [ngModel]="columnFilterDisplayValue(col.key)"
+                  (ngModelChange)="onColumnFilterValue(col.key, $event)"
                 />
               }
 
@@ -75,19 +85,19 @@
                   role="group"
                   [attr.aria-label]="col.header + ' values'"
                 >
-                  @for (option of toggleOptionsByColumn().get(col.key) ?? []; track option) {
+                  @for (option of toggleOptionsByColumn().get(col.key) ?? []; track option.value) {
                     <label
                       class="generic-table-tanstack__toggle-option"
                       [class.generic-table-tanstack__toggle-option--disabled]="disabled()"
-                      [attr.for]="toggleOptionId(col.key, option)"
+                      [attr.for]="toggleOptionId(col.key, option.value)"
                     >
                       <input
                         class="generic-table-tanstack__toggle-checkbox"
                         type="checkbox"
-                        [id]="toggleOptionId(col.key, option)"
-                        [checked]="isToggleValueSelected(col.key, option)"
+                        [id]="toggleOptionId(col.key, option.value)"
+                        [checked]="isToggleValueSelected(col.key, option.value)"
                         [disabled]="disabled()"
-                        (change)="onToggleFilterInput(col.key, option, $event)"
+                        (change)="onToggleFilterInput(col.key, option.value, $event)"
                       />
                       <span class="generic-table-tanstack__toggle-value">
                         {{ toggleFilterLabel(option) }}
