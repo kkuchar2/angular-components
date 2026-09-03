@@ -240,6 +240,12 @@
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+  max-height: var(--gtt-toggle-list-max-height, 11rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gtt-border) transparent;
 }
 
 .generic-table-tanstack__toggle-option {
