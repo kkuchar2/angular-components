@@ -826,9 +826,8 @@ export class GenericTableTanstackComponent<T = unknown> {
     });
   }
 
-  toggleFilterLabel(option: GenericTableToggleOption): string {
-    const name = option.value === '' ? '(Empty)' : option.value;
-    return `${name} (${option.count})`;
+  toggleFilterName(value: string): string {
+    return value === '' ? '(Empty)' : value;
   }
 
   toggleOptionId(columnKey: string, value: string): string {

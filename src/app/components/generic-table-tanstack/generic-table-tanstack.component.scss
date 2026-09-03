@@ -263,10 +263,24 @@
 }
 
 .generic-table-tanstack__toggle-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.generic-table-tanstack__toggle-name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.generic-table-tanstack__toggle-count {
+  flex-shrink: 0;
+  white-space: nowrap;
+  color: var(--gtt-empty-color);
 }
 
 .generic-table-tanstack--fill .generic-table-tanstack__layout,

@@ -100,7 +100,12 @@
                         (change)="onToggleFilterInput(col.key, option.value, $event)"
                       />
                       <span class="generic-table-tanstack__toggle-value">
-                        {{ toggleFilterLabel(option) }}
+                        <span class="generic-table-tanstack__toggle-name">
+                          {{ toggleFilterName(option.value) }}
+                        </span>
+                        <span class="generic-table-tanstack__toggle-count">
+                          ({{ option.count }})
+                        </span>
                       </span>
                     </label>
                   }
