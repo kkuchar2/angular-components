@@ -693,12 +693,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.closeFiltersDialog();
   }
 
-  onDialogBackdropClick(event: MouseEvent): void {
-    if (event.target === event.currentTarget) {
-      this.closeFiltersDialog();
-    }
-  }
-
   clearFilters(): void {
     if (!this.disabled()) {
       this.filters.clear();

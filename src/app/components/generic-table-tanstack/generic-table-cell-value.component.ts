@@ -61,7 +61,7 @@ export class GenericTableCellValueComponent<T = unknown> {
         this.copiedTimer = null;
       }, 1200);
     } catch {
-
+      // Clipboard can be denied by the browser or permissions policy.
     }
   }
 }

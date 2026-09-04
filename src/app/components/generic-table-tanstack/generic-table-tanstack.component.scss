@@ -456,6 +456,7 @@
 }
 
 .gtt__dialog[open] {
+  position: fixed;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -470,7 +471,24 @@
   background: rgb(0 0 0 / 40%);
 }
 
+.gtt__dialog-dismiss {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.gtt__dialog-dismiss:focus-visible {
+  outline: none;
+}
+
 .gtt__dialog-frame {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;

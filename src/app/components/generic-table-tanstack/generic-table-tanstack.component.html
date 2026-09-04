@@ -263,9 +263,15 @@
       #filtersDialog
       class="gtt__dialog"
       [attr.aria-labelledby]="dialogTitleId"
-      (click)="onDialogBackdropClick($event)"
       (close)="filtersDialogOpen.set(false)"
     >
+      <button
+        type="button"
+        class="gtt__dialog-dismiss"
+        aria-label="Close filters"
+        (click)="closeFiltersDialog()"
+      ></button>
+
       <div class="gtt__dialog-frame">
         <header class="gtt__dialog-header">
           <h2 class="gtt__dialog-title" [id]="dialogTitleId">Filters</h2>

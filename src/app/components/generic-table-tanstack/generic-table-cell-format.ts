@@ -74,7 +74,7 @@ export function resolveSortValue<T>(column: ColumnDef<T>, row: T): string | numb
 export function resolveFilterText<T>(column: ColumnDef<T>, row: T): string {
   const formatted = formatColumnCell(column, row);
   const raw = resolveCellRawValue(column, row);
-  let rawText = '';
+  let rawText: string;
 
   if (raw == null) {
     rawText = '';

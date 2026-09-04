@@ -18,6 +18,8 @@ export interface GenericTableRowActionEvent<T = unknown> {
   row: T;
 }
 
+/** Type alias (not interface) so it stays assignable to `ngComponentOutletInputs`. */
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- needs an implicit index signature
 export type GenericTableCellComponentInputs<T = unknown> = {
   value: unknown;
   row: T;
