@@ -47,7 +47,6 @@ export class GenericTablePaginatorComponent {
     Math.min(Math.max(this.pageIndex(), 0), this.pageCount() - 1),
   );
 
-  /** Always offers the active size, even when the caller forgot to list it. */
   readonly sizeOptions = computed(() => {
     const options = new Set(this.pageSizeOptions().filter((option) => option > 0));
 
@@ -99,7 +98,6 @@ export class GenericTablePaginatorComponent {
     const previousPageIndex = this.currentPage();
 
     this.page.emit({
-      // Keep the first row of the current page in view instead of jumping to the start.
       pageIndex: Math.floor((previousPageIndex * this.pageSize()) / pageSize),
       previousPageIndex,
       pageSize,

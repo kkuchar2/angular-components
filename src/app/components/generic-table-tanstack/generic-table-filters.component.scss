@@ -35,8 +35,6 @@
   text-transform: uppercase;
 }
 
-// Indented to line up with the toggle's text rather than its chevron. Sections without a
-// toggle have no chevron to clear, so they sit flush.
 .gt-filters__body {
   display: flex;
   flex-direction: column;
@@ -138,9 +136,6 @@
   border-radius: 999px;
 }
 
-// No inner scroller: the rail body is the single scroll container, so the wheel scrolls
-// the panel wherever the pointer sits and its scrollbar reflects all the content. Long
-// option lists are capped by rendering fewer rather than by clipping.
 .gt-filters__options {
   display: flex;
   flex-direction: column;

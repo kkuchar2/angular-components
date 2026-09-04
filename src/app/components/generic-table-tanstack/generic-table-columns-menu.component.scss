@@ -21,8 +21,6 @@
   transform: rotate(180deg);
 }
 
-// The panel lives in the CDK overlay (outside `.gtt`), so it cannot rely on table tokens
-// alone. Fallbacks keep an opaque surface even when host CSS variables are out of reach.
 .gtt-columns-menu__panel {
   --gtt-columns-menu-bg: var(--color-surface, #ffffff);
   --gtt-columns-menu-border: var(--color-border, #e0e4ef);

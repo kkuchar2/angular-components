@@ -93,12 +93,6 @@ export function sortToggleOptions(
   });
 }
 
-/**
- * Filters rows and derives facet counts in a single pass over the data.
- *
- * A facet's counts are computed against the rows that survive every *other* group, so
- * narrowing one group updates its siblings' counts without zeroing out its own options.
- */
 export function applyFilters<T>(
   rows: readonly T[],
   searchableColumns: readonly ColumnDef<T>[],
@@ -199,7 +193,6 @@ export function applyFilters<T>(
   return { rows: result, facets };
 }
 
-/** Mutable text + toggle selections. Instantiated twice: once for applied, once for modal drafts. */
 export class GenericTableFilterValues {
   readonly text = signal<TextFilterMap>({});
   readonly toggles = signal<ToggleFilterMap>({});
@@ -215,7 +208,7 @@ export class GenericTableFilterValues {
   }
 
   isSelected(key: string, value: string): boolean {
-    return this.toggles()[key]?.has(value) === true;
+    return this.toggles()[key]?.has(value);
   }
 
   selectedCount(key: string): number {
@@ -284,18 +277,12 @@ export class GenericTableFilterValues {
     this.toggles.set(toggles);
   }
 
-  /** Drops selections whose column or toggle group no longer exists. */
   prune(validTextKeys: ReadonlySet<string>, validToggleKeys: ReadonlySet<string>): void {
     this.text.update((current) => retainKeys(current, validTextKeys));
     this.toggles.update((current) => retainKeys(current, validToggleKeys));
   }
 }
 
-/**
- * Which facet groups are collapsed and which have had their option list expanded past
- * the visible cap. Held outside the filter components so the rail keeps its shape across
- * close/reopen and hands the same view to the modal.
- */
 export class GenericTableFilterUiState {
   private readonly collapsed = signal<ReadonlySet<string>>(new Set());
   private readonly expanded = signal<ReadonlySet<string>>(new Set());

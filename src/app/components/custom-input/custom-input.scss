@@ -192,10 +192,6 @@ $floating-label-min-height: 3rem;
   &.appearance-outlined {
     --ci-label-scale-float: 0.75;
     --ci-label-rest-y: calc((var(--ci-field-height, 52px) - 1em) / 2);
-
-    // The floated label and the text below it have to share the field's height, so both
-    // offsets are fractions of it. Fixed offsets tuned for the default 52px left no room
-    // for the text once a consumer shortened the field.
     --ci-label-float-y: calc(var(--ci-field-height, 52px) * 0.14);
     --ci-control-float-padding: calc(var(--ci-field-height, 52px) * 0.42);
 
@@ -203,8 +199,6 @@ $floating-label-min-height: 3rem;
       position: relative;
     }
 
-    // A floated label and the text under it need a minimum to share; without this floor a
-    // consumer asking for a short field pushes the text past the bottom edge.
     &.has-floating-label .custom-input__field {
       min-height: max(var(--ci-field-height, 52px), #{$floating-label-min-height});
     }

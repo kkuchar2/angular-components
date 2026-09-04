@@ -2,16 +2,6 @@
 
 @include controls.control;
 
-// Height model, entirely in CSS:
-//   auto   – the shell is as tall as its rows, capped by `maxHeight` (default 30rem).
-//   fill   – the host shrinks to its rows but never outgrows the space the parent leaves.
-//   parent – the host claims the parent's space and the shell stretches into it.
-// Every level of the chain carries `min-height: 0` so the scroll container, not the
-// document, is what actually scrolls.
-//
-// Parent mode uses `max-height: inherit` so a parent that only declares `max-height`
-// (no definite `height`) still caps the host. Plain `max-height: 100%` does nothing in
-// that case because the percentage base is indefinite.
 :host {
   display: flex;
   flex-direction: column;
@@ -30,10 +20,6 @@
   align-self: stretch;
   box-sizing: border-box;
   height: 100%;
-  // Inherit the parent's max-height so a wrapper that only sets `max-height` (no
-  // definite `height`) still bounds the host. `max-height: 100%` is a no-op when the
-  // parent's height is indefinite. Prefer a flex parent with `min-height: 0` when you
-  // can; inherit covers the plain `max-height` wrapper case for length values.
   max-height: inherit;
   overflow: hidden;
 }
@@ -100,11 +86,6 @@
   user-select: none;
 }
 
-// ── Toolbar ────────────────────────────────────────────────────────────────
-// Two slots anchored to opposite edges with flexible space between them, so the
-// filter affordance and the tools can never collide or swap places. Both slots keep
-// a single line at every width — controls drop their labels instead of wrapping.
-
 .gtt__toolbar {
   display: flex;
   flex: 0 0 auto;
@@ -126,9 +107,6 @@
   margin-inline-start: auto;
 }
 
-// Projected tools are compiled against the consumer's stylesheet, so the shared control
-// chrome has to be pierced through to reach them. Scoped to the slot rather than the
-// document, and only for elements the directive marked.
 .gtt__toolbar-trail ::ng-deep {
   @include controls.control;
 }
@@ -155,16 +133,12 @@
   color: var(--gtt-text-muted);
 }
 
-// Chips get a full-width band of their own. They may wrap to any number of lines
-// without ever pushing the toolbar controls around.
 .gtt__chips {
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
   gap: var(--gtt-space-sm);
 }
-
-// ── Body: filter rail + table pane ─────────────────────────────────────────
 
 .gtt__body {
   display: flex;
@@ -224,9 +198,6 @@
   flex: 1 1 0;
 }
 
-// Horizontal scroll owns both the header and the body so columns stay locked together.
-// Vertical scroll is only on the body, so a transparent header never has rows passing
-// underneath it (sticky overlay would need an opaque fill to hide them).
 .gtt__hscroll {
   display: flex;
   flex: 1 1 auto;
@@ -248,7 +219,6 @@
 
 .gtt__head {
   flex: 0 0 auto;
-  // Reserve the same inline-end gutter as the body scrollbar so columns stay aligned.
   overflow-y: scroll;
   scrollbar-gutter: stable;
   background: transparent;
@@ -268,8 +238,6 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  // `clip` (not `hidden`) so horizontal sticky on the empty state can still see the
-  // hscroll ancestor; rows themselves never need to scroll sideways here.
   overflow-x: clip;
   overflow-y: auto;
   overflow-anchor: none;
@@ -332,8 +300,6 @@
   gap: 0.35rem;
 }
 
-// Centered headers keep the label optically centred by lifting the sort/info glyphs
-// out of the flow instead of letting them shift the text off-centre.
 .gtt__header-cell--center .gtt__header-accessories,
 .gtt__header-cell--right .gtt__header-accessories {
   position: absolute;
@@ -441,12 +407,10 @@
   outline-offset: -2px;
 }
 
-// Suppressed mid-gesture so momentum scrolling doesn't strobe the hover state.
 .gtt__scroll:not(.gtt__scroll--scrolling) .gtt__row--clickable:hover .gtt__cell {
   background: var(--gtt-row-hover-bg);
 }
 
-// Pinned to the visible inline-start of the table while the hscroll moves sideways.
 .gtt__empty {
   position: sticky;
   inset-inline-start: 0;
@@ -476,8 +440,6 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-
-// ── Filters dialog (narrow hosts) ──────────────────────────────────────────
 
 .gtt__dialog {
   box-sizing: border-box;

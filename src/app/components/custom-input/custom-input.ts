@@ -118,8 +118,6 @@ export class CustomInputComponent implements ControlValueAccessor {
       return this.isLabelFloated() ? this.placeholder() : '';
     }
 
-    // Without a label the placeholder is the field's only visible name, so it has to
-    // survive focus.
     if (!this.label()) {
       return this.placeholder();
     }

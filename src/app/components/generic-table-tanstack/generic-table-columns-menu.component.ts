@@ -51,8 +51,6 @@ export class GenericTableColumnsMenuComponent<T = unknown> {
   );
 
   readonly allVisible = computed(() => this.visibleCount() === this.columns().length);
-
-  /** The last visible column can't be hidden — an empty grid has no usable layout. */
   readonly isLocked = computed(() => this.visibleCount() <= 1);
 
   toggleMenu(): void {

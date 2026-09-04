@@ -14,7 +14,6 @@ export type GenericTableFiltersLayout = 'rail' | 'grid';
 
 interface FilterGroup {
   facet: GenericTableToggleFacet;
-  /** Set only when the group needs its own row because the section holds more than one. */
   heading: string | null;
 }
 
@@ -22,7 +21,6 @@ interface FilterSection<T> {
   column: ColumnDef<T>;
   collapseKey: string;
   heading: string;
-  /** Only option lists are worth hiding; a lone search field is already one row tall. */
   collapsible: boolean;
   searchable: boolean;
   searchLabel: string;
@@ -52,7 +50,6 @@ export class GenericTableFiltersComponent<T = unknown> {
   readonly showCounts = input(true);
   readonly ui = input(new GenericTableFilterUiState());
 
-  /** Options shown before a group offers to reveal the rest. */
   readonly visibleOptionLimit = input(8);
 
   readonly sections = computed((): FilterSection<T>[] => {

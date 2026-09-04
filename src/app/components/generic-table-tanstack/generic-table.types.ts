@@ -18,7 +18,6 @@ export interface GenericTableRowActionEvent<T = unknown> {
   row: T;
 }
 
-/** A type alias, not an interface, so it stays assignable to `ngComponentOutletInputs`. */
 export type GenericTableCellComponentInputs<T = unknown> = {
   value: unknown;
   row: T;
@@ -50,7 +49,6 @@ export interface ColumnDef<T = unknown> {
   cell?: (row: T) => unknown;
   cellComponent?: Type<unknown>;
   sortAccessor?: (row: T) => string | number;
-  /** Render `\n` in default text cells as hard line breaks. */
   splitByNewline?: boolean;
   hideable?: boolean;
   visible?: boolean;
@@ -59,12 +57,6 @@ export interface ColumnDef<T = unknown> {
   align?: GenericTableAlign;
 }
 
-/**
- * `auto`   – the table is as tall as its rows, capped by `maxHeight`.
- * `fill`   – the table shrinks to its rows but never exceeds the space the parent leaves it.
- * `parent` – the table always claims the parent's available space, even with few rows.
- *            Inherits the parent's `max-height` when the parent has no definite height.
- */
 export type GenericTableHeightMode = 'auto' | 'fill' | 'parent';
 
 export type GenericTableColumnToggle = 'menu' | 'chips' | 'none';

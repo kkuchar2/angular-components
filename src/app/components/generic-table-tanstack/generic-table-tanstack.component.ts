@@ -62,7 +62,6 @@ import {
   GenericTableSort,
 } from './generic-table.types';
 
-/** Below this host width the filter rail costs the table more room than it is worth. */
 const FILTER_RAIL_MIN_WIDTH_PX = 720;
 const DEFAULT_SCROLL_MAX_HEIGHT = '30rem';
 const DEFAULT_RAIL_MAX_HEIGHT = '26rem';
@@ -195,7 +194,6 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly filtersDialogOpen = signal(false);
   readonly hostWidth = signal(0);
 
-  /** Owned locally so the paginator's size picker sticks until the `pageSize` input changes. */
   readonly activePageSize = linkedSignal(() => Math.max(1, this.pageSize()));
   readonly clientPageIndex = signal(0);
 
@@ -252,7 +250,6 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   readonly hasFilters = computed(() => this.filterColumns().length > 0);
 
-  /** Narrow hosts swap the rail for a modal, which needs draft state and an explicit Apply. */
   readonly useFiltersDialog = computed(
     () => this.hasFilters() && this.hostWidth() > 0 && this.hostWidth() < FILTER_RAIL_MIN_WIDTH_PX,
   );
@@ -288,7 +285,6 @@ export class GenericTableTanstackComponent<T = unknown> {
       (this.rowMenuVariant() === 'details' && this.rowDetails() != null),
   );
 
-  /** Facet counts describe the loaded rows, which is only the whole set client-side. */
   readonly showFacetCounts = computed(() => !this.serverSide());
 
   private readonly filterResult = computed(() =>
@@ -341,8 +337,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     const columns = this.displayedColumns();
     const tracks = columns.map((column) => columnTrack(column));
 
-    // Without a flexible track the grid would leave a gap on the right, so the last
-    // column absorbs the slack even when it declares an explicit width.
     if (tracks.length > 0 && !columns.some((column) => isFlexibleColumn(column))) {
       tracks[tracks.length - 1] = `minmax(${columnFloor(columns[columns.length - 1])}, 1fr)`;
     }

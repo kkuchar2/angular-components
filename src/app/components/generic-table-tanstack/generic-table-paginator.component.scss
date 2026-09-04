@@ -2,8 +2,6 @@
 
 @include controls.control;
 
-// Fixed height at every width: the paginator sheds controls instead of wrapping, so a
-// bounded-height table never reflows when its container narrows.
 :host {
   container-type: inline-size;
   container-name: gtt-paginator;
