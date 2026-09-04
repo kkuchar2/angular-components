@@ -61,7 +61,6 @@
   --gtt-border: var(--color-border, #e0e4ef);
   --gtt-text: var(--color-text, rgb(0 0 0 / 87%));
   --gtt-text-muted: var(--color-text-muted, rgb(0 0 0 / 60%));
-  --gtt-header-bg: var(--gtt-surface);
   --gtt-row-hover-bg: var(--color-row-hover, #f2f2f2);
   --gtt-row-alt-bg: var(--color-row-even, #fafbfc);
   --gtt-row-divider: var(--color-border, #e0e4ef);
@@ -218,7 +217,7 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: var(--gtt-surface);
+  background: transparent;
   border: 1px solid var(--gtt-border);
   border-radius: var(--gtt-radius-md);
 }
@@ -227,31 +226,56 @@
   flex: 1 1 0;
 }
 
+// Horizontal scroll owns both the header and the body so columns stay locked together.
+// Vertical scroll is only on the body, so a transparent header never has rows passing
+// underneath it (sticky overlay would need an opaque fill to hide them).
+.gtt__hscroll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.gtt__grid {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  width: max(100%, min-content);
+  min-width: min-content;
+  min-height: 0;
+}
+
+.gtt__head {
+  flex: 0 0 auto;
+  // Reserve the same inline-end gutter as the body scrollbar so columns stay aligned.
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--gtt-accent);
+  scrollbar-color: transparent transparent;
+}
+
+.gtt__head::-webkit-scrollbar {
+  background: transparent;
+}
+
+.gtt__head::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
 .gtt__scroll {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  // `clip` (not `hidden`) so horizontal sticky on the empty state can still see the
+  // hscroll ancestor; rows themselves never need to scroll sideways here.
+  overflow-x: clip;
+  overflow-y: auto;
   overflow-anchor: none;
   scrollbar-gutter: stable;
-}
-
-// ── Grid ───────────────────────────────────────────────────────────────────
-// `min-width: min-content` resolves to the sum of the column track floors, so the
-// grid stretches to fill the viewport when the columns fit and overflows into a
-// horizontal scroll when they don't — no measurement in JS.
-
-.gtt__grid {
-  width: 100%;
-  min-width: min-content;
-}
-
-.gtt__head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--gtt-header-bg);
-  box-shadow: inset 0 -1px 0 var(--gtt-accent);
 }
 
 .gtt__header,
@@ -412,7 +436,7 @@
   background: var(--gtt-row-hover-bg);
 }
 
-// Pinned to the inline start so the message stays in view while scrolling sideways.
+// Pinned to the visible inline-start of the table while the hscroll moves sideways.
 .gtt__empty {
   position: sticky;
   inset-inline-start: 0;
@@ -422,7 +446,8 @@
   justify-content: center;
   gap: var(--gtt-space-md);
   box-sizing: border-box;
-  width: 100%;
+  width: 100cqw;
+  max-width: 100%;
   min-height: calc(var(--gtt-row-height) * 3);
   padding: var(--gtt-space-lg);
   text-align: center;

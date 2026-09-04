@@ -97,20 +97,12 @@
     <div class="gtt__pane">
       <div class="gtt__shell" [style.height]="shellHeight()">
         <div
-          #scrollElement
-          class="gtt__scroll"
-          [class.gtt__scroll--scrolling]="isScrolling()"
+          class="gtt__hscroll"
           [style.--gtt-cols]="gridTemplateColumns()"
           [style.max-height]="scrollMaxHeight()"
           [style.min-height]="minHeight()"
-          (scroll)="onScroll()"
         >
-          <div
-            class="gtt__grid"
-            role="table"
-            [attr.aria-rowcount]="ariaRowCount()"
-            [attr.aria-colcount]="ariaColCount()"
-          >
+          <div class="gtt__grid" role="table" [attr.aria-rowcount]="ariaRowCount()" [attr.aria-colcount]="ariaColCount()">
             <div class="gtt__head" role="rowgroup">
               <div class="gtt__header" role="row" aria-rowindex="1">
                 @for (column of displayedColumns(); track column.key) {
@@ -163,85 +155,92 @@
             </div>
 
             <div
-              class="gtt__rows"
-              role="rowgroup"
-              [class.gtt__rows--virtual]="virtualized()"
-              [class.gtt__rows--striped]="striped()"
-              [style.height.px]="virtualTotalHeight()"
-              [style.min-height.px]="reservedBodyHeight()"
+              #scrollElement
+              class="gtt__scroll"
+              [class.gtt__scroll--scrolling]="isScrolling()"
+              (scroll)="onScroll()"
             >
-              @for (item of renderRows(); track trackRenderRow($index, item)) {
-                <div
-                  class="gtt__row"
-                  role="row"
-                  [class.gtt__row--clickable]="rowClickable() && !disabled()"
-                  [attr.aria-rowindex]="item.index + 2"
-                  [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
-                  [style.height.px]="item.height"
-                  [style.transform]="item.offset === null ? null : 'translateY(' + item.offset + 'px)'"
-                  (click)="onRowClick(item.row)"
-                  (keydown)="onRowKeydown($event, item.row)"
-                >
-                  @for (column of displayedColumns(); track column.key) {
-                    <div
-                      class="gtt__cell"
-                      role="cell"
-                      [class.gtt__cell--center]="column.align === 'center'"
-                      [class.gtt__cell--right]="column.align === 'right'"
-                    >
-                      @if (cellTemplates().get(column.key); as template) {
-                        <div class="gtt__cell-content">
-                          <ng-container
-                            [ngTemplateOutlet]="template"
-                            [ngTemplateOutletContext]="cellContext(item.row)"
-                          />
-                        </div>
-                      } @else if (column.cellComponent; as cellComponent) {
-                        <div class="gtt__cell-content">
-                          <ng-container
-                            [ngComponentOutlet]="cellComponent"
-                            [ngComponentOutletInputs]="cellComponentInputs(column, item.row)"
-                          />
-                        </div>
-                      } @else {
-                        <app-generic-table-cell-value [column]="column" [row]="item.row" />
-                      }
-                    </div>
-                  }
+              <div
+                class="gtt__rows"
+                role="rowgroup"
+                [class.gtt__rows--virtual]="virtualized()"
+                [class.gtt__rows--striped]="striped()"
+                [style.height.px]="virtualTotalHeight()"
+                [style.min-height.px]="reservedBodyHeight()"
+              >
+                @for (item of renderRows(); track trackRenderRow($index, item)) {
+                  <div
+                    class="gtt__row"
+                    role="row"
+                    [class.gtt__row--clickable]="rowClickable() && !disabled()"
+                    [attr.aria-rowindex]="item.index + 2"
+                    [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
+                    [style.height.px]="item.height"
+                    [style.transform]="item.offset === null ? null : 'translateY(' + item.offset + 'px)'"
+                    (click)="onRowClick(item.row)"
+                    (keydown)="onRowKeydown($event, item.row)"
+                  >
+                    @for (column of displayedColumns(); track column.key) {
+                      <div
+                        class="gtt__cell"
+                        role="cell"
+                        [class.gtt__cell--center]="column.align === 'center'"
+                        [class.gtt__cell--right]="column.align === 'right'"
+                      >
+                        @if (cellTemplates().get(column.key); as template) {
+                          <div class="gtt__cell-content">
+                            <ng-container
+                              [ngTemplateOutlet]="template"
+                              [ngTemplateOutletContext]="cellContext(item.row)"
+                            />
+                          </div>
+                        } @else if (column.cellComponent; as cellComponent) {
+                          <div class="gtt__cell-content">
+                            <ng-container
+                              [ngComponentOutlet]="cellComponent"
+                              [ngComponentOutletInputs]="cellComponentInputs(column, item.row)"
+                            />
+                          </div>
+                        } @else {
+                          <app-generic-table-cell-value [column]="column" [row]="item.row" />
+                        }
+                      </div>
+                    }
 
-                  @if (hasRowActions()) {
-                    <div
-                      class="gtt__cell gtt__cell--actions"
-                      role="cell"
-                      (click)="$event.stopPropagation()"
-                      (keydown)="$event.stopPropagation()"
-                    >
-                      <app-context-menu
-                        [variant]="rowMenuVariant()"
-                        [items]="rowMenuItems(item.row)"
-                        [details]="rowMenuDetails(item.row)"
-                        [title]="rowMenuTitle(item.row)"
-                        [disabled]="disabled()"
-                        [ariaLabel]="rowMenuVariant() === 'details' ? 'Row details' : 'Row actions'"
-                        (itemSelect)="onRowMenuSelect($event, item.row)"
-                      />
-                    </div>
+                    @if (hasRowActions()) {
+                      <div
+                        class="gtt__cell gtt__cell--actions"
+                        role="cell"
+                        (click)="$event.stopPropagation()"
+                        (keydown)="$event.stopPropagation()"
+                      >
+                        <app-context-menu
+                          [variant]="rowMenuVariant()"
+                          [items]="rowMenuItems(item.row)"
+                          [details]="rowMenuDetails(item.row)"
+                          [title]="rowMenuTitle(item.row)"
+                          [disabled]="disabled()"
+                          [ariaLabel]="rowMenuVariant() === 'details' ? 'Row details' : 'Row actions'"
+                          (itemSelect)="onRowMenuSelect($event, item.row)"
+                        />
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              @if (renderRows().length === 0) {
+                <div class="gtt__empty">
+                  <p class="gtt__empty-text">{{ emptyText() }}</p>
+                  @if (canClearFromEmptyState()) {
+                    <button type="button" class="gtt-control" (click)="clearFilters()">
+                      Clear filters
+                    </button>
                   }
                 </div>
               }
             </div>
           </div>
-
-          @if (renderRows().length === 0) {
-            <div class="gtt__empty">
-              <p class="gtt__empty-text">{{ emptyText() }}</p>
-              @if (canClearFromEmptyState()) {
-                <button type="button" class="gtt-control" (click)="clearFilters()">
-                  Clear filters
-                </button>
-              }
-            </div>
-          }
         </div>
       </div>
 
