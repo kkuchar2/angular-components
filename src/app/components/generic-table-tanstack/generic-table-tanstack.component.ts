@@ -21,6 +21,7 @@ import { FormsModule } from '@angular/forms';
 import { MatChipListboxChange, MatChipsModule } from '@angular/material/chips';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Sort } from '@angular/material/sort';
+import { LucideDynamicIcon, LucideFunnel, LucidePanelLeftClose } from '@lucide/angular';
 import {
   createAngularTable,
   getCoreRowModel,
@@ -71,6 +72,7 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
     FormsModule,
     MatChipsModule,
     MatPaginatorModule,
+    LucideDynamicIcon,
     ContextMenuComponent,
     CustomInputComponent,
     GenericTableHeaderInfoComponent,
@@ -99,6 +101,8 @@ export class GenericTableTanstackComponent<T = unknown> {
   private observedBoundedTargets = new Set<HTMLElement>();
 
   readonly isScrolling = signal(false);
+  readonly LucideFunnel = LucideFunnel;
+  readonly LucidePanelLeftClose = LucidePanelLeftClose;
 
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly data = input.required<readonly T[]>();
@@ -308,6 +312,8 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly columnToggleSelections = signal<Readonly<Record<string, ReadonlySet<string>>>>(
     {},
   );
+
+  readonly filtersCollapsed = signal(false);
 
   readonly toggleFacets = computed((): GenericTableToggleFacet<T>[] => {
     const rows = this.data();
@@ -777,6 +783,14 @@ export class GenericTableTanstackComponent<T = unknown> {
 
     this.columnFilterValues.set({});
     this.columnToggleSelections.set({});
+  }
+
+  toggleFiltersCollapsed(): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    this.filtersCollapsed.update((collapsed) => !collapsed);
   }
 
   columnFilterDisplayValue(key: string): string {

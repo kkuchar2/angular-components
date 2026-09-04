@@ -46,97 +46,150 @@
   <div
     class="generic-table-tanstack__layout"
     [class.generic-table-tanstack__layout--filters]="hasFilterColumns()"
-    [class.generic-table-tanstack__layout--filters-independent]="hasIndependentFilterHeight()"
+    [class.generic-table-tanstack__layout--filters-collapsed]="
+      hasFilterColumns() && filtersCollapsed()
+    "
+    [class.generic-table-tanstack__layout--filters-independent]="
+      hasIndependentFilterHeight() && !filtersCollapsed()
+    "
     [style.--gtt-filter-min-height]="filterMinHeight()"
   >
     @if (hasFilterColumns()) {
-      <aside class="generic-table-tanstack__filters" aria-label="Table filters">
-        <div class="generic-table-tanstack__filters-header">
+      @if (filtersCollapsed()) {
+        <div class="generic-table-tanstack__filters-collapsed" aria-label="Table filters">
           <button
             type="button"
-            class="generic-table-tanstack__clear-filters"
-            [disabled]="disabled() || !hasActiveFilters()"
-            (click)="clearAllFilters()"
+            class="generic-table-tanstack__filters-toggle generic-table-tanstack__filters-toggle--rail"
+            [disabled]="disabled()"
+            [attr.aria-expanded]="false"
+            [attr.aria-label]="
+              hasActiveFilters() ? 'Show filters (filters active)' : 'Show filters'
+            "
+            title="Show filters"
+            (click)="toggleFiltersCollapsed()"
           >
-            Clear filter
+            <svg
+              class="generic-table-tanstack__filters-toggle-icon"
+              [lucideIcon]="LucideFunnel"
+              [size]="14"
+              aria-hidden="true"
+            ></svg>
+            <span class="generic-table-tanstack__filters-toggle-label">Filters</span>
+            @if (hasActiveFilters()) {
+              <span class="generic-table-tanstack__filters-toggle-badge" aria-hidden="true"></span>
+            }
           </button>
         </div>
+      } @else {
+        <aside class="generic-table-tanstack__filters" aria-label="Table filters">
+          <div class="generic-table-tanstack__filters-header">
+            <button
+              type="button"
+              class="generic-table-tanstack__clear-filters"
+              [disabled]="disabled() || !hasActiveFilters()"
+              (click)="clearAllFilters()"
+            >
+              Clear filter
+            </button>
+            <button
+              type="button"
+              class="generic-table-tanstack__filters-toggle generic-table-tanstack__filters-toggle--collapse"
+              [disabled]="disabled()"
+              [attr.aria-expanded]="true"
+              title="Hide filters"
+              (click)="toggleFiltersCollapsed()"
+            >
+              <svg
+                class="generic-table-tanstack__filters-toggle-icon"
+                [lucideIcon]="LucidePanelLeftClose"
+                [size]="14"
+                aria-hidden="true"
+              ></svg>
+              <span class="generic-table-tanstack__filters-toggle-label">Hide</span>
+            </button>
+          </div>
 
-        <div class="generic-table-tanstack__filters-body">
-          <div class="generic-table-tanstack__filters-inner">
-            @for (col of filterColumns(); track col.key) {
-              <div class="generic-table-tanstack__filter">
-                @if (col.searchable) {
-                  <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
-                  <app-custom-input
-                    [label]="'Search on ' + col.header"
-                    appearance="outlined"
-                    type="search"
-                    [disabled]="disabled()"
-                    [placeholder]="'Search on ' + col.header"
-                    autocomplete="off"
-                    [spellcheck]="false"
-                    [ngModel]="columnFilterDisplayValue(col.key)"
-                    (ngModelChange)="onColumnFilterValue(col.key, $event)"
-                  />
-                }
+          <div class="generic-table-tanstack__filters-body">
+            <div class="generic-table-tanstack__filters-inner">
+              @for (col of filterColumns(); track col.key) {
+                <div class="generic-table-tanstack__filter">
+                  @if (col.searchable) {
+                    <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
+                    <app-custom-input
+                      [label]="'Search on ' + col.header"
+                      appearance="outlined"
+                      type="search"
+                      [disabled]="disabled()"
+                      [placeholder]="'Search on ' + col.header"
+                      autocomplete="off"
+                      [spellcheck]="false"
+                      [ngModel]="columnFilterDisplayValue(col.key)"
+                      (ngModelChange)="onColumnFilterValue(col.key, $event)"
+                    />
+                  }
 
-                @for (facet of toggleFacetsForColumn(col.key); track facet.group.id) {
-                  <div class="generic-table-tanstack__toggle-group">
-                    <span class="generic-table-tanstack__filter-label">{{ facet.label }}</span>
-                    <div
-                      class="generic-table-tanstack__toggle-list"
-                      role="group"
-                      [attr.aria-label]="facet.label + ' values'"
-                    >
-                      @for (option of facet.options; track option.value) {
-                        <label
-                          class="generic-table-tanstack__toggle-option"
-                          [class.generic-table-tanstack__toggle-option--disabled]="
-                            disabled() ||
-                            (option.count === 0 &&
-                              !isToggleValueSelected(col.key, facet.group.id, option.value))
-                          "
-                          [attr.for]="toggleOptionId(col.key, facet.group.id, option.value)"
-                        >
-                          <input
-                            class="generic-table-tanstack__toggle-checkbox"
-                            type="checkbox"
-                            [id]="toggleOptionId(col.key, facet.group.id, option.value)"
-                            [checked]="
-                              isToggleValueSelected(col.key, facet.group.id, option.value)
-                            "
-                            [disabled]="
+                  @for (facet of toggleFacetsForColumn(col.key); track facet.group.id) {
+                    <div class="generic-table-tanstack__toggle-group">
+                      <span class="generic-table-tanstack__filter-label">{{ facet.label }}</span>
+                      <div
+                        class="generic-table-tanstack__toggle-list"
+                        role="group"
+                        [attr.aria-label]="facet.label + ' values'"
+                      >
+                        @for (option of facet.options; track option.value) {
+                          <label
+                            class="generic-table-tanstack__toggle-option"
+                            [class.generic-table-tanstack__toggle-option--disabled]="
                               disabled() ||
                               (option.count === 0 &&
-                                !isToggleValueSelected(
+                                !isToggleValueSelected(col.key, facet.group.id, option.value))
+                            "
+                            [attr.for]="toggleOptionId(col.key, facet.group.id, option.value)"
+                          >
+                            <input
+                              class="generic-table-tanstack__toggle-checkbox"
+                              type="checkbox"
+                              [id]="toggleOptionId(col.key, facet.group.id, option.value)"
+                              [checked]="
+                                isToggleValueSelected(col.key, facet.group.id, option.value)
+                              "
+                              [disabled]="
+                                disabled() ||
+                                (option.count === 0 &&
+                                  !isToggleValueSelected(
+                                    col.key,
+                                    facet.group.id,
+                                    option.value
+                                  ))
+                              "
+                              (change)="
+                                onToggleFilterInput(
                                   col.key,
                                   facet.group.id,
-                                  option.value
-                                ))
-                            "
-                            (change)="
-                              onToggleFilterInput(col.key, facet.group.id, option.value, $event)
-                            "
-                          />
-                          <span class="generic-table-tanstack__toggle-value">
-                            <span class="generic-table-tanstack__toggle-name">
-                              {{ toggleFilterName(option.value) }}
+                                  option.value,
+                                  $event
+                                )
+                              "
+                            />
+                            <span class="generic-table-tanstack__toggle-value">
+                              <span class="generic-table-tanstack__toggle-name">
+                                {{ toggleFilterName(option.value) }}
+                              </span>
+                              <span class="generic-table-tanstack__toggle-count">
+                                ({{ option.count }})
+                              </span>
                             </span>
-                            <span class="generic-table-tanstack__toggle-count">
-                              ({{ option.count }})
-                            </span>
-                          </span>
-                        </label>
-                      }
+                          </label>
+                        }
+                      </div>
                     </div>
-                  </div>
-                }
-              </div>
-            }
+                  }
+                </div>
+              }
+            </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+      }
     }
 
     <div class="generic-table-tanstack__table-pane">
