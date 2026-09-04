@@ -1,4 +1,4 @@
-import type { ColumnDef, ColumnToggleConfig, ColumnToggleGroup } from './generic-table.types';
+import type { ColumnDef } from './generic-table.types';
 import type { GenericTableDateDisplay } from './generic-table-cell.types';
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -91,13 +91,7 @@ export function resolveFilterText<T>(column: ColumnDef<T>, row: T): string {
   return `${formatted} ${rawText}`;
 }
 
-export function columnMatchesFilter<T>(
-  column: ColumnDef<T>,
-  row: T,
-  query: string,
-): boolean {
-  const needle = query.trim().toLocaleLowerCase();
-
+export function columnMatchesFilter<T>(column: ColumnDef<T>, row: T, needle: string): boolean {
   if (!needle) {
     return true;
   }
@@ -109,130 +103,6 @@ export function resolveToggleValue<T>(column: ColumnDef<T>, row: T): string {
   return formatColumnCell(column, row).trim();
 }
 
-export interface GenericTableToggleOption {
-  value: string;
-  count: number;
-}
-
-export interface GenericTableToggleFacet<T = unknown> {
-  columnKey: string;
-  group: ColumnToggleGroup<T>;
-  label: string;
-  options: GenericTableToggleOption[];
-}
-
-export function isColumnToggleConfig<T>(
-  value: ColumnDef<T>['toggleable'],
-): value is ColumnToggleConfig<T> {
-  return typeof value === 'object' && value != null && Array.isArray(value.groups);
-}
-
-export function isColumnToggleable<T>(column: ColumnDef<T>): boolean {
-  return column.toggleable === true || isColumnToggleConfig(column.toggleable);
-}
-
-export function resolveToggleGroups<T>(column: ColumnDef<T>): ColumnToggleGroup<T>[] {
-  if (column.toggleable === true) {
-    return [
-      {
-        id: 'value',
-        label: column.header,
-        getValues: (row) => resolveToggleValue(column, row),
-      },
-    ];
-  }
-
-  if (isColumnToggleConfig(column.toggleable)) {
-    return column.toggleable.groups;
-  }
-
-  return [];
-}
-
-export function toggleSelectionKey(columnKey: string, groupId: string): string {
-  return `${columnKey}::${groupId}`;
-}
-
-export function normalizeToggleValues(
-  raw: string | readonly string[] | null | undefined,
-): string[] {
-  if (raw == null) {
-    return [];
-  }
-
-  const list = typeof raw === 'string' ? [raw] : [...raw];
-  return list.map((value) => String(value).trim());
-}
-
-export function sortToggleOptions(options: GenericTableToggleOption[]): GenericTableToggleOption[] {
-  return [...options].sort((a, b) => {
-    if (a.value === '' && b.value !== '') {
-      return 1;
-    }
-
-    if (b.value === '' && a.value !== '') {
-      return -1;
-    }
-
-    return a.value.localeCompare(b.value, undefined, {
-      sensitivity: 'base',
-      numeric: true,
-    });
-  });
-}
-
-export function collectToggleGroupOptions<T>(
-  group: ColumnToggleGroup<T>,
-  rows: readonly T[],
-): GenericTableToggleOption[] {
-  const counts = new Map<string, number>();
-
-  for (const row of rows) {
-    const values = new Set(normalizeToggleValues(group.getValues(row)));
-
-    for (const value of values) {
-      counts.set(value, (counts.get(value) ?? 0) + 1);
-    }
-  }
-
-  return sortToggleOptions(
-    [...counts.entries()].map(([value, count]) => ({ value, count })),
-  );
-}
-
-export function collectUniqueToggleValues<T>(
-  column: ColumnDef<T>,
-  rows: readonly T[],
-): GenericTableToggleOption[] {
-  const [group] = resolveToggleGroups(column);
-  return group ? collectToggleGroupOptions(group, rows) : [];
-}
-
-export function rowMatchesToggleGroup<T>(
-  group: ColumnToggleGroup<T>,
-  row: T,
-  selected: ReadonlySet<string> | undefined,
-): boolean {
-  if (!selected || selected.size === 0) {
-    return true;
-  }
-
-  const values = normalizeToggleValues(group.getValues(row));
-  return values.some((value) => selected.has(value));
-}
-
-export function columnMatchesToggleFilter<T>(
-  column: ColumnDef<T>,
-  row: T,
-  selected: ReadonlySet<string> | undefined,
-): boolean {
-  if (!selected || selected.size === 0) {
-    return true;
-  }
-
-  return selected.has(resolveToggleValue(column, row));
-}
-
 export function formatTextCell(raw: unknown): string {
   if (raw == null) {
     return '';
@@ -240,10 +110,6 @@ export function formatTextCell(raw: unknown): string {
 
   if (raw instanceof Date) {
     return Number.isNaN(raw.getTime()) ? '' : raw.toLocaleString();
-  }
-
-  if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
-    return String(raw);
   }
 
   return String(raw);
@@ -263,9 +129,7 @@ export function formatDateCell(
     return formatTextCell(raw);
   }
 
-  const mode = resolveDateDisplayMode(raw, parsed, display);
-
-  if (mode === 'date') {
+  if (resolveDateDisplayMode(raw, parsed, display) === 'date') {
     return parsed.toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'short',

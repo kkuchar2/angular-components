@@ -39,6 +39,7 @@ export class CustomInputComponent implements ControlValueAccessor {
   readonly controlId = `custom-input-${++CustomInputComponent.idCounter}`;
 
   readonly label = input('');
+  readonly ariaLabel = input('');
   readonly placeholder = input('');
   readonly appearance = input<CustomInputAppearance>('default');
   readonly disabled = input(false);
@@ -100,8 +101,12 @@ export class CustomInputComponent implements ControlValueAccessor {
     return this.value().length > 0;
   }
 
+  hasFloatingLabel(): boolean {
+    return this.appearance() === 'outlined' && this.label() !== '';
+  }
+
   isLabelFloated(): boolean {
-    if (this.appearance() !== 'outlined') {
+    if (!this.hasFloatingLabel()) {
       return false;
     }
 
@@ -109,15 +114,17 @@ export class CustomInputComponent implements ControlValueAccessor {
   }
 
   effectivePlaceholder(): string {
-    if (this.isFocused()) {
-      return '';
+    if (this.appearance() === 'outlined' && this.label()) {
+      return this.isLabelFloated() ? this.placeholder() : '';
     }
 
-    if (this.appearance() === 'outlined' && this.label() && !this.isLabelFloated()) {
-      return '';
+    // Without a label the placeholder is the field's only visible name, so it has to
+    // survive focus.
+    if (!this.label()) {
+      return this.placeholder();
     }
 
-    return this.placeholder();
+    return this.isFocused() ? '' : this.placeholder();
   }
 
   onInput(event: Event): void {

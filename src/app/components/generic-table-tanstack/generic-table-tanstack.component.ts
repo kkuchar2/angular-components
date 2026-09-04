@@ -1,34 +1,24 @@
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  ElementRef,
+  TemplateRef,
+  TrackByFunction,
   computed,
   contentChildren,
-  DestroyRef,
   effect,
-  ElementRef,
   inject,
   input,
   linkedSignal,
   output,
   signal,
-  TemplateRef,
-  TrackByFunction,
   untracked,
   viewChild,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { MatChipListboxChange, MatChipsModule } from '@angular/material/chips';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { Sort } from '@angular/material/sort';
-import {
-  LucideDynamicIcon,
-  LucideDownload,
-  LucideFunnel,
-  LucidePanelLeftClose,
-  LucideX,
-} from '@lucide/angular';
+import { LucideDownload, LucideDynamicIcon, LucideFunnel, LucideX } from '@lucide/angular';
 import {
   createAngularTable,
   getCoreRowModel,
@@ -43,82 +33,106 @@ import { injectVirtualizer } from '@tanstack/angular-virtual';
 
 import { ContextMenuComponent, type ContextMenuItem } from '../context-menu';
 import type { ContextMenuDetailField, ContextMenuVariant } from '../context-menu';
-import { CustomInputComponent } from '../custom-input/custom-input';
 import { GenericTableCellDirective } from './generic-table-cell.directive';
-import {
-  collectToggleGroupOptions,
-  columnMatchesFilter,
-  isColumnToggleable,
-  resolveCellRawValue,
-  resolveSortValue,
-  resolveToggleGroups,
-  rowMatchesToggleGroup,
-  sortToggleOptions,
-  toggleSelectionKey,
-  type GenericTableToggleFacet,
-} from './generic-table-cell-format';
+import { resolveCellRawValue, resolveSortValue } from './generic-table-cell-format';
 import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
+import { GenericTableColumnsMenuComponent } from './generic-table-columns-menu.component';
+import {
+  GenericTableFilterUiState,
+  GenericTableFilterValues,
+  applyFilters,
+  isColumnToggleable,
+  resolveToggleGroups,
+} from './generic-table-filter-model';
+import { GenericTableFiltersComponent } from './generic-table-filters.component';
 import { GenericTableHeaderInfoComponent } from './generic-table-header-info.component';
+import { GenericTablePaginatorComponent } from './generic-table-paginator.component';
+import { GenericTableToolDirective } from './generic-table-tool.directive';
 import {
   ColumnDef,
-  GENERIC_TABLE_ROW_ACTIONS_TRACK,
+  GenericTableCellComponentInputs,
   GenericTableCellContext,
+  GenericTableColumnToggle,
   GenericTableExportRequest,
+  GenericTableFilterChange,
   GenericTableHeightMode,
+  GenericTablePageEvent,
   GenericTableRowAction,
   GenericTableRowActionEvent,
+  GenericTableSort,
 } from './generic-table.types';
 
-const DEFAULT_MAX_HEIGHT_PX = 480;
-const FILTERS_OVERLAY_MAX_REM = 40;
+/** Below this host width the filter rail costs the table more room than it is worth. */
+const FILTER_RAIL_MIN_WIDTH_PX = 720;
+const DEFAULT_SCROLL_MAX_HEIGHT = '30rem';
+const DEFAULT_RAIL_MAX_HEIGHT = '26rem';
+const SCROLL_IDLE_MS = 150;
 
-type FilterEditSource = 'applied' | 'draft';
+interface RenderRow<T> {
+  row: T;
+  index: number;
+  offset: number | null;
+  height: number | null;
+}
+
+interface RowMenuEntry {
+  source: unknown;
+  items: ContextMenuItem[];
+  details: ContextMenuDetailField[];
+  title: string | null;
+}
 
 @Component({
   selector: 'app-generic-table-tanstack',
   imports: [
     NgComponentOutlet,
     NgTemplateOutlet,
-    FormsModule,
     MatChipsModule,
-    MatPaginatorModule,
     LucideDynamicIcon,
     ContextMenuComponent,
-    CustomInputComponent,
-    GenericTableHeaderInfoComponent,
     GenericTableCellValueComponent,
+    GenericTableColumnsMenuComponent,
+    GenericTableFiltersComponent,
+    GenericTableHeaderInfoComponent,
+    GenericTablePaginatorComponent,
   ],
   templateUrl: './generic-table-tanstack.component.html',
   styleUrl: './generic-table-tanstack.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'generic-table-tanstack-host',
-    '[class.generic-table-tanstack-host--fill]': 'isFillMode()',
-    '[class.generic-table-tanstack-host--parent]': 'isParentMode()',
-    '[class.generic-table-tanstack-host--bounded]': 'isBoundedHeightMode()',
-    '[class.generic-table-tanstack-host--virtualized]': 'virtualized()',
-    '[class.generic-table-tanstack-host--disabled]': 'disabled()',
-    '[style.--gtt-bounded-max-height.px]': 'boundedMaxHeightPx()',
-    '[style.--gtt-parent-min-height]': 'parentMinHeight()',
+    class: 'gtt-host',
+    '[class.gtt-host--fill]': "heightMode() === 'fill'",
+    '[class.gtt-host--parent]': "heightMode() === 'parent'",
+    '[class.gtt-host--disabled]': 'disabled()',
+    '[style.min-height]': 'hostMinHeight()',
+    '[style.max-height]': 'hostMaxHeight()',
+    '[style.--gtt-row-height.px]': 'rowHeight()',
   },
 })
 export class GenericTableTanstackComponent<T = unknown> {
   private static instanceCount = 0;
 
-  private readonly destroyRef = inject(DestroyRef);
   private readonly hostEl = inject(ElementRef<HTMLElement>);
-  private scrollEndTimer: ReturnType<typeof setTimeout> | null = null;
-  private layoutSyncFrame: number | null = null;
-  private boundedResizeObserver: ResizeObserver | null = null;
-  private filtersOverlayObserver: ResizeObserver | null = null;
-  private observedBoundedTargets = new Set<HTMLElement>();
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly cellContextCache = new WeakMap<object, GenericTableCellContext<T>>();
+  private readonly cellInputsCache = new WeakMap<
+    object,
+    Map<string, GenericTableCellComponentInputs<T>>
+  >();
+  private readonly rowMenuCache = new WeakMap<object, RowMenuEntry>();
+
+  private readonly coreRowModel = getCoreRowModel<T>();
+  private readonly sortedRowModel = getSortedRowModel<T>();
+  private readonly paginationRowModel = getPaginationRowModel<T>();
+
+  private scrollIdleTimer: ReturnType<typeof setTimeout> | null = null;
+  private hasEmittedFilters = false;
 
   readonly instanceId = `gtt-${++GenericTableTanstackComponent.instanceCount}`;
-  readonly filtersDialogId = `${this.instanceId}-filters-dialog`;
-  readonly filtersDialogTitleId = `${this.instanceId}-filters-title`;
-  readonly isScrolling = signal(false);
+  readonly dialogTitleId = `${this.instanceId}-filters-title`;
+
   readonly LucideFunnel = LucideFunnel;
-  readonly LucidePanelLeftClose = LucidePanelLeftClose;
   readonly LucideDownload = LucideDownload;
   readonly LucideX = LucideX;
 
@@ -126,179 +140,100 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly data = input.required<readonly T[]>();
 
   readonly paginated = input(false);
-
   readonly serverSide = input(false);
   readonly totalCount = input(0);
   readonly pageIndex = input(0);
-
-  readonly virtualized = input(false);
-  readonly rowHeight = input(40);
-
-  readonly overscan = input(12);
   readonly pageSize = input(10);
   readonly pageSizeOptions = input<number[]>([5, 10, 25, 50]);
 
-  readonly showColumnToggle = input(true);
-  readonly emptyMessage = input('No data available');
-  readonly rowClickable = input(false);
+  readonly virtualized = input(false);
+  readonly rowHeight = input(40);
+  readonly overscan = input(12);
 
-  readonly rowMenuVariant = input<ContextMenuVariant>('actions');
-
-  readonly rowActions = input<GenericTableRowAction<T>[]>([]);
-
-  readonly rowDetails = input<((row: T) => ContextMenuDetailField[]) | null>(null);
-
-  readonly rowDetailsTitle = input<string | ((row: T) => string) | null>(null);
-  readonly disabled = input(false);
+  readonly columnToggle = input<GenericTableColumnToggle>('menu');
   readonly showExport = input(false);
   readonly exportFileName = input('table-export.csv');
   readonly exportData = input<readonly T[] | null>(null);
+
+  readonly emptyMessage = input('No data available');
+  readonly rowClickable = input(false);
+  readonly striped = input(false);
+  readonly disabled = input(false);
+
+  readonly rowMenuVariant = input<ContextMenuVariant>('actions');
+  readonly rowActions = input<GenericTableRowAction<T>[]>([]);
+  readonly rowDetails = input<((row: T) => ContextMenuDetailField[]) | null>(null);
+  readonly rowDetailsTitle = input<string | ((row: T) => string) | null>(null);
+
   readonly heightMode = input<GenericTableHeightMode>('auto');
-
   readonly height = input<string | null>(null);
-
   readonly maxHeight = input<string | null>(null);
   readonly minHeight = input<string | null>(null);
+  readonly filterMaxHeight = input<string | null>(null);
 
-  readonly filterMinHeight = input<string | null>(null);
   readonly trackBy = input<TrackByFunction<T>>((_index, row) => row);
 
   readonly rowClick = output<T>();
-
   readonly rowAction = output<GenericTableRowActionEvent<T>>();
-
-  readonly sortChange = output<Sort>();
-  readonly pageChange = output<PageEvent>();
+  readonly sortChange = output<GenericTableSort>();
+  readonly pageChange = output<GenericTablePageEvent>();
   readonly exportRequest = output<GenericTableExportRequest<T>>();
+  readonly filtersChange = output<GenericTableFilterChange>();
 
-  private readonly scrollElement = viewChild<ElementRef<HTMLDivElement>>('scrollElement');
-  private readonly headerTrack = viewChild<ElementRef<HTMLElement>>('headerTrack');
-  private readonly virtualShell = viewChild<ElementRef<HTMLElement>>('virtualShell');
+  private readonly scrollElement = viewChild<ElementRef<HTMLElement>>('scrollElement');
   private readonly filtersDialog = viewChild<ElementRef<HTMLDialogElement>>('filtersDialog');
   private readonly cellDirectives = contentChildren(GenericTableCellDirective);
-  private readonly cellContextCache = new WeakMap<object, GenericTableCellContext<T>>();
+  private readonly projectedTools = contentChildren(GenericTableToolDirective);
+
+  readonly filters = new GenericTableFilterValues();
+  readonly draftFilters = new GenericTableFilterValues();
+  readonly filterUi = new GenericTableFilterUiState();
 
   readonly sorting = signal<SortingState>([]);
+  readonly isScrolling = signal(false);
+  readonly filtersCollapsed = signal(false);
+  readonly filtersDialogOpen = signal(false);
+  readonly hostWidth = signal(0);
 
-  readonly clientPagination = signal<PaginationState>({ pageIndex: 0, pageSize: 10 });
+  /** Owned locally so the paginator's size picker sticks until the `pageSize` input changes. */
+  readonly activePageSize = linkedSignal(() => Math.max(1, this.pageSize()));
+  readonly clientPageIndex = signal(0);
 
-  readonly isParentMode = computed(() => this.heightMode() === 'parent');
-  readonly isFixed = computed(() => !this.isParentMode() && this.height() != null);
-  readonly isFillMode = computed(() => !this.isFixed() && this.heightMode() === 'fill');
-  readonly isBoundedHeightMode = computed(() => this.isParentMode() || this.isFillMode());
-  readonly scrollBodyHeight = computed(() => (this.isParentMode() ? null : this.height()));
+  readonly visibleKeys = linkedSignal(
+    () =>
+      new Set(
+        this.columns()
+          .filter((column) => column.visible !== false)
+          .map((column) => column.key),
+      ),
+  );
 
-  readonly parentMinHeight = computed(() => (this.isParentMode() ? this.height() : null));
-  readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
-  readonly isServerSidePagination = computed(() => this.serverSide() && this.showPaginator());
+  readonly isBounded = computed(() => this.heightMode() !== 'auto');
 
-  readonly headerHeightPx = signal(40);
-  readonly boundedAvailableHeightPx = signal<number | null>(null);
-  readonly boundedChromeHeightPx = signal(0);
-  readonly scrollbarGutterPx = signal(0);
+  readonly hostMinHeight = computed(() => (this.isBounded() ? this.height() : null));
 
-  readonly boundedMaxHeightPx = computed(() => {
-    if (!this.isBoundedHeightMode()) {
+  readonly hostMaxHeight = computed(() => {
+    const cap = this.isBounded() ? this.maxHeight() : null;
+    return cap ? `min(100%, ${cap})` : null;
+  });
+
+  readonly shellHeight = computed(() => (this.isBounded() ? null : this.height()));
+
+  readonly scrollMaxHeight = computed(() => {
+    if (this.isBounded() || this.height()) {
       return null;
     }
 
-    if (this.isParentMode()) {
-      return this.resolveExplicitMaxHeightPx();
-    }
-
-    const available = this.boundedAvailableHeightPx();
-
-    if (available == null) {
-      return this.virtualized() ? null : this.resolveBoundedAvailableFallbackPx();
-    }
-
-    if (this.virtualized()) {
-      return available;
-    }
-
-    const maxBodyCap = this.resolveExplicitMaxHeightPx();
-
-    if (maxBodyCap == null) {
-      return available;
-    }
-
-    return Math.min(
-      available,
-      maxBodyCap + this.boundedChromeHeightPx() + this.headerHeightPx(),
-    );
+    return this.maxHeight() ?? DEFAULT_SCROLL_MAX_HEIGHT;
   });
 
-  readonly virtualViewportHeightPx = computed(() => {
-    if (!this.virtualized()) {
-      return null;
-    }
-
-    if (this.isFixed()) {
-      return null;
-    }
-
-    const rowCount = Math.max(this.sortedRows().length, 1);
-    const bodyContent = rowCount * this.rowHeight();
-
-    if (this.isBoundedHeightMode()) {
-      const available = this.boundedAvailableHeightPx();
-
-      if (available == null) {
-
-        return null;
-      }
-
-      const fillHeight = Math.max(
-        0,
-        available - this.boundedChromeHeightPx() - this.headerHeightPx(),
-      );
-
-      if (fillHeight < this.rowHeight()) {
-        return null;
-      }
-
-      return this.resolveBoundedScrollBodyHeightPx(bodyContent, fillHeight);
-    }
-
-    const maxBody = Math.max(
-      this.rowHeight(),
-      this.resolveMaxScrollHeightPx() - this.headerHeightPx(),
-    );
-
-    return Math.min(bodyContent, maxBody);
-  });
-
-  readonly cellTemplates = computed(() => {
-    const templates = new Map<string, TemplateRef<GenericTableCellContext<T>>>();
-
-    for (const directive of this.cellDirectives()) {
-      templates.set(directive.columnKey(), directive.templateRef);
-    }
-
-    return templates;
-  });
-
-  readonly columnByKey = computed(() => {
-    const map = new Map<string, ColumnDef<T>>();
-
-    for (const column of this.columns()) {
-      map.set(column.key, column);
-    }
-
-    return map;
-  });
+  readonly railMaxHeight = computed(() =>
+    this.isBounded() ? null : (this.filterMaxHeight() ?? DEFAULT_RAIL_MAX_HEIGHT),
+  );
 
   readonly hideableColumns = computed(() =>
     this.columns().filter((column) => column.hideable !== false),
   );
-
-  readonly visibleKeys = linkedSignal(() => {
-    const keys = this.columns()
-      .filter((column) => column.visible !== false)
-      .map((column) => column.key);
-
-    return new Set(keys);
-  });
 
   readonly displayedColumns = computed(() =>
     this.columns().filter(
@@ -310,9 +245,7 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.columns().filter((column) => column.searchable === true),
   );
 
-  readonly toggleableColumns = computed(() =>
-    this.columns().filter((column) => isColumnToggleable(column)),
-  );
+  readonly toggleGroups = computed(() => resolveToggleGroups(this.columns()));
 
   readonly filterColumns = computed(() =>
     this.columns().filter(
@@ -320,120 +253,37 @@ export class GenericTableTanstackComponent<T = unknown> {
     ),
   );
 
-  readonly hasFilterColumns = computed(() => this.filterColumns().length > 0);
+  readonly hasFilters = computed(() => this.filterColumns().length > 0);
 
-  readonly hasIndependentFilterHeight = computed(
-    () => this.hasFilterColumns() && this.filterMinHeight() != null,
+  /** Narrow hosts swap the rail for a modal, which needs draft state and an explicit Apply. */
+  readonly useFiltersDialog = computed(
+    () => this.hasFilters() && this.hostWidth() > 0 && this.hostWidth() < FILTER_RAIL_MIN_WIDTH_PX,
   );
 
-  readonly columnFilterValues = signal<Readonly<Record<string, string>>>({});
-
-  readonly columnToggleSelections = signal<Readonly<Record<string, ReadonlySet<string>>>>(
-    {},
+  readonly showRail = computed(
+    () => this.hasFilters() && !this.useFiltersDialog() && !this.filtersCollapsed(),
   );
 
-  readonly draftColumnFilterValues = signal<Readonly<Record<string, string>>>({});
-
-  readonly draftColumnToggleSelections = signal<
-    Readonly<Record<string, ReadonlySet<string>>>
-  >({});
-
-  readonly filtersCollapsed = signal(false);
-
-  readonly filtersOverlayMode = signal(
-    typeof globalThis.matchMedia === 'function' &&
-      globalThis.matchMedia(`(max-width: ${FILTERS_OVERLAY_MAX_REM}rem)`).matches,
+  readonly showColumnsMenu = computed(
+    () => this.columnToggle() === 'menu' && this.hideableColumns().length > 0,
   );
 
-  readonly filtersModalOpen = signal(false);
-
-  readonly showSidebarFilters = computed(
-    () => this.hasFilterColumns() && !this.filtersOverlayMode(),
-  );
-
-  readonly exportSitsInToolbar = computed(
-    () =>
-      !this.hasFilterColumns() || this.filtersCollapsed() || this.filtersOverlayMode(),
+  readonly showColumnChips = computed(
+    () => this.columnToggle() === 'chips' && this.hideableColumns().length > 0,
   );
 
   readonly showToolbar = computed(
     () =>
-      (this.showColumnToggle() && this.hideableColumns().length > 0) ||
-      (this.showExport() && this.exportSitsInToolbar()) ||
-      (this.hasFilterColumns() && this.filtersOverlayMode()),
+      this.hasFilters() ||
+      this.showColumnsMenu() ||
+      this.showColumnChips() ||
+      this.showExport() ||
+      this.projectedTools().length > 0,
   );
 
-  readonly toggleFacets = computed((): GenericTableToggleFacet<T>[] =>
-    this.buildToggleFacets(this.columnFilterValues(), this.columnToggleSelections()),
-  );
-
-  readonly draftToggleFacets = computed((): GenericTableToggleFacet<T>[] =>
-    this.buildToggleFacets(
-      this.draftColumnFilterValues(),
-      this.draftColumnToggleSelections(),
-    ),
-  );
-
-  toggleFacetsForColumn(
-    columnKey: string,
-    source: FilterEditSource = 'applied',
-  ): GenericTableToggleFacet<T>[] {
-    const facets = source === 'draft' ? this.draftToggleFacets() : this.toggleFacets();
-    return facets.filter((facet) => facet.columnKey === columnKey);
-  }
-
-  readonly hasActiveFilters = computed(() =>
-    this.hasFilterState(this.columnFilterValues(), this.columnToggleSelections()),
-  );
-
-  readonly hasDraftFilters = computed(() =>
-    this.hasFilterState(
-      this.draftColumnFilterValues(),
-      this.draftColumnToggleSelections(),
-    ),
-  );
-
-  readonly filteredRows = computed((): T[] => {
-    const rows = this.data();
-    const textValues = this.columnFilterValues();
-    const toggleValues = this.columnToggleSelections();
-
-    const activeText = this.searchableColumns().filter(
-      (column) => (textValues[column.key] ?? '').trim().length > 0,
-    );
-
-    const activeToggleGroups = this.toggleableColumns().flatMap((column) =>
-      resolveToggleGroups(column)
-        .map((group) => ({
-          columnKey: column.key,
-          group,
-          key: toggleSelectionKey(column.key, group.id),
-        }))
-        .filter((entry) => (toggleValues[entry.key]?.size ?? 0) > 0),
-    );
-
-    if (activeText.length === 0 && activeToggleGroups.length === 0) {
-      return [...rows];
-    }
-
-    return rows.filter(
-      (row) =>
-        activeText.every((column) =>
-          columnMatchesFilter(column, row, textValues[column.key] ?? ''),
-        ) &&
-        activeToggleGroups.every((entry) =>
-          rowMatchesToggleGroup(entry.group, row, toggleValues[entry.key]),
-        ),
-    );
-  });
-
-  readonly tableEmptyMessage = computed(() => {
-    if (this.hasActiveFilters() && this.data().length > 0 && this.filteredRows().length === 0) {
-      return 'No rows match the current filters.';
-    }
-
-    return this.emptyMessage();
-  });
+  readonly showPaginator = computed(() => this.paginated() && !this.virtualized());
+  readonly isServerPagination = computed(() => this.serverSide() && this.showPaginator());
+  readonly isClientPagination = computed(() => this.showPaginator() && !this.serverSide());
 
   readonly hasRowActions = computed(
     () =>
@@ -441,129 +291,119 @@ export class GenericTableTanstackComponent<T = unknown> {
       (this.rowMenuVariant() === 'details' && this.rowDetails() != null),
   );
 
+  /** Facet counts describe the loaded rows, which is only the whole set client-side. */
+  readonly showFacetCounts = computed(() => !this.serverSide());
+
+  private readonly filterResult = computed(() =>
+    applyFilters(
+      this.data(),
+      this.searchableColumns(),
+      this.toggleGroups(),
+      this.filters.text(),
+      this.filters.toggles(),
+    ),
+  );
+
+  private readonly draftResult = computed(() =>
+    applyFilters(
+      this.data(),
+      this.searchableColumns(),
+      this.toggleGroups(),
+      this.draftFilters.text(),
+      this.draftFilters.toggles(),
+    ),
+  );
+
+  readonly filteredRows = computed(() => this.filterResult().rows);
+  readonly toggleFacets = computed(() => this.filterResult().facets);
+  readonly draftFacets = computed(() => this.draftResult().facets);
+
+  readonly emptyText = computed(() => {
+    if (this.filters.isActive() && this.data().length > 0) {
+      return 'No rows match the current filters.';
+    }
+
+    return this.emptyMessage();
+  });
+
+  readonly canClearFromEmptyState = computed(
+    () => this.filters.isActive() && !this.useFiltersDialog(),
+  );
+
+  readonly cellTemplates = computed(() => {
+    const templates = new Map<string, TemplateRef<GenericTableCellContext<T>>>();
+
+    for (const directive of this.cellDirectives()) {
+      templates.set(directive.columnKey(), directive.templateRef);
+    }
+
+    return templates;
+  });
+
   readonly gridTemplateColumns = computed(() => {
     const columns = this.displayedColumns();
+    const tracks = columns.map((column) => columnTrack(column));
 
-    if (columns.length === 0 && !this.hasRowActions()) {
-      return '';
-    }
-
-    const tracks = columns.map((column, index) =>
-      this.resolveColumnTrack(column, { stretch: index === columns.length - 1 }),
-    );
-
-    if (this.hasRowActions()) {
-      tracks.push(GENERIC_TABLE_ROW_ACTIONS_TRACK);
-    }
-
-    return tracks.join(' ');
-  });
-
-  readonly gridMinWidthPx = computed(() => {
-    const reference =
-      this.scrollContentWidthPx() || this.hostEl.nativeElement.clientWidth || globalThis.innerWidth;
-    let total = 0;
-
-    for (const column of this.displayedColumns()) {
-      total += this.columnFloorPx(column, reference);
+    // Without a flexible track the grid would leave a gap on the right, so the last
+    // column absorbs the slack even when it declares an explicit width.
+    if (tracks.length > 0 && !columns.some((column) => isFlexibleColumn(column))) {
+      tracks[tracks.length - 1] = `minmax(${columnFloor(columns[columns.length - 1])}, 1fr)`;
     }
 
     if (this.hasRowActions()) {
-      total += this.parseLengthToPx(GENERIC_TABLE_ROW_ACTIONS_TRACK, reference);
+      tracks.push('var(--gtt-actions-width)');
     }
 
-    return Math.ceil(total);
+    return tracks.length > 0 ? tracks.join(' ') : 'minmax(0, 1fr)';
   });
-
-  readonly gridLayoutWidthPx = computed((): number | null => {
-    const min = this.gridMinWidthPx();
-    const viewport = this.scrollContentWidthPx();
-
-    if (viewport > 0 && min > viewport + 1) {
-      return min;
-    }
-
-    return null;
-  });
-
-  readonly scrollContentWidthPx = signal(0);
 
   private readonly tanstackColumns = computed((): TanstackColumnDef<T, unknown>[] =>
     this.displayedColumns().map((column) => ({
       id: column.key,
-      accessorFn: (row) => this.sortValue(column, row),
+      accessorFn: (row) => resolveSortValue(column, row),
       header: column.header,
       enableSorting: column.sortable === true,
     })),
   );
 
-  private readonly paginationState = computed((): PaginationState => {
-    if (this.isServerSidePagination()) {
+  private readonly paginationState = computed(
+    (): PaginationState => ({
+      pageIndex: this.isServerPagination() ? 0 : this.clientPageIndex(),
+      pageSize: this.activePageSize(),
+    }),
+  );
 
-      return { pageIndex: 0, pageSize: this.pageSize() };
-    }
-
-    const client = this.clientPagination();
-    return {
-      pageIndex: client.pageIndex,
-      pageSize: this.pageSize() || client.pageSize,
-    };
-  });
-
-  private readonly tableData = signal<T[]>([]);
-  private readonly tableColumnDefs = signal<TanstackColumnDef<T, unknown>[]>([]);
-
-  private readonly table = createAngularTable(() => {
-    const paginateClientSide = this.showPaginator() && !this.isServerSidePagination();
-
-    return {
-      data: this.tableData(),
-      columns: this.tableColumnDefs(),
-      state: {
-        sorting: this.sorting(),
-        pagination: this.paginationState(),
-      },
-      manualPagination: this.isServerSidePagination() || this.virtualized() || !this.showPaginator(),
-      pageCount: this.isServerSidePagination()
-        ? Math.max(1, Math.ceil(this.totalCount() / Math.max(this.pageSize(), 1)))
-        : undefined,
-      onSortingChange: (updater) => {
-        const next = typeof updater === 'function' ? updater(this.sorting()) : updater;
-        this.sorting.set(next);
-        this.emitMaterialSort(next);
-      },
-      onPaginationChange: (updater) => {
-        if (this.isServerSidePagination() || this.virtualized()) {
-          return;
-        }
-
-        const next =
-          typeof updater === 'function' ? updater(this.paginationState()) : updater;
-        this.clientPagination.set(next);
-      },
-      getCoreRowModel: getCoreRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      getPaginationRowModel: paginateClientSide ? getPaginationRowModel() : undefined,
-    };
-  });
+  private readonly table = createAngularTable(() => ({
+    data: this.filteredRows() as T[],
+    columns: this.tanstackColumns(),
+    state: {
+      sorting: this.sorting(),
+      pagination: this.paginationState(),
+    },
+    manualSorting: this.serverSide(),
+    manualPagination: !this.isClientPagination(),
+    pageCount: this.isServerPagination()
+      ? Math.max(1, Math.ceil(this.totalCount() / this.activePageSize()))
+      : undefined,
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(this.sorting()) : updater;
+      this.sorting.set(next);
+      this.sortChange.emit(
+        next.length === 0
+          ? { active: '', direction: '' }
+          : { active: next[0].id, direction: next[0].desc ? 'desc' : 'asc' },
+      );
+    },
+    getCoreRowModel: this.coreRowModel,
+    getSortedRowModel: this.sortedRowModel,
+    getPaginationRowModel: this.isClientPagination() ? this.paginationRowModel : undefined,
+  }));
 
   readonly sortedRows = computed(() => this.table.getSortedRowModel().rows);
 
-  readonly bodyRows = computed((): Row<T>[] => {
-    if (this.virtualized()) {
-      return this.sortedRows();
-    }
-
-    return this.table.getRowModel().rows;
-  });
-
-  readonly paginatedBodyMinHeightPx = computed(() => {
-    if (!this.showPaginator() || this.bodyRows().length === 0) {
-      return null;
-    }
-
-    return this.pageSize() * this.rowHeight();
-  });
+  readonly bodyRows = computed((): Row<T>[] =>
+    this.virtualized() ? this.sortedRows() : this.table.getRowModel().rows,
+  );
 
   readonly virtualizer = injectVirtualizer(() => ({
     scrollElement: this.scrollElement(),
@@ -572,159 +412,132 @@ export class GenericTableTanstackComponent<T = unknown> {
     overscan: this.overscan(),
   }));
 
+  readonly renderRows = computed((): RenderRow<T>[] => {
+    if (!this.virtualized()) {
+      return this.bodyRows().map((model, index) => ({
+        row: model.original,
+        index,
+        offset: null,
+        height: null,
+      }));
+    }
+
+    const rows = this.sortedRows();
+    const items: RenderRow<T>[] = [];
+
+    for (const item of this.virtualizer.getVirtualItems()) {
+      const model = rows[item.index];
+
+      if (model) {
+        items.push({
+          row: model.original,
+          index: item.index,
+          offset: item.start,
+          height: item.size,
+        });
+      }
+    }
+
+    return items;
+  });
+
+  readonly virtualTotalHeight = computed(() =>
+    this.virtualized() ? this.virtualizer.getTotalSize() : null,
+  );
+
+  /** Keeps a short last page the same height as a full one so the paginator never jumps. */
+  readonly reservedBodyHeight = computed(() => {
+    if (!this.showPaginator() || this.renderRows().length === 0) {
+      return null;
+    }
+
+    return this.activePageSize() * this.rowHeight();
+  });
+
   readonly paginatorLength = computed(() =>
-    this.isServerSidePagination() ? this.totalCount() : this.filteredRows().length,
+    this.isServerPagination() ? this.totalCount() : this.filteredRows().length,
   );
 
   readonly paginatorPageIndex = computed(() =>
-    this.isServerSidePagination()
-      ? this.pageIndex()
-      : this.clientPagination().pageIndex,
+    this.isServerPagination() ? this.pageIndex() : this.clientPageIndex(),
+  );
+
+  readonly ariaRowCount = computed(() => this.renderRows().length + 1);
+
+  readonly ariaColCount = computed(
+    () => this.displayedColumns().length + (this.hasRowActions() ? 1 : 0),
   );
 
   constructor() {
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver((entries) => {
+        const width = entries[0]?.contentRect.width ?? 0;
+
+        if (width > 0) {
+          this.hostWidth.set(width);
+        }
+      });
+
+      observer.observe(this.hostEl.nativeElement);
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    }
+
     this.destroyRef.onDestroy(() => {
-      if (this.scrollEndTimer != null) {
-        clearTimeout(this.scrollEndTimer);
+      if (this.scrollIdleTimer != null) {
+        clearTimeout(this.scrollIdleTimer);
       }
-
-      if (this.layoutSyncFrame != null) {
-        cancelAnimationFrame(this.layoutSyncFrame);
-      }
-
-      this.boundedResizeObserver?.disconnect();
-      this.filtersOverlayObserver?.disconnect();
-    });
-
-    this.boundedResizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === this.scrollElement()?.nativeElement) {
-          this.scrollContentWidthPx.set(entry.contentRect.width);
-        }
-      }
-
-      this.measureBoundedLayout();
     });
 
     effect(() => {
-      this.tableData.set(this.filteredRows());
-      this.tableColumnDefs.set(this.tanstackColumns());
-    });
-
-    effect(() => {
-      this.columnFilterValues();
-      this.columnToggleSelections();
+      const textKeys = new Set(this.searchableColumns().map((column) => column.key));
+      const toggleKeys = new Set(this.toggleGroups().map((group) => group.key));
 
       untracked(() => {
-        const current = this.clientPagination();
-
-        if (current.pageIndex !== 0) {
-          this.clientPagination.set({ ...current, pageIndex: 0 });
-        }
+        this.filters.prune(textKeys, toggleKeys);
+        this.draftFilters.prune(textKeys, toggleKeys);
       });
     });
 
     effect(() => {
-      const size = this.pageSize();
-      const current = this.clientPagination();
+      const text = this.filters.text();
+      const toggles = this.filters.toggles();
 
-      if (current.pageSize !== size) {
-        this.clientPagination.set({ ...current, pageSize: size, pageIndex: 0 });
-      }
+      untracked(() => {
+        this.clientPageIndex.set(0);
+
+        if (!this.hasEmittedFilters) {
+          this.hasEmittedFilters = true;
+          return;
+        }
+
+        this.filtersChange.emit({
+          text,
+          toggles: Object.fromEntries(
+            Object.entries(toggles).map(([key, values]) => [key, [...values]]),
+          ),
+        });
+      });
     });
 
     effect(() => {
-      if (!this.isBoundedHeightMode()) {
-        for (const target of this.observedBoundedTargets) {
-          this.boundedResizeObserver?.unobserve(target);
-        }
-
-        this.observedBoundedTargets.clear();
-        this.boundedAvailableHeightPx.set(null);
-        this.boundedChromeHeightPx.set(0);
+      if (!this.isClientPagination()) {
         return;
       }
 
-      this.showPaginator();
-      this.showColumnToggle();
-      this.hideableColumns();
-      this.hasFilterColumns();
-      this.filtersOverlayMode();
-      this.data();
-      this.virtualized();
-
-      const host = this.hostEl.nativeElement;
-      const parent = host.parentElement;
-      const targets = new Set<HTMLElement>();
-
-      if (parent) {
-        targets.add(parent);
-      }
-
-      if (this.isFillMode()) {
-        targets.add(host);
-      }
-
-      const viewportEl = this.scrollElement()?.nativeElement;
-
-      if (viewportEl) {
-        targets.add(viewportEl);
-      }
-
-      for (const target of this.observedBoundedTargets) {
-        if (!targets.has(target)) {
-          this.boundedResizeObserver?.unobserve(target);
-          this.observedBoundedTargets.delete(target);
-        }
-      }
-
-      for (const target of targets) {
-        if (!this.observedBoundedTargets.has(target)) {
-          this.boundedResizeObserver?.observe(target);
-          this.observedBoundedTargets.add(target);
-        }
-      }
+      const lastPage =
+        Math.max(1, Math.ceil(this.filteredRows().length / this.activePageSize())) - 1;
 
       untracked(() => {
-        requestAnimationFrame(() => this.measureBoundedLayout());
+        if (this.clientPageIndex() > lastPage) {
+          this.clientPageIndex.set(lastPage);
+        }
       });
     });
 
     effect(() => {
-      this.displayedColumns();
-      this.data();
-      this.virtualized();
-      this.virtualShell();
-      this.headerTrack();
-      this.scrollElement();
-      this.gridMinWidthPx();
-
-      untracked(() => this.queueLayoutSync());
-    });
-
-    effect(() => {
-      const viewportEl = this.scrollElement()?.nativeElement;
-
-      if (!viewportEl || this.isBoundedHeightMode()) {
-        return;
+      if (!this.useFiltersDialog()) {
+        untracked(() => this.closeFiltersDialog());
       }
-
-      this.boundedResizeObserver?.observe(viewportEl);
-      this.observedBoundedTargets.add(viewportEl);
-
-      untracked(() => {
-        this.scrollContentWidthPx.set(viewportEl.clientWidth);
-      });
-    });
-
-    this.filtersOverlayObserver = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? this.hostEl.nativeElement.clientWidth;
-      this.syncFiltersOverlayMode(width);
-    });
-    this.filtersOverlayObserver.observe(this.hostEl.nativeElement);
-
-    afterNextRender(() => {
-      this.syncFiltersOverlayMode(this.hostEl.nativeElement.clientWidth);
     });
   }
 
@@ -743,254 +556,45 @@ export class GenericTableTanstackComponent<T = unknown> {
     return context;
   }
 
-  cellComponentInputs(column: ColumnDef<T>, row: T): Record<string, unknown> {
-    return {
-      value: resolveCellRawValue(column, row),
-      row,
-      column,
-    };
-  }
+  cellComponentInputs(column: ColumnDef<T>, row: T): GenericTableCellComponentInputs<T> {
+    const value = resolveCellRawValue(column, row);
 
-  isColumnVisible(key: string): boolean {
-    return this.visibleKeys().has(key);
-  }
-
-  onColumnFilterValue(
-    key: string,
-    value: string,
-    source: FilterEditSource = 'applied',
-  ): void {
-    if (this.disabled()) {
-      return;
+    if (typeof row !== 'object' || row === null) {
+      return { value, row, column };
     }
 
-    const update = (current: Readonly<Record<string, string>>) => {
-      if (!value) {
-        if (!(key in current)) {
-          return current;
-        }
+    let byColumn = this.cellInputsCache.get(row);
 
-        const next = { ...current };
-        delete next[key];
-        return next;
-      }
-
-      if (current[key] === value) {
-        return current;
-      }
-
-      return { ...current, [key]: value };
-    };
-
-    if (source === 'draft') {
-      this.draftColumnFilterValues.update(update);
-      return;
+    if (!byColumn) {
+      byColumn = new Map();
+      this.cellInputsCache.set(row, byColumn);
     }
 
-    this.columnFilterValues.update(update);
+    const cached = byColumn.get(column.key);
+
+    if (cached) {
+      cached.value = value;
+      cached.column = column;
+      return cached;
+    }
+
+    const inputs: GenericTableCellComponentInputs<T> = { value, row, column };
+    byColumn.set(column.key, inputs);
+    return inputs;
   }
 
-  clearAllFilters(source: FilterEditSource = 'applied'): void {
-    if (this.disabled()) {
-      return;
+  columnAriaSort(column: ColumnDef<T>): 'ascending' | 'descending' | 'none' | null {
+    if (column.sortable !== true) {
+      return null;
     }
 
-    if (source === 'draft') {
-      if (!this.hasDraftFilters()) {
-        return;
-      }
+    const entry = this.sorting().find((item) => item.id === column.key);
 
-      this.draftColumnFilterValues.set({});
-      this.draftColumnToggleSelections.set({});
-      return;
+    if (!entry) {
+      return 'none';
     }
 
-    if (!this.hasActiveFilters()) {
-      return;
-    }
-
-    this.columnFilterValues.set({});
-    this.columnToggleSelections.set({});
-  }
-
-  toggleFiltersCollapsed(): void {
-    if (this.disabled()) {
-      return;
-    }
-
-    this.filtersCollapsed.update((collapsed) => !collapsed);
-  }
-
-  openFiltersModal(): void {
-    if (this.disabled() || !this.filtersOverlayMode()) {
-      return;
-    }
-
-    this.draftColumnFilterValues.set({ ...this.columnFilterValues() });
-    this.draftColumnToggleSelections.set(
-      this.cloneToggleSelections(this.columnToggleSelections()),
-    );
-    this.filtersModalOpen.set(true);
-
-    requestAnimationFrame(() => {
-      const dialog = this.filtersDialog()?.nativeElement;
-
-      if (dialog && !dialog.open) {
-        dialog.showModal();
-      }
-    });
-  }
-
-  closeFiltersModal(): void {
-    this.filtersModalOpen.set(false);
-
-    const dialog = this.filtersDialog()?.nativeElement;
-
-    if (dialog?.open) {
-      dialog.close();
-    }
-  }
-
-  applyFiltersModal(): void {
-    if (this.disabled()) {
-      return;
-    }
-
-    this.columnFilterValues.set({ ...this.draftColumnFilterValues() });
-    this.columnToggleSelections.set(
-      this.cloneToggleSelections(this.draftColumnToggleSelections()),
-    );
-    this.closeFiltersModal();
-  }
-
-  onFiltersDialogClose(): void {
-    this.filtersModalOpen.set(false);
-  }
-
-  onFiltersDialogBackdrop(event: MouseEvent): void {
-    if (event.target === event.currentTarget) {
-      this.closeFiltersModal();
-    }
-  }
-
-  columnFilterDisplayValue(
-    key: string,
-    source: FilterEditSource = 'applied',
-  ): string {
-    return this.filterValues(source)[key] ?? '';
-  }
-
-  isToggleValueSelected(
-    columnKey: string,
-    groupId: string,
-    value: string,
-    source: FilterEditSource = 'applied',
-  ): boolean {
-    return (
-      this.toggleSelections(source)[toggleSelectionKey(columnKey, groupId)]?.has(
-        value,
-      ) === true
-    );
-  }
-
-  onToggleFilterInput(
-    columnKey: string,
-    groupId: string,
-    value: string,
-    event: Event,
-    source: FilterEditSource = 'applied',
-  ): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.onToggleFilterChange(columnKey, groupId, value, checked, source);
-  }
-
-  onToggleFilterChange(
-    columnKey: string,
-    groupId: string,
-    value: string,
-    checked: boolean,
-    source: FilterEditSource = 'applied',
-  ): void {
-    if (this.disabled()) {
-      return;
-    }
-
-    const selectionKey = toggleSelectionKey(columnKey, groupId);
-    const update = (current: Readonly<Record<string, ReadonlySet<string>>>) => {
-      const existing = current[selectionKey] ?? new Set<string>();
-      const nextSet = new Set(existing);
-
-      if (checked) {
-        nextSet.add(value);
-      } else {
-        nextSet.delete(value);
-      }
-
-      if (nextSet.size === 0) {
-        if (!(selectionKey in current)) {
-          return current;
-        }
-
-        const next = { ...current };
-        delete next[selectionKey];
-        return next;
-      }
-
-      return { ...current, [selectionKey]: nextSet };
-    };
-
-    if (source === 'draft') {
-      this.draftColumnToggleSelections.update(update);
-      return;
-    }
-
-    this.columnToggleSelections.update(update);
-  }
-
-  toggleFilterName(value: string): string {
-    return value === '' ? '(Empty)' : value;
-  }
-
-  toggleOptionId(
-    columnKey: string,
-    groupId: string,
-    value: string,
-    source: FilterEditSource = 'applied',
-  ): string {
-    const safe =
-      value === '' ? '__empty' : encodeURIComponent(value).replaceAll('%', '_');
-    return `${this.instanceId}-toggle-${source}-${columnKey}-${groupId}-${safe}`;
-  }
-
-  onToggleColumns(event: MatChipListboxChange): void {
-    if (this.disabled()) {
-      return;
-    }
-
-    if (Array.isArray(event.value)) {
-      this.visibleKeys.set(new Set(event.value));
-    }
-  }
-
-  toggleSort(column: ColumnDef<T>): void {
-    if (this.disabled() || !column.sortable) {
-      return;
-    }
-
-    const current = this.sorting();
-    const existing = current.find((entry) => entry.id === column.key);
-
-    if (!existing) {
-      this.table.setSorting([{ id: column.key, desc: false }]);
-      return;
-    }
-
-    if (!existing.desc) {
-      this.table.setSorting([{ id: column.key, desc: true }]);
-      return;
-    }
-
-    this.table.setSorting([]);
+    return entry.desc ? 'descending' : 'ascending';
   }
 
   sortDirection(columnKey: string): false | 'asc' | 'desc' {
@@ -1003,641 +607,312 @@ export class GenericTableTanstackComponent<T = unknown> {
     return entry.desc ? 'desc' : 'asc';
   }
 
-  onPageChange(event: PageEvent): void {
+  toggleSort(column: ColumnDef<T>): void {
+    if (this.disabled() || column.sortable !== true) {
+      return;
+    }
+
+    const existing = this.sorting().find((entry) => entry.id === column.key);
+
+    if (!existing) {
+      this.table.setSorting([{ id: column.key, desc: false }]);
+      return;
+    }
+
+    this.table.setSorting(existing.desc ? [] : [{ id: column.key, desc: true }]);
+  }
+
+  onColumnVisibility(change: { key: string; visible: boolean }): void {
     if (this.disabled()) {
       return;
     }
 
-    if (!this.isServerSidePagination()) {
-      this.clientPagination.set({
-        pageIndex: event.pageIndex,
-        pageSize: event.pageSize,
-      });
+    this.visibleKeys.update((keys) => {
+      const next = new Set(keys);
+
+      if (change.visible) {
+        next.add(change.key);
+      } else {
+        next.delete(change.key);
+      }
+
+      return next;
+    });
+  }
+
+  showAllColumns(): void {
+    this.visibleKeys.set(new Set(this.columns().map((column) => column.key)));
+  }
+
+  onChipsChange(event: MatChipListboxChange): void {
+    if (this.disabled() || !Array.isArray(event.value)) {
+      return;
+    }
+
+    const selected = event.value as string[];
+
+    // Guard the chip list the same way the menu does: an empty grid has no layout.
+    if (selected.length === 0) {
+      return;
+    }
+
+    this.visibleKeys.set(new Set(selected));
+  }
+
+  onFiltersButtonClick(): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    if (this.useFiltersDialog()) {
+      this.openFiltersDialog();
+      return;
+    }
+
+    this.filtersCollapsed.update((collapsed) => !collapsed);
+  }
+
+  openFiltersDialog(): void {
+    this.draftFilters.copyFrom(this.filters);
+    this.filtersDialogOpen.set(true);
+
+    const dialog = this.filtersDialog()?.nativeElement;
+
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }
+
+  closeFiltersDialog(): void {
+    this.filtersDialogOpen.set(false);
+
+    const dialog = this.filtersDialog()?.nativeElement;
+
+    if (dialog?.open) {
+      dialog.close();
+    }
+  }
+
+  applyDraftFilters(): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    this.filters.copyFrom(this.draftFilters);
+    this.closeFiltersDialog();
+  }
+
+  onDialogBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeFiltersDialog();
+    }
+  }
+
+  clearFilters(): void {
+    if (!this.disabled()) {
+      this.filters.clear();
+    }
+  }
+
+  clearDraftFilters(): void {
+    if (!this.disabled()) {
+      this.draftFilters.clear();
+    }
+  }
+
+  onPageChange(event: GenericTablePageEvent): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    this.activePageSize.set(event.pageSize);
+
+    if (!this.isServerPagination()) {
+      this.clientPageIndex.set(event.pageIndex);
     }
 
     this.pageChange.emit(event);
   }
 
   onRowClick(row: T): void {
-    if (this.disabled() || !this.rowClickable()) {
+    if (!this.disabled() && this.rowClickable()) {
+      this.rowClick.emit(row);
+    }
+  }
+
+  onRowKeydown(event: KeyboardEvent, row: T): void {
+    if (event.key !== 'Enter' && event.key !== ' ') {
       return;
     }
 
-    this.rowClick.emit(row);
+    event.preventDefault();
+    this.onRowClick(row);
   }
 
   rowMenuItems(row: T): ContextMenuItem[] {
-    return this.rowActions()
-      .filter((action) => !this.resolveRowActionFlag(action.hidden, row))
-      .map((action) => ({
-        id: action.id,
-        label: action.label,
-        icon: action.icon,
-        danger: action.danger,
-        dividerBefore: action.dividerBefore,
-        disabled: this.resolveRowActionFlag(action.disabled, row),
-      }));
+    return this.rowMenu(row).items;
   }
 
   rowMenuDetails(row: T): ContextMenuDetailField[] {
-    return this.rowDetails()?.(row) ?? [];
+    return this.rowMenu(row).details;
   }
 
-  rowMenuDetailsTitle(row: T): string | null {
-    const title = this.rowDetailsTitle();
-
-    if (title == null) {
-      return null;
-    }
-
-    return typeof title === 'function' ? title(row) : title;
+  rowMenuTitle(row: T): string | null {
+    return this.rowMenu(row).title;
   }
 
   onRowMenuSelect(item: ContextMenuItem, row: T): void {
-    if (this.disabled()) {
-      return;
+    if (!this.disabled()) {
+      this.rowAction.emit({ actionId: item.id, row });
     }
-
-    this.rowAction.emit({ actionId: item.id, row });
-  }
-
-  private resolveRowActionFlag(
-    value: boolean | ((row: T) => boolean) | undefined,
-    row: T,
-  ): boolean {
-    if (typeof value === 'function') {
-      return value(row);
-    }
-
-    return value === true;
-  }
-
-  exportToCsv(fileName = this.exportFileName(), rows?: readonly T[]): void {
-    if (this.disabled()) {
-      return;
-    }
-
-    this.downloadCsv(rows ?? this.exportData() ?? this.filteredRows(), fileName);
   }
 
   onExportClick(): void {
-    this.requestCsvExport();
-  }
-
-  requestCsvExport(fileName = this.exportFileName()): void {
     if (this.disabled()) {
       return;
     }
 
-    const resolvedName = this.resolveCsvFileName(fileName);
-    const complete = (rows: readonly T[]) => this.downloadCsv(rows, resolvedName);
+    const fileName = withCsvExtension(this.exportFileName());
+    const complete = (rows: readonly T[]) => this.downloadCsv(rows, fileName);
 
-    this.exportRequest.emit({ fileName: resolvedName, complete });
+    this.exportRequest.emit({ fileName, complete });
 
-    if (!this.isServerSidePagination() || this.exportData() != null) {
+    if (!this.isServerPagination() || this.exportData() != null) {
       complete(this.exportData() ?? this.filteredRows());
     }
   }
 
-  onScroll(event?: Event): void {
+  onScroll(): void {
     this.isScrolling.set(true);
 
-    if (this.scrollEndTimer != null) {
-      clearTimeout(this.scrollEndTimer);
+    if (this.scrollIdleTimer != null) {
+      clearTimeout(this.scrollIdleTimer);
     }
 
-    this.scrollEndTimer = setTimeout(() => {
+    this.scrollIdleTimer = setTimeout(() => {
       this.isScrolling.set(false);
-      this.scrollEndTimer = null;
-    }, 150);
-
-    if (!event) {
-      return;
-    }
-
-    const viewport = event.currentTarget as HTMLElement;
-    const header = this.headerTrack()?.nativeElement;
-
-    if (header && header.scrollLeft !== viewport.scrollLeft) {
-      header.scrollLeft = viewport.scrollLeft;
-    }
-
-    const gutter = viewport.offsetWidth - viewport.clientWidth;
-
-    if (gutter !== this.scrollbarGutterPx()) {
-      this.scrollbarGutterPx.set(gutter);
-    }
-
-    if (viewport.clientWidth !== this.scrollContentWidthPx()) {
-      this.scrollContentWidthPx.set(viewport.clientWidth);
-    }
-
-    const headerHeight = header?.offsetHeight ?? 0;
-
-    if (headerHeight > 0 && headerHeight !== this.headerHeightPx()) {
-      this.headerHeightPx.set(headerHeight);
-    }
+      this.scrollIdleTimer = null;
+    }, SCROLL_IDLE_MS);
   }
 
-  trackVirtualRow(virtualIndex: number): unknown {
-    const row = this.sortedRows()[virtualIndex]?.original;
+  trackRenderRow = (_index: number, item: RenderRow<T>): unknown =>
+    this.trackBy()(item.index, item.row);
 
-    if (row === undefined) {
-      return virtualIndex;
+  private rowMenu(row: T): RowMenuEntry {
+    const source = this.rowActions();
+
+    if (typeof row !== 'object' || row === null) {
+      return this.buildRowMenu(row, source);
     }
 
-    return this.trackBy()(virtualIndex, row);
-  }
+    const cached = this.rowMenuCache.get(row);
 
-  trackBodyRow(index: number, row: Row<T>): unknown {
-    return this.trackBy()(index, row.original);
-  }
-
-  private emitMaterialSort(state: SortingState): void {
-    if (state.length === 0) {
-      this.sortChange.emit({ active: '', direction: '' });
-      return;
+    if (cached && cached.source === source) {
+      return cached;
     }
 
-    const [first] = state;
-    this.sortChange.emit({
-      active: first.id,
-      direction: first.desc ? 'desc' : 'asc',
-    });
+    const entry = this.buildRowMenu(row, source);
+    this.rowMenuCache.set(row, entry);
+    return entry;
   }
 
-  private sortValue(column: ColumnDef<T>, row: T): string | number {
-    return resolveSortValue(column, row);
+  private buildRowMenu(row: T, source: readonly GenericTableRowAction<T>[]): RowMenuEntry {
+    const title = this.rowDetailsTitle();
+
+    return {
+      source,
+      items: source
+        .filter((action) => !resolveRowFlag(action.hidden, row))
+        .map((action) => ({
+          id: action.id,
+          label: action.label,
+          icon: action.icon,
+          danger: action.danger,
+          dividerBefore: action.dividerBefore,
+          disabled: resolveRowFlag(action.disabled, row),
+        })),
+      details: this.rowDetails()?.(row) ?? [],
+      title: typeof title === 'function' ? title(row) : title,
+    };
   }
 
   private downloadCsv(rows: readonly T[], fileName: string): void {
-    const columns = this.columns();
+    const columns = this.displayedColumns();
     const lines = [
-      columns.map((column) => this.escapeCsvField(column.header)).join(','),
+      columns.map((column) => escapeCsvField(column.header)).join(','),
       ...rows.map((row) =>
-        columns
-          .map((column) => this.escapeCsvField(this.getRawExportValue(row, column.key)))
-          .join(','),
+        columns.map((column) => escapeCsvField(exportValue(column, row))).join(','),
       ),
     ];
 
-    const blob = new Blob(['\uFEFF' + lines.join('\n')], {
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], {
       type: 'text/csv;charset=utf-8;',
     });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
 
     anchor.href = url;
-    anchor.download = this.resolveCsvFileName(fileName);
+    anchor.download = fileName;
     anchor.rel = 'noopener';
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
   }
+}
 
-  private resolveCsvFileName(fileName: string): string {
-    return fileName.toLowerCase().endsWith('.csv') ? fileName : `${fileName}.csv`;
+function isFlexibleColumn<T>(column: ColumnDef<T>): boolean {
+  return !column.width?.trim();
+}
+
+function columnFloor<T>(column: ColumnDef<T>): string {
+  return column.minWidth?.trim() || column.width?.trim() || 'var(--gtt-column-min-width)';
+}
+
+function columnTrack<T>(column: ColumnDef<T>): string {
+  const width = column.width?.trim();
+  const minWidth = column.minWidth?.trim();
+
+  if (width && minWidth) {
+    return `minmax(${minWidth}, ${width})`;
   }
 
-  private escapeCsvField(value: string | number): string {
-    const text = String(value);
-
-    if (/[",\n\r]/.test(text)) {
-      return `"${text.replaceAll('"', '""')}"`;
-    }
-
-    return text;
+  if (width) {
+    return width;
   }
 
-  private getRawExportValue(row: T, key: string): string {
-    if (typeof row !== 'object' || row === null || !(key in row)) {
-      return '';
-    }
-
-    const value = (row as Record<string, unknown>)[key];
-
-    if (value == null) {
-      return '';
-    }
-
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    if (typeof value === 'number' || typeof value === 'boolean') {
-      return String(value);
-    }
-
-    if (value instanceof Date) {
-      return value.toISOString();
-    }
-
-    return String(value);
+  if (minWidth) {
+    return `minmax(${minWidth}, 1fr)`;
   }
 
-  private filterValues(
-    source: FilterEditSource,
-  ): Readonly<Record<string, string>> {
-    return source === 'draft'
-      ? this.draftColumnFilterValues()
-      : this.columnFilterValues();
+  return 'minmax(var(--gtt-column-min-width), 1fr)';
+}
+
+function resolveRowFlag<T>(
+  value: boolean | ((row: T) => boolean) | undefined,
+  row: T,
+): boolean {
+  return typeof value === 'function' ? value(row) : value === true;
+}
+
+function withCsvExtension(fileName: string): string {
+  return fileName.toLowerCase().endsWith('.csv') ? fileName : `${fileName}.csv`;
+}
+
+function exportValue<T>(column: ColumnDef<T>, row: T): string {
+  const value = resolveCellRawValue(column, row);
+
+  if (value == null) {
+    return '';
   }
 
-  private toggleSelections(
-    source: FilterEditSource,
-  ): Readonly<Record<string, ReadonlySet<string>>> {
-    return source === 'draft'
-      ? this.draftColumnToggleSelections()
-      : this.columnToggleSelections();
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? '' : value.toISOString();
   }
 
-  private hasFilterState(
-    textValues: Readonly<Record<string, string>>,
-    toggleValues: Readonly<Record<string, ReadonlySet<string>>>,
-  ): boolean {
-    const hasText = this.searchableColumns().some(
-      (column) => (textValues[column.key] ?? '').trim().length > 0,
-    );
-
-    if (hasText) {
-      return true;
-    }
-
-    return Object.values(toggleValues).some((selected) => (selected?.size ?? 0) > 0);
-  }
-
-  private cloneToggleSelections(
-    source: Readonly<Record<string, ReadonlySet<string>>>,
-  ): Readonly<Record<string, ReadonlySet<string>>> {
-    const next: Record<string, ReadonlySet<string>> = {};
-
-    for (const [key, value] of Object.entries(source)) {
-      next[key] = new Set(value);
-    }
-
-    return next;
-  }
-
-  private syncFiltersOverlayMode(width: number): void {
-    if (width <= 0) {
-      return;
-    }
-
-    const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const threshold = FILTERS_OVERLAY_MAX_REM * (Number.isNaN(rem) ? 16 : rem);
-    const overlay = width <= threshold;
-
-    if (this.filtersOverlayMode() === overlay) {
-      return;
-    }
-
-    this.filtersOverlayMode.set(overlay);
-
-    if (!overlay) {
-      this.closeFiltersModal();
-    }
-  }
-
-  private buildToggleFacets(
-    textValues: Readonly<Record<string, string>>,
-    toggleValues: Readonly<Record<string, ReadonlySet<string>>>,
-  ): GenericTableToggleFacet<T>[] {
-    const rows = this.data();
-    const searchable = this.searchableColumns();
-    const facets: GenericTableToggleFacet<T>[] = [];
-
-    const activeText = searchable.filter(
-      (column) => (textValues[column.key] ?? '').trim().length > 0,
-    );
-
-    const textFilteredRows = rows.filter((row) =>
-      activeText.every((textColumn) =>
-        columnMatchesFilter(textColumn, row, textValues[textColumn.key] ?? ''),
-      ),
-    );
-
-    for (const column of this.toggleableColumns()) {
-      for (const group of resolveToggleGroups(column)) {
-        const selfKey = toggleSelectionKey(column.key, group.id);
-
-        const baseRows = textFilteredRows.filter((row) =>
-          this.toggleableColumns().every((toggleColumn) =>
-            resolveToggleGroups(toggleColumn).every((otherGroup) => {
-              const otherKey = toggleSelectionKey(toggleColumn.key, otherGroup.id);
-
-              // Ignore current group's selection when computing its siblings' counts.
-              if (otherKey === selfKey) {
-                return true;
-              }
-
-              return rowMatchesToggleGroup(otherGroup, row, toggleValues[otherKey]);
-            }),
-          ),
-        );
-
-        const counted = collectToggleGroupOptions(group, baseRows);
-        const countByValue = new Map(counted.map((option) => [option.value, option.count]));
-        const universe = collectToggleGroupOptions(group, rows);
-        const values = new Set(universe.map((option) => option.value));
-        const selected = toggleValues[selfKey];
-
-        if (selected?.size) {
-          for (const value of selected) {
-            values.add(value);
-          }
-        }
-
-        facets.push({
-          columnKey: column.key,
-          group,
-          label: group.label ?? column.header,
-          options: sortToggleOptions(
-            [...values].map((value) => ({
-              value,
-              count: countByValue.get(value) ?? 0,
-            })),
-          ),
-        });
-      }
-    }
-
-    return facets;
-  }
-
-  private resolveColumnTrack(
-    column: ColumnDef<T>,
-    options: { stretch?: boolean } = {},
-  ): string {
-    const floor = this.columnFloorLength(column);
-
-    if (options.stretch) {
-      return `minmax(${floor}, 1fr)`;
-    }
-
-    if (column.width && column.minWidth != null && column.minWidth !== '') {
-      return `minmax(${column.minWidth}, ${column.width})`;
-    }
-
-    if (column.width) {
-      return column.width;
-    }
-
-    if (column.minWidth != null && column.minWidth !== '') {
-      return column.minWidth;
-    }
-
-    return 'minmax(0, 1fr)';
-  }
-
-  private columnFloorLength(column: ColumnDef<T>): string {
-    if (column.minWidth != null && column.minWidth !== '') {
-      return column.minWidth;
-    }
-
-    if (column.width) {
-      return column.width;
-    }
-
-    return '0px';
-  }
-
-  private columnFloorPx(column: ColumnDef<T>, referenceWidth: number): number {
-    return Math.max(0, this.parseLengthToPx(this.columnFloorLength(column), referenceWidth));
-  }
-
-  columnMinWidth(column: ColumnDef<T>): string | null {
-    if (column.minWidth != null && column.minWidth !== '') {
-      return column.minWidth;
-    }
-
-    return column.width ?? null;
-  }
-
-  columnMaxWidth(column: ColumnDef<T>, stretch = false): string | null {
-
-    if (stretch) {
-      return null;
-    }
-
-    return column.width ?? null;
-  }
-
-  private resolveMaxScrollHeightPx(): number {
-    return this.resolveExplicitMaxHeightPx() ?? DEFAULT_MAX_HEIGHT_PX;
-  }
-
-  private resolveExplicitMaxHeightPx(referenceWidth?: number): number | null {
-    const maxHeight = this.maxHeight();
-
-    if (!maxHeight) {
-      return null;
-    }
-
-    const ref = referenceWidth ?? this.hostEl.nativeElement.clientWidth ?? globalThis.innerWidth;
-    const parsed = this.parseLengthToPx(maxHeight, ref);
-
-    return parsed > 0 ? parsed : null;
-  }
-
-  private resolveMinScrollHeightPx(): number {
-    const value = this.minHeight();
-
-    if (!value) {
-      return 0;
-    }
-
-    const parsed = this.parseLengthToPx(
-      value,
-      this.hostEl.nativeElement.clientWidth ?? globalThis.innerWidth,
-    );
-
-    return parsed > 0 ? parsed : 0;
-  }
-
-  private resolveBoundedScrollBodyHeightPx(contentHeight: number, fillHeight: number): number {
-    const minHeight = this.resolveMinScrollHeightPx();
-
-    if (this.isParentMode()) {
-      return Math.max(fillHeight, minHeight);
-    }
-
-    if (fillHeight < minHeight) {
-      return Math.max(contentHeight, minHeight);
-    }
-
-    return Math.min(contentHeight, fillHeight);
-  }
-
-  private resolveHeightInputPx(): number {
-    const value = this.height();
-
-    if (!value) {
-      return 0;
-    }
-
-    const parsed = this.parseLengthToPx(
-      value,
-      this.hostEl.nativeElement.clientWidth ?? globalThis.innerWidth,
-    );
-
-    return parsed > 0 ? parsed : 0;
-  }
-
-  private clampParentAvailableHeightPx(measured: number): number {
-    const floor = this.resolveHeightInputPx();
-    const cap = this.resolveExplicitMaxHeightPx();
-    let size = Math.max(measured, floor);
-
-    if (cap != null) {
-      size = Math.min(size, Math.max(cap, floor));
-    }
-
-    return size;
-  }
-
-  private resolveBoundedAvailableFallbackPx(): number {
-    const maxBody = this.resolveExplicitMaxHeightPx() ?? DEFAULT_MAX_HEIGHT_PX;
-    const chrome = this.boundedChromeHeightPx();
-    const header = this.virtualized() ? this.headerHeightPx() : 0;
-
-    return maxBody + chrome + header;
-  }
-
-  private parseLengthToPx(value: string, referenceWidth: number): number {
-    const trimmed = value.trim();
-
-    if (trimmed.endsWith('vh')) {
-      const vh = Number.parseFloat(trimmed);
-      return Number.isNaN(vh) ? 0 : (globalThis.innerHeight * vh) / 100;
-    }
-
-    if (trimmed.endsWith('rem')) {
-      const rem = Number.parseFloat(trimmed);
-      const rootSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
-      return Number.isNaN(rem) ? 0 : rem * (Number.isNaN(rootSize) ? 16 : rootSize);
-    }
-
-    if (trimmed.endsWith('%')) {
-      const percent = Number.parseFloat(trimmed);
-      return Number.isNaN(percent) ? 0 : (referenceWidth * percent) / 100;
-    }
-
-    const parsed = Number.parseFloat(trimmed);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
-
-  private queueLayoutSync(): void {
-    if (this.layoutSyncFrame != null) {
-      cancelAnimationFrame(this.layoutSyncFrame);
-    }
-
-    this.layoutSyncFrame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this.layoutSyncFrame = null;
-        this.syncVirtualLayout();
-      });
-    });
-  }
-
-  private syncVirtualLayout(): void {
-    const viewport = this.scrollElement()?.nativeElement;
-    const header = this.headerTrack()?.nativeElement;
-
-    if (!viewport || !header) {
-      return;
-    }
-
-    const headerHeight = header.offsetHeight;
-
-    if (headerHeight > 0) {
-      this.headerHeightPx.set(headerHeight);
-    }
-
-    this.scrollbarGutterPx.set(viewport.offsetWidth - viewport.clientWidth);
-    this.scrollContentWidthPx.set(viewport.clientWidth);
-    this.measureBoundedLayout();
-
-    if (this.virtualized()) {
-
-      this.virtualizer.measure();
-    }
-  }
-
-  private measureBoundedLayout(): void {
-    if (!this.isBoundedHeightMode()) {
-      return;
-    }
-
-    const host = this.hostEl.nativeElement;
-    const parent = host.parentElement;
-
-    if (!parent) {
-      return;
-    }
-
-    const measured = this.isFillMode()
-      ? this.measureFillAvailableHeight(host, parent)
-      : this.measureParentAvailableHeight(host, parent);
-
-    this.boundedAvailableHeightPx.set(
-      this.isParentMode() ? this.clampParentAvailableHeightPx(measured) : measured,
-    );
-
-    const tableRoot = host.querySelector('.generic-table-tanstack');
-
-    const scrollBody = this.virtualized()
-      ? host.querySelector('.generic-table-tanstack__virtual-shell')
-      : host.querySelector('.generic-table-tanstack__static-shell');
-
-    if (tableRoot instanceof HTMLElement && scrollBody instanceof HTMLElement) {
-      this.boundedChromeHeightPx.set(
-        Math.max(0, tableRoot.clientHeight - scrollBody.clientHeight),
-      );
-    }
-
-    const header = this.headerTrack()?.nativeElement;
-    const headerHeight = header?.offsetHeight ?? 0;
-
-    if (headerHeight > 0 && headerHeight !== this.headerHeightPx()) {
-      this.headerHeightPx.set(headerHeight);
-    }
-  }
-
-  private measureFillAvailableHeight(host: HTMLElement, parent: HTMLElement): number {
-    const parentStyle = getComputedStyle(parent);
-    const gap = Number.parseFloat(parentStyle.rowGap || parentStyle.gap) || 0;
-    let siblingHeight = 0;
-
-    for (const child of parent.children) {
-      if (child === host || !(child instanceof HTMLElement)) {
-        continue;
-      }
-
-      siblingHeight += child.offsetHeight;
-    }
-
-    const flexGapTotal = Math.max(0, parent.children.length - 1) * gap;
-    return Math.max(0, parent.clientHeight - siblingHeight - flexGapTotal);
-  }
-
-  private measureParentAvailableHeight(host: HTMLElement, parent: HTMLElement): number {
-    const parentStyle = getComputedStyle(parent);
-    const parsedHeight = this.parseLengthToPx(parentStyle.height, parent.clientWidth);
-    const parsedMaxHeight = this.parseLengthToPx(parentStyle.maxHeight, parent.clientWidth);
-    const hasExplicitHeight = parentStyle.height !== 'auto' && parsedHeight > 0;
-    const hasExplicitMaxHeight = parentStyle.maxHeight !== 'none' && parsedMaxHeight > 0;
-    const hostHeight = host.offsetHeight;
-    const parentHeight = parent.clientHeight;
-
-    if (hasExplicitHeight || hasExplicitMaxHeight) {
-      return parentHeight;
-    }
-
-    if (hostHeight > 0 && parentHeight - hostHeight <= 2) {
-      return hostHeight;
-    }
-
-    return parentHeight;
-  }
+  return String(value);
+}
+
+function escapeCsvField(value: string): string {
+  return /[",\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
 }

@@ -1,0 +1,60 @@
+@if (sizeOptions().length > 1) {
+  <div class="gtt-paginator__size">
+    <label class="gtt-paginator__size-label" [attr.for]="selectId">Rows per page</label>
+    <select
+      class="gtt-paginator__select"
+      [id]="selectId"
+      [disabled]="disabled()"
+      aria-label="Rows per page"
+      (change)="onPageSizeChange($event)"
+    >
+      @for (option of sizeOptions(); track option) {
+        <option [value]="option" [selected]="option === pageSize()">{{ option }}</option>
+      }
+    </select>
+  </div>
+}
+
+<span class="gtt-paginator__range" aria-live="polite">{{ rangeLabel() }}</span>
+
+<div class="gtt-paginator__nav">
+  <button
+    type="button"
+    class="gtt-control gtt-control--icon gtt-paginator__edge"
+    aria-label="First page"
+    [disabled]="disabled() || isFirstPage()"
+    (click)="goToPage(0)"
+  >
+    <svg class="gtt-control__icon" [lucideIcon]="LucideChevronsLeft" [size]="16" aria-hidden="true"></svg>
+  </button>
+
+  <button
+    type="button"
+    class="gtt-control gtt-control--icon"
+    aria-label="Previous page"
+    [disabled]="disabled() || isFirstPage()"
+    (click)="goToPage(currentPage() - 1)"
+  >
+    <svg class="gtt-control__icon" [lucideIcon]="LucideChevronLeft" [size]="16" aria-hidden="true"></svg>
+  </button>
+
+  <button
+    type="button"
+    class="gtt-control gtt-control--icon"
+    aria-label="Next page"
+    [disabled]="disabled() || isLastPage()"
+    (click)="goToPage(currentPage() + 1)"
+  >
+    <svg class="gtt-control__icon" [lucideIcon]="LucideChevronRight" [size]="16" aria-hidden="true"></svg>
+  </button>
+
+  <button
+    type="button"
+    class="gtt-control gtt-control--icon gtt-paginator__edge"
+    aria-label="Last page"
+    [disabled]="disabled() || isLastPage()"
+    (click)="goToPage(pageCount() - 1)"
+  >
+    <svg class="gtt-control__icon" [lucideIcon]="LucideChevronsRight" [size]="16" aria-hidden="true"></svg>
+  </button>
+</div>

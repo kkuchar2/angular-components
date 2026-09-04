@@ -1,686 +1,313 @@
-<div
-  class="generic-table-tanstack"
-  [class.generic-table-tanstack--fill]="isFillMode()"
-  [class.generic-table-tanstack--parent]="isParentMode()"
-  [class.generic-table-tanstack--bounded]="isBoundedHeightMode()"
-  [class.generic-table-tanstack--virtualized]="virtualized()"
-  [class.generic-table-tanstack--disabled]="disabled()"
-  [class.generic-table-tanstack--filters]="hasFilterColumns()"
-  [attr.aria-disabled]="disabled() || null"
-  [style.--gtt-max-height]="isBoundedHeightMode() ? null : maxHeight()"
-  [style.--gtt-min-height]="minHeight()"
-  [style.--gtt-row-height.px]="rowHeight()"
-  [style.--gtt-virtual-scrollbar-gutter.px]="scrollbarGutterPx()"
->
+<div class="gtt" [class.gtt--disabled]="disabled()" [attr.aria-disabled]="disabled() || null">
   @if (showToolbar()) {
-    <div
-      class="generic-table-tanstack__toolbar"
-      [class.generic-table-tanstack__toolbar--with-filters]="hasFilterColumns()"
-      [class.generic-table-tanstack__toolbar--overlay]="filtersOverlayMode()"
-    >
-      @if (hasFilterColumns() && filtersOverlayMode()) {
-        <button
-          type="button"
-          class="generic-table-tanstack__filters-open"
-          [disabled]="disabled()"
-          [attr.aria-expanded]="filtersModalOpen()"
-          aria-haspopup="dialog"
-          [attr.aria-controls]="filtersDialogId"
-          [attr.aria-label]="
-            hasActiveFilters() ? 'Open filters (filters active)' : 'Open filters'
-          "
-          (click)="openFiltersModal()"
-        >
-          <svg
-            class="generic-table-tanstack__filters-toggle-icon"
-            [lucideIcon]="LucideFunnel"
-            [size]="14"
-            aria-hidden="true"
-          ></svg>
-          <span class="generic-table-tanstack__filters-toggle-label">Filters</span>
-          @if (hasActiveFilters()) {
-            <span class="generic-table-tanstack__filters-toggle-badge" aria-hidden="true"></span>
-          }
-        </button>
-      }
-
-      @if (showColumnToggle() && hideableColumns().length > 0) {
-        <mat-chip-listbox
-          class="generic-table-tanstack__column-toggle"
-          multiple
-          aria-label="Toggle columns"
-          [disabled]="disabled()"
-          (change)="onToggleColumns($event)"
-        >
-          @for (col of hideableColumns(); track col.key) {
-            <mat-chip-option [value]="col.key" [selected]="isColumnVisible(col.key)">
-              {{ col.header }}
-            </mat-chip-option>
-          }
-        </mat-chip-listbox>
-      }
-
-      @if (showExport() && exportSitsInToolbar()) {
-        <button
-          type="button"
-          class="generic-table-tanstack__export"
-          [disabled]="disabled()"
-          (click)="onExportClick()"
-        >
-          <svg
-            class="generic-table-tanstack__export-icon"
-            [lucideIcon]="LucideDownload"
-            [size]="14"
-            aria-hidden="true"
-          ></svg>
-          Export CSV
-        </button>
-      }
-    </div>
-  }
-
-  <div
-    class="generic-table-tanstack__layout"
-    [class.generic-table-tanstack__layout--filters]="showSidebarFilters()"
-    [class.generic-table-tanstack__layout--filters-collapsed]="
-      showSidebarFilters() && filtersCollapsed()
-    "
-    [class.generic-table-tanstack__layout--filters-independent]="
-      showSidebarFilters() && hasIndependentFilterHeight() && !filtersCollapsed()
-    "
-    [style.--gtt-filter-min-height]="filterMinHeight()"
-  >
-    @if (showSidebarFilters()) {
-      @if (filtersCollapsed()) {
-        <div class="generic-table-tanstack__filters-collapsed" aria-label="Table filters">
+    <div class="gtt__toolbar">
+      <div class="gtt__toolbar-lead">
+        @if (hasFilters()) {
           <button
             type="button"
-            class="generic-table-tanstack__filters-toggle generic-table-tanstack__filters-toggle--rail"
+            class="gtt-control gtt-control--collapsible"
+            [class.gtt-control--pressed]="showRail()"
             [disabled]="disabled()"
-            [attr.aria-expanded]="false"
-            [attr.aria-label]="
-              hasActiveFilters() ? 'Show filters (filters active)' : 'Show filters'
-            "
-            title="Show filters"
-            (click)="toggleFiltersCollapsed()"
+            [attr.aria-pressed]="useFiltersDialog() ? null : showRail()"
+            [attr.aria-expanded]="useFiltersDialog() ? filtersDialogOpen() : null"
+            [attr.aria-haspopup]="useFiltersDialog() ? 'dialog' : null"
+            (click)="onFiltersButtonClick()"
           >
-            <svg
-              class="generic-table-tanstack__filters-toggle-icon"
-              [lucideIcon]="LucideFunnel"
-              [size]="14"
-              aria-hidden="true"
-            ></svg>
-            <span class="generic-table-tanstack__filters-toggle-label">Filters</span>
-            @if (hasActiveFilters()) {
-              <span class="generic-table-tanstack__filters-toggle-badge" aria-hidden="true"></span>
+            <svg class="gtt-control__icon" [lucideIcon]="LucideFunnel" [size]="14" aria-hidden="true"></svg>
+            <span class="gtt-control__label">Filters</span>
+            @if (filters.activeCount() > 0) {
+              <span class="gtt__filter-count">{{ filters.activeCount() }}</span>
             }
           </button>
-        </div>
-      } @else {
-        <aside class="generic-table-tanstack__filters" aria-label="Table filters">
-          @if (showExport()) {
-            <div class="generic-table-tanstack__filters-export">
-              <button
-                type="button"
-                class="generic-table-tanstack__export"
-                [disabled]="disabled()"
-                (click)="onExportClick()"
-              >
-                <svg
-                  class="generic-table-tanstack__export-icon"
-                  [lucideIcon]="LucideDownload"
-                  [size]="14"
-                  aria-hidden="true"
-                ></svg>
-                Export CSV
-              </button>
-            </div>
-          }
 
-          <div class="generic-table-tanstack__filters-header">
+          @if (filters.isActive()) {
             <button
               type="button"
-              class="generic-table-tanstack__clear-filters"
-              [disabled]="disabled() || !hasActiveFilters()"
-              (click)="clearAllFilters()"
-            >
-              Clear filter
-            </button>
-            <button
-              type="button"
-              class="generic-table-tanstack__filters-toggle generic-table-tanstack__filters-toggle--collapse"
+              class="gtt-control gtt__clear"
               [disabled]="disabled()"
-              [attr.aria-expanded]="true"
-              title="Hide filters"
-              (click)="toggleFiltersCollapsed()"
+              (click)="clearFilters()"
             >
-              <svg
-                class="generic-table-tanstack__filters-toggle-icon"
-                [lucideIcon]="LucidePanelLeftClose"
-                [size]="14"
-                aria-hidden="true"
-              ></svg>
-              <span class="generic-table-tanstack__filters-toggle-label">Hide</span>
+              Clear
             </button>
-          </div>
-
-          <div class="generic-table-tanstack__filters-body">
-            <ng-container
-              [ngTemplateOutlet]="filterFields"
-              [ngTemplateOutletContext]="{ source: 'applied' }"
-            />
-          </div>
-        </aside>
-      }
-    }
-
-    <div class="generic-table-tanstack__table-pane">
-  @if (virtualized()) {
-    <div
-      class="generic-table-tanstack__virtual-shell"
-      #virtualShell
-      [class.generic-table-tanstack__virtual-shell--bounded]="isBoundedHeightMode()"
-      [style.height]="scrollBodyHeight()"
-      [style.--gtt-cols]="gridTemplateColumns()"
-      [style.--gtt-grid-min.px]="gridMinWidthPx()"
-    >
-      <div class="generic-table-tanstack__header-track" #headerTrack>
-        <div
-          class="generic-table-tanstack__header generic-table-tanstack__header--virtual"
-          [style.width.px]="gridLayoutWidthPx()"
-          [style.min-width.px]="gridMinWidthPx()"
-        >
-          @for (col of displayedColumns(); track col.key) {
-            <div
-              class="generic-table-tanstack__header-cell"
-              [class.generic-table-tanstack__header-cell--sortable]="col.sortable"
-              [class.generic-table-tanstack__header-cell--center]="col.align === 'center'"
-              [style.min-width]="columnMinWidth(col)"
-              [style.max-width]="columnMaxWidth(col, $last)"
-              [style.text-align]="col.align ?? 'left'"
-              [style.justify-content]="
-                col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start'
-              "
-              [attr.role]="col.sortable ? 'button' : null"
-              [attr.tabindex]="col.sortable && !disabled() ? 0 : null"
-              (click)="toggleSort(col)"
-              (keydown.enter)="toggleSort(col)"
-              (keydown.space)="$event.preventDefault(); toggleSort(col)"
-            >
-              <span class="generic-table-tanstack__header-cluster">
-                <span class="generic-table-tanstack__header-label">{{ col.header }}</span>
-                @if (col.description || col.sortable) {
-                  <span class="generic-table-tanstack__header-accessories">
-                    @if (col.description) {
-                      <app-generic-table-header-info
-                        [description]="col.description"
-                        [label]="col.header"
-                      />
-                    }
-                    @if (col.sortable) {
-                      <span
-                        class="generic-table-tanstack__sort"
-                        [class.generic-table-tanstack__sort--asc]="sortDirection(col.key) === 'asc'"
-                        [class.generic-table-tanstack__sort--desc]="sortDirection(col.key) === 'desc'"
-                        [class.generic-table-tanstack__sort--active]="!!sortDirection(col.key)"
-                        aria-hidden="true"
-                      >
-                        <svg
-                          class="generic-table-tanstack__sort-icon"
-                          viewBox="0 0 10 5"
-                          focusable="false"
-                        >
-                          <polygon points="0,0 10,0 5,5" />
-                        </svg>
-                      </span>
-                    }
-                  </span>
-                }
-              </span>
-            </div>
           }
-          @if (hasRowActions()) {
-            <div
-              class="generic-table-tanstack__header-cell generic-table-tanstack__header-cell--actions"
-              aria-hidden="true"
-            ></div>
-          }
-        </div>
+        }
       </div>
 
-      <div
-        #scrollElement
-        class="generic-table-tanstack__scroll generic-table-tanstack__scroll--virtual"
-        [class.generic-table-tanstack__scroll--scrolling]="isScrolling()"
-        [class.generic-table-tanstack__scroll--fill]="isFixed()"
-        [class.generic-table-tanstack__scroll--bounded]="isBoundedHeightMode()"
-        [style.height.px]="virtualViewportHeightPx()"
-        (scroll)="onScroll($event)"
-      >
-        @if (sortedRows().length === 0) {
-          <div class="generic-table-tanstack__empty">{{ tableEmptyMessage() }}</div>
-        } @else {
-          <div
-            class="generic-table-tanstack__spacer"
-            [style.height.px]="virtualizer.getTotalSize()"
-            [style.width.px]="gridLayoutWidthPx()"
-            [style.min-width.px]="gridMinWidthPx()"
+      <div class="gtt__toolbar-trail">
+        <ng-content select="[gttTool]" />
+
+        @if (showColumnsMenu()) {
+          <app-generic-table-columns-menu
+            [columns]="hideableColumns()"
+            [visibleKeys]="visibleKeys()"
+            [disabled]="disabled()"
+            (visibilityChange)="onColumnVisibility($event)"
+            (showAll)="showAllColumns()"
+          />
+        }
+
+        @if (showExport()) {
+          <button
+            type="button"
+            class="gtt-control gtt-control--collapsible"
+            [disabled]="disabled()"
+            (click)="onExportClick()"
           >
-            @for (
-              virtualRow of virtualizer.getVirtualItems();
-              track trackVirtualRow(virtualRow.index)
-            ) {
-              @if (sortedRows()[virtualRow.index]; as rowModel) {
+            <svg class="gtt-control__icon" [lucideIcon]="LucideDownload" [size]="14" aria-hidden="true"></svg>
+            <span class="gtt-control__label">Export CSV</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (showColumnChips()) {
+      <mat-chip-listbox
+        class="gtt__chips"
+        multiple
+        aria-label="Toggle columns"
+        [disabled]="disabled()"
+        (change)="onChipsChange($event)"
+      >
+        @for (column of hideableColumns(); track column.key) {
+          <mat-chip-option [value]="column.key" [selected]="visibleKeys().has(column.key)">
+            {{ column.header }}
+          </mat-chip-option>
+        }
+      </mat-chip-listbox>
+    }
+  }
+
+  <div class="gtt__body" [class.gtt__body--rail]="showRail()">
+    @if (showRail()) {
+      <aside class="gtt__rail" aria-label="Table filters" [style.max-height]="railMaxHeight()">
+        <app-generic-table-filters
+          class="gtt__rail-body"
+          layout="rail"
+          [columns]="filterColumns()"
+          [facets]="toggleFacets()"
+          [values]="filters"
+          [idPrefix]="instanceId + '-rail'"
+          [disabled]="disabled()"
+          [showCounts]="showFacetCounts()"
+          [ui]="filterUi"
+        />
+      </aside>
+    }
+
+    <div class="gtt__pane">
+      <div class="gtt__shell" [style.height]="shellHeight()">
+        <div
+          #scrollElement
+          class="gtt__scroll"
+          [class.gtt__scroll--scrolling]="isScrolling()"
+          [style.--gtt-cols]="gridTemplateColumns()"
+          [style.max-height]="scrollMaxHeight()"
+          [style.min-height]="minHeight()"
+          (scroll)="onScroll()"
+        >
+          <div
+            class="gtt__grid"
+            role="table"
+            [attr.aria-rowcount]="ariaRowCount()"
+            [attr.aria-colcount]="ariaColCount()"
+          >
+            <div class="gtt__head" role="rowgroup">
+              <div class="gtt__header" role="row" aria-rowindex="1">
+                @for (column of displayedColumns(); track column.key) {
+                  <div
+                    class="gtt__header-cell"
+                    role="columnheader"
+                    [class.gtt__header-cell--sortable]="column.sortable"
+                    [class.gtt__cell--center]="column.align === 'center'"
+                    [class.gtt__cell--right]="column.align === 'right'"
+                    [attr.aria-sort]="columnAriaSort(column)"
+                    [attr.tabindex]="column.sortable && !disabled() ? 0 : null"
+                    (click)="toggleSort(column)"
+                    (keydown.enter)="toggleSort(column)"
+                    (keydown.space)="$event.preventDefault(); toggleSort(column)"
+                  >
+                    <span class="gtt__header-label">{{ column.header }}</span>
+
+                    @if (column.description || column.sortable) {
+                      <span class="gtt__header-accessories">
+                        @if (column.description) {
+                          <app-generic-table-header-info
+                            [description]="column.description"
+                            [label]="column.header"
+                          />
+                        }
+                        @if (column.sortable) {
+                          <span
+                            class="gtt__sort"
+                            [class.gtt__sort--asc]="sortDirection(column.key) === 'asc'"
+                            [class.gtt__sort--desc]="sortDirection(column.key) === 'desc'"
+                            [class.gtt__sort--active]="!!sortDirection(column.key)"
+                            aria-hidden="true"
+                          >
+                            <svg class="gtt__sort-icon" viewBox="0 0 10 5" focusable="false">
+                              <polygon points="0,0 10,0 5,5" />
+                            </svg>
+                          </span>
+                        }
+                      </span>
+                    }
+                  </div>
+                }
+
+                @if (hasRowActions()) {
+                  <div class="gtt__header-cell gtt__cell--actions" role="columnheader">
+                    <span class="gtt__sr-only">Actions</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div
+              class="gtt__rows"
+              role="rowgroup"
+              [class.gtt__rows--virtual]="virtualized()"
+              [class.gtt__rows--striped]="striped()"
+              [style.height.px]="virtualTotalHeight()"
+              [style.min-height.px]="reservedBodyHeight()"
+            >
+              @for (item of renderRows(); track trackRenderRow($index, item)) {
                 <div
-                  class="generic-table-tanstack__row"
-                  [class.generic-table-tanstack__row--even]="virtualRow.index % 2 === 0"
-                  [class.generic-table-tanstack__row--odd]="virtualRow.index % 2 === 1"
-                  [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
-                  [style.height.px]="virtualRow.size"
-                  [style.width.px]="gridLayoutWidthPx()"
-                  [style.min-width.px]="gridMinWidthPx()"
-                  [style.transform]="'translateY(' + virtualRow.start + 'px)'"
-                  [attr.role]="rowClickable() && !disabled() ? 'button' : null"
+                  class="gtt__row"
+                  role="row"
+                  [class.gtt__row--clickable]="rowClickable() && !disabled()"
+                  [attr.aria-rowindex]="item.index + 2"
                   [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
-                  (click)="onRowClick(rowModel.original)"
-                  (keydown.enter)="onRowClick(rowModel.original)"
-                  (keydown.space)="$event.preventDefault(); onRowClick(rowModel.original)"
+                  [style.height.px]="item.height"
+                  [style.transform]="item.offset === null ? null : 'translateY(' + item.offset + 'px)'"
+                  (click)="onRowClick(item.row)"
+                  (keydown)="onRowKeydown($event, item.row)"
                 >
-                  @for (col of displayedColumns(); track col.key) {
+                  @for (column of displayedColumns(); track column.key) {
                     <div
-                      class="generic-table-tanstack__cell"
-                      [style.min-width]="columnMinWidth(col)"
-                      [style.max-width]="columnMaxWidth(col, $last)"
-                      [style.text-align]="col.align ?? 'left'"
-                      [style.justify-content]="
-                        col.align === 'center'
-                          ? 'center'
-                          : col.align === 'right'
-                            ? 'flex-end'
-                            : 'flex-start'
-                      "
+                      class="gtt__cell"
+                      role="cell"
+                      [class.gtt__cell--center]="column.align === 'center'"
+                      [class.gtt__cell--right]="column.align === 'right'"
                     >
-                      @if (cellTemplates().get(col.key); as template) {
-                        <div class="generic-table-tanstack__cell-content">
+                      @if (cellTemplates().get(column.key); as template) {
+                        <div class="gtt__cell-content">
                           <ng-container
                             [ngTemplateOutlet]="template"
-                            [ngTemplateOutletContext]="cellContext(rowModel.original)"
+                            [ngTemplateOutletContext]="cellContext(item.row)"
                           />
                         </div>
-                      } @else if (col.cellComponent; as cellCmp) {
-                        <div class="generic-table-tanstack__cell-content">
+                      } @else if (column.cellComponent; as cellComponent) {
+                        <div class="gtt__cell-content">
                           <ng-container
-                            [ngComponentOutlet]="cellCmp"
-                            [ngComponentOutletInputs]="cellComponentInputs(col, rowModel.original)"
+                            [ngComponentOutlet]="cellComponent"
+                            [ngComponentOutletInputs]="cellComponentInputs(column, item.row)"
                           />
                         </div>
                       } @else {
-                        <app-generic-table-cell-value
-                          [column]="col"
-                          [row]="rowModel.original"
-                        />
+                        <app-generic-table-cell-value [column]="column" [row]="item.row" />
                       }
                     </div>
                   }
+
                   @if (hasRowActions()) {
                     <div
-                      class="generic-table-tanstack__cell generic-table-tanstack__cell--actions"
+                      class="gtt__cell gtt__cell--actions"
+                      role="cell"
                       (click)="$event.stopPropagation()"
                       (keydown)="$event.stopPropagation()"
                     >
                       <app-context-menu
                         [variant]="rowMenuVariant()"
-                        [items]="rowMenuItems(rowModel.original)"
-                        [details]="rowMenuDetails(rowModel.original)"
-                        [title]="rowMenuDetailsTitle(rowModel.original)"
+                        [items]="rowMenuItems(item.row)"
+                        [details]="rowMenuDetails(item.row)"
+                        [title]="rowMenuTitle(item.row)"
                         [disabled]="disabled()"
-                        [ariaLabel]="
-                          rowMenuVariant() === 'details' ? 'Row details' : 'Row actions'
-                        "
-                        (itemSelect)="onRowMenuSelect($event, rowModel.original)"
+                        [ariaLabel]="rowMenuVariant() === 'details' ? 'Row details' : 'Row actions'"
+                        (itemSelect)="onRowMenuSelect($event, item.row)"
                       />
                     </div>
                   }
                 </div>
               }
-            }
-          </div>
-        }
-      </div>
-    </div>
-  } @else {
-    <div
-      class="generic-table-tanstack__static-shell"
-      [class.generic-table-tanstack__static-shell--bounded]="isBoundedHeightMode()"
-      [style.height]="scrollBodyHeight()"
-      [style.--gtt-cols]="gridTemplateColumns()"
-      [style.--gtt-grid-min.px]="gridMinWidthPx()"
-    >
-      <div class="generic-table-tanstack__header-track" #headerTrack>
-        <div
-          class="generic-table-tanstack__header generic-table-tanstack__header--virtual"
-          [style.width.px]="gridLayoutWidthPx()"
-          [style.min-width.px]="gridMinWidthPx()"
-        >
-          @for (col of displayedColumns(); track col.key) {
-            <div
-              class="generic-table-tanstack__header-cell"
-              [class.generic-table-tanstack__header-cell--sortable]="col.sortable"
-              [class.generic-table-tanstack__header-cell--plain]="!col.sortable"
-              [class.generic-table-tanstack__header-cell--center]="col.align === 'center'"
-              [style.min-width]="columnMinWidth(col)"
-              [style.max-width]="columnMaxWidth(col, $last)"
-              [style.text-align]="col.align ?? 'left'"
-              [style.justify-content]="
-                col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start'
-              "
-              [attr.role]="col.sortable ? 'button' : null"
-              [attr.tabindex]="col.sortable && !disabled() ? 0 : null"
-              (click)="toggleSort(col)"
-              (keydown.enter)="toggleSort(col)"
-              (keydown.space)="$event.preventDefault(); toggleSort(col)"
-            >
-              <span class="generic-table-tanstack__header-cluster">
-                <span class="generic-table-tanstack__header-label">{{ col.header }}</span>
-                @if (col.description || col.sortable) {
-                  <span class="generic-table-tanstack__header-accessories">
-                    @if (col.description) {
-                      <app-generic-table-header-info
-                        [description]="col.description"
-                        [label]="col.header"
-                      />
-                    }
-                    @if (col.sortable) {
-                      <span
-                        class="generic-table-tanstack__sort"
-                        [class.generic-table-tanstack__sort--asc]="sortDirection(col.key) === 'asc'"
-                        [class.generic-table-tanstack__sort--desc]="sortDirection(col.key) === 'desc'"
-                        [class.generic-table-tanstack__sort--active]="!!sortDirection(col.key)"
-                        aria-hidden="true"
-                      >
-                        <svg
-                          class="generic-table-tanstack__sort-icon"
-                          viewBox="0 0 10 5"
-                          focusable="false"
-                        >
-                          <polygon points="0,0 10,0 5,5" />
-                        </svg>
-                      </span>
-                    }
-                  </span>
-                }
-              </span>
             </div>
-          }
-          @if (hasRowActions()) {
-            <div
-              class="generic-table-tanstack__header-cell generic-table-tanstack__header-cell--actions"
-              aria-hidden="true"
-            ></div>
+          </div>
+
+          @if (renderRows().length === 0) {
+            <div class="gtt__empty">
+              <p class="gtt__empty-text">{{ emptyText() }}</p>
+              @if (canClearFromEmptyState()) {
+                <button type="button" class="gtt-control" (click)="clearFilters()">
+                  Clear filters
+                </button>
+              }
+            </div>
           }
         </div>
       </div>
 
-      <div
-        #scrollElement
-        class="generic-table-tanstack__scroll generic-table-tanstack__scroll--static-body"
-        [class.generic-table-tanstack__scroll--scrolling]="isScrolling()"
-        [class.generic-table-tanstack__scroll--fill]="isFillMode()"
-        [class.generic-table-tanstack__scroll--bounded]="isBoundedHeightMode()"
-        [style.--gtt-cols]="gridTemplateColumns()"
-        [style.--gtt-grid-min.px]="gridMinWidthPx()"
-        (scroll)="onScroll($event)"
-      >
-        @if (bodyRows().length === 0) {
-          <div class="generic-table-tanstack__empty">
-            {{ tableEmptyMessage() }}
-          </div>
-        } @else {
-          <div
-            class="generic-table-tanstack__body"
-            [style.min-height.px]="paginatedBodyMinHeightPx()"
-          >
-            @for (rowModel of bodyRows(); track trackBodyRow($index, rowModel)) {
-              <div
-                class="generic-table-tanstack__row generic-table-tanstack__row--static"
-                [class.generic-table-tanstack__row--even]="$index % 2 === 0"
-                [class.generic-table-tanstack__row--odd]="$index % 2 === 1"
-                [class.generic-table-tanstack__row--clickable]="rowClickable() && !disabled()"
-                [style.width.px]="gridLayoutWidthPx()"
-                [style.min-width.px]="gridMinWidthPx()"
-                [attr.role]="rowClickable() && !disabled() ? 'button' : null"
-                [attr.tabindex]="rowClickable() && !disabled() ? 0 : null"
-                (click)="onRowClick(rowModel.original)"
-                (keydown.enter)="onRowClick(rowModel.original)"
-                (keydown.space)="$event.preventDefault(); onRowClick(rowModel.original)"
-              >
-                @for (col of displayedColumns(); track col.key) {
-                  <div
-                    class="generic-table-tanstack__cell"
-                    [style.min-width]="columnMinWidth(col)"
-                    [style.max-width]="columnMaxWidth(col, $last)"
-                    [style.text-align]="col.align ?? 'left'"
-                    [style.justify-content]="
-                      col.align === 'center'
-                        ? 'center'
-                        : col.align === 'right'
-                          ? 'flex-end'
-                          : 'flex-start'
-                    "
-                  >
-                    @if (cellTemplates().get(col.key); as template) {
-                      <div class="generic-table-tanstack__cell-content">
-                        <ng-container
-                          [ngTemplateOutlet]="template"
-                          [ngTemplateOutletContext]="cellContext(rowModel.original)"
-                        />
-                      </div>
-                    } @else if (col.cellComponent; as cellCmp) {
-                      <div class="generic-table-tanstack__cell-content">
-                        <ng-container
-                          [ngComponentOutlet]="cellCmp"
-                          [ngComponentOutletInputs]="cellComponentInputs(col, rowModel.original)"
-                        />
-                      </div>
-                    } @else {
-                      <app-generic-table-cell-value
-                        [column]="col"
-                        [row]="rowModel.original"
-                      />
-                    }
-                  </div>
-                }
-                @if (hasRowActions()) {
-                  <div
-                    class="generic-table-tanstack__cell generic-table-tanstack__cell--actions"
-                    (click)="$event.stopPropagation()"
-                    (keydown)="$event.stopPropagation()"
-                  >
-                    <app-context-menu
-                      [variant]="rowMenuVariant()"
-                      [items]="rowMenuItems(rowModel.original)"
-                      [details]="rowMenuDetails(rowModel.original)"
-                      [title]="rowMenuDetailsTitle(rowModel.original)"
-                      [disabled]="disabled()"
-                      [ariaLabel]="
-                        rowMenuVariant() === 'details' ? 'Row details' : 'Row actions'
-                      "
-                      (itemSelect)="onRowMenuSelect($event, rowModel.original)"
-                    />
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        }
-      </div>
-    </div>
-  }
-    </div>
-
       @if (showPaginator()) {
-        <mat-paginator
-          class="generic-table-tanstack__paginator"
-          [disabled]="disabled()"
+        <app-generic-table-paginator
           [length]="paginatorLength()"
           [pageIndex]="paginatorPageIndex()"
-          [pageSize]="pageSize()"
+          [pageSize]="activePageSize()"
           [pageSizeOptions]="pageSizeOptions()"
+          [disabled]="disabled()"
           (page)="onPageChange($event)"
         />
       }
+    </div>
   </div>
 
-  @if (hasFilterColumns() && filtersOverlayMode()) {
+  @if (useFiltersDialog()) {
     <dialog
       #filtersDialog
-      class="generic-table-tanstack__filters-dialog"
-      [id]="filtersDialogId"
-      [attr.aria-labelledby]="filtersDialogTitleId"
-      (click)="onFiltersDialogBackdrop($event)"
-      (close)="onFiltersDialogClose()"
+      class="gtt__dialog"
+      [attr.aria-labelledby]="dialogTitleId"
+      (click)="onDialogBackdropClick($event)"
+      (close)="filtersDialogOpen.set(false)"
     >
-      <div class="generic-table-tanstack__filters-dialog-frame">
-        <header class="generic-table-tanstack__filters-dialog-header">
-          <h2 class="generic-table-tanstack__filters-dialog-title" [id]="filtersDialogTitleId">
-            Filters
-          </h2>
+      <div class="gtt__dialog-frame">
+        <header class="gtt__dialog-header">
+          <h2 class="gtt__dialog-title" [id]="dialogTitleId">Filters</h2>
+
           <button
             type="button"
-            class="generic-table-tanstack__clear-filters"
-            [disabled]="disabled() || !hasDraftFilters()"
-            (click)="clearAllFilters('draft')"
+            class="gtt-control gtt__clear"
+            [disabled]="disabled() || !draftFilters.isActive()"
+            (click)="clearDraftFilters()"
           >
-            Clear filter
+            Clear
           </button>
+
           <button
             type="button"
-            class="generic-table-tanstack__filters-dialog-close"
+            class="gtt-control gtt-control--icon"
             aria-label="Close filters"
-            (click)="closeFiltersModal()"
+            (click)="closeFiltersDialog()"
           >
-            <svg [lucideIcon]="LucideX" [size]="16" aria-hidden="true"></svg>
+            <svg class="gtt-control__icon" [lucideIcon]="LucideX" [size]="16" aria-hidden="true"></svg>
           </button>
         </header>
 
-        <div class="generic-table-tanstack__filters-dialog-body">
-          <div class="generic-table-tanstack__filters-modal">
-            @if (searchableColumns().length > 0) {
-              <div class="generic-table-tanstack__filters-modal-fields">
-                @for (col of searchableColumns(); track col.key) {
-                  <div class="generic-table-tanstack__filter">
-                    <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
-                    <app-custom-input
-                      [label]="'Search on ' + col.header"
-                      appearance="outlined"
-                      type="search"
-                      [disabled]="disabled()"
-                      [placeholder]="'Search on ' + col.header"
-                      autocomplete="off"
-                      [spellcheck]="false"
-                      [ngModel]="columnFilterDisplayValue(col.key, 'draft')"
-                      (ngModelChange)="onColumnFilterValue(col.key, $event, 'draft')"
-                    />
-                  </div>
-                }
-              </div>
-            }
-
-            @if (draftToggleFacets().length > 0) {
-              <div class="generic-table-tanstack__filters-modal-toggles">
-                @for (facet of draftToggleFacets(); track facet.columnKey + '-' + facet.group.id) {
-                  <div class="generic-table-tanstack__toggle-group">
-                    <span class="generic-table-tanstack__filter-label">{{ facet.label }}</span>
-                    <div
-                      class="generic-table-tanstack__toggle-list"
-                      role="group"
-                      [attr.aria-label]="facet.label + ' values'"
-                    >
-                      @for (option of facet.options; track option.value) {
-                        <label
-                          class="generic-table-tanstack__toggle-option"
-                          [class.generic-table-tanstack__toggle-option--disabled]="
-                            disabled() ||
-                            (option.count === 0 &&
-                              !isToggleValueSelected(
-                                facet.columnKey,
-                                facet.group.id,
-                                option.value,
-                                'draft'
-                              ))
-                          "
-                          [attr.for]="
-                            toggleOptionId(
-                              facet.columnKey,
-                              facet.group.id,
-                              option.value,
-                              'draft'
-                            )
-                          "
-                        >
-                          <input
-                            class="generic-table-tanstack__toggle-checkbox"
-                            type="checkbox"
-                            [id]="
-                              toggleOptionId(
-                                facet.columnKey,
-                                facet.group.id,
-                                option.value,
-                                'draft'
-                              )
-                            "
-                            [checked]="
-                              isToggleValueSelected(
-                                facet.columnKey,
-                                facet.group.id,
-                                option.value,
-                                'draft'
-                              )
-                            "
-                            [disabled]="
-                              disabled() ||
-                              (option.count === 0 &&
-                                !isToggleValueSelected(
-                                  facet.columnKey,
-                                  facet.group.id,
-                                  option.value,
-                                  'draft'
-                                ))
-                            "
-                            (change)="
-                              onToggleFilterInput(
-                                facet.columnKey,
-                                facet.group.id,
-                                option.value,
-                                $event,
-                                'draft'
-                              )
-                            "
-                          />
-                          <span class="generic-table-tanstack__toggle-value">
-                            <span class="generic-table-tanstack__toggle-name">
-                              {{ toggleFilterName(option.value) }}
-                            </span>
-                            <span class="generic-table-tanstack__toggle-count">
-                              ({{ option.count }})
-                            </span>
-                          </span>
-                        </label>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-            }
-          </div>
+        <div class="gtt__dialog-body">
+          <app-generic-table-filters
+            layout="grid"
+            [columns]="filterColumns()"
+            [facets]="draftFacets()"
+            [values]="draftFilters"
+            [idPrefix]="instanceId + '-dialog'"
+            [disabled]="disabled()"
+            [showCounts]="showFacetCounts()"
+            [ui]="filterUi"
+          />
         </div>
 
-        <footer class="generic-table-tanstack__filters-dialog-footer">
+        <footer class="gtt__dialog-footer">
           <button
             type="button"
-            class="generic-table-tanstack__filters-apply"
+            class="gtt-control gtt__apply"
             [disabled]="disabled()"
-            (click)="applyFiltersModal()"
+            (click)="applyDraftFilters()"
           >
             Apply
           </button>
@@ -688,98 +315,4 @@
       </div>
     </dialog>
   }
-
-  <ng-template #filterFields let-source="source">
-    <div class="generic-table-tanstack__filters-inner">
-      @for (col of filterColumns(); track col.key) {
-        <div class="generic-table-tanstack__filter">
-          @if (col.searchable) {
-            <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
-            <app-custom-input
-              [label]="'Search on ' + col.header"
-              appearance="outlined"
-              type="search"
-              [disabled]="disabled()"
-              [placeholder]="'Search on ' + col.header"
-              autocomplete="off"
-              [spellcheck]="false"
-              [ngModel]="columnFilterDisplayValue(col.key, source)"
-              (ngModelChange)="onColumnFilterValue(col.key, $event, source)"
-            />
-          }
-
-          @for (facet of toggleFacetsForColumn(col.key, source); track facet.group.id) {
-            <div class="generic-table-tanstack__toggle-group">
-              <span class="generic-table-tanstack__filter-label">{{ facet.label }}</span>
-              <div
-                class="generic-table-tanstack__toggle-list"
-                role="group"
-                [attr.aria-label]="facet.label + ' values'"
-              >
-                @for (option of facet.options; track option.value) {
-                  <label
-                    class="generic-table-tanstack__toggle-option"
-                    [class.generic-table-tanstack__toggle-option--disabled]="
-                      disabled() ||
-                      (option.count === 0 &&
-                        !isToggleValueSelected(
-                          col.key,
-                          facet.group.id,
-                          option.value,
-                          source
-                        ))
-                    "
-                    [attr.for]="
-                      toggleOptionId(col.key, facet.group.id, option.value, source)
-                    "
-                  >
-                    <input
-                      class="generic-table-tanstack__toggle-checkbox"
-                      type="checkbox"
-                      [id]="toggleOptionId(col.key, facet.group.id, option.value, source)"
-                      [checked]="
-                        isToggleValueSelected(
-                          col.key,
-                          facet.group.id,
-                          option.value,
-                          source
-                        )
-                      "
-                      [disabled]="
-                        disabled() ||
-                        (option.count === 0 &&
-                          !isToggleValueSelected(
-                            col.key,
-                            facet.group.id,
-                            option.value,
-                            source
-                          ))
-                      "
-                      (change)="
-                        onToggleFilterInput(
-                          col.key,
-                          facet.group.id,
-                          option.value,
-                          $event,
-                          source
-                        )
-                      "
-                    />
-                    <span class="generic-table-tanstack__toggle-value">
-                      <span class="generic-table-tanstack__toggle-name">
-                        {{ toggleFilterName(option.value) }}
-                      </span>
-                      <span class="generic-table-tanstack__toggle-count">
-                        ({{ option.count }})
-                      </span>
-                    </span>
-                  </label>
-                }
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  </ng-template>
 </div>

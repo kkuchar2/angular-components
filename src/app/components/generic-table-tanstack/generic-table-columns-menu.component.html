@@ -1,0 +1,67 @@
+<button
+  #trigger
+  type="button"
+  class="gtt-control gtt-columns-menu__trigger"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  [disabled]="disabled()"
+  [attr.aria-expanded]="isOpen()"
+  [attr.aria-controls]="isOpen() ? menuId : null"
+  aria-haspopup="dialog"
+  (click)="toggleMenu()"
+>
+  <svg class="gtt-control__icon" [lucideIcon]="LucideColumns3" [size]="14" aria-hidden="true"></svg>
+  <span class="gtt-control__label">Columns</span>
+  <span class="gtt-columns-menu__count">{{ visibleCount() }}/{{ columns().length }}</span>
+  <svg
+    class="gtt-control__icon gtt-columns-menu__caret"
+    [class.gtt-columns-menu__caret--open]="isOpen()"
+    [lucideIcon]="LucideChevronDown"
+    [size]="14"
+    aria-hidden="true"
+  ></svg>
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="isOpen()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayViewportMargin]="8"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  (backdropClick)="close()"
+  (overlayKeydown)="onOverlayKeydown($event)"
+  (detach)="close()"
+>
+  <div class="gtt-columns-menu__panel" role="dialog" aria-label="Toggle columns" [id]="menuId">
+    <div class="gtt-columns-menu__list">
+      @for (column of columns(); track column.key) {
+        <label
+          class="gtt-columns-menu__option"
+          [class.gtt-columns-menu__option--disabled]="isOptionDisabled(column.key)"
+        >
+          <input
+            type="checkbox"
+            class="gtt-columns-menu__checkbox"
+            [checked]="isVisible(column.key)"
+            [disabled]="isOptionDisabled(column.key)"
+            (change)="onOptionChange(column.key, $event)"
+          />
+          <span class="gtt-columns-menu__option-label">{{ column.header }}</span>
+        </label>
+      }
+    </div>
+
+    <div class="gtt-columns-menu__footer">
+      <button
+        type="button"
+        class="gtt-columns-menu__reset"
+        [disabled]="allVisible()"
+        (click)="showAll.emit()"
+      >
+        Show all
+      </button>
+    </div>
+  </div>
+</ng-template>

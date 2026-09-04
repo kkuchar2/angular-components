@@ -1,21 +1,21 @@
 <section class="demo">
   <article class="demo__card">
-    <h2 class="demo__title">1. Paginated + column chips + cellComponent</h2>
+    <h2 class="demo__title">1. Paginated + toolbar + filters</h2>
     <p class="demo__hint">
-      Same features as Material <code>app-generic-table</code>: chip column toggle,
-      client-side pagination, sorting, export, built-in <code>uuid</code>/<code>date</code>
-      cells with optional copy, plus reusable <code>cellComponent</code> cells
-      (status badge). Pass <code>[rowActions]</code> for a rightmost ⋮ context menu
-      (<code>app-context-menu</code>). Projected templates still work for one-offs.
-      Columns with <code>searchable: true</code> open a text field in the left
-      filter rail; <code>toggleable: true</code> lists unique values as
-      checkboxes. Text and toggle filters combine with AND.
-      Try it: toggle a <code>Status</code> value and watch the <code>Department</code>
-      counts narrow. Options that drop to <code>(0)</code> stay visible but disabled,
-      so the filter list height doesn't jump. Use Hide to collapse the filter rail and
-      free table space; active filters keep applying (orange badge on Filters).
-      On narrow screens the rail is replaced by a Filters button that opens a compact
-      overlay — close discards unsaved changes, Apply commits them.
+      The toolbar has two fixed slots. <strong>Leading</strong> holds the filter
+      affordance (plus a Clear button once something is active); <strong>trailing</strong>
+      holds the tools — anything you project with <code>gttTool</code>, then
+      <code>Columns</code>, then <code>Export</code>. They are anchored to opposite edges,
+      so no combination of options can make them collide or swap places. Below
+      <code>34rem</code> the controls drop their labels rather than wrapping, so the
+      toolbar is exactly one row tall at every width.
+    </p>
+    <p class="demo__hint">
+      Columns with <code>searchable: true</code> get a text field in the filter rail;
+      <code>toggleable: true</code> lists their values as checkboxes. Text and toggles
+      combine with AND, multiple checks within a group with OR. Toggle a
+      <code>Status</code> and watch the <code>Department</code> counts narrow — options
+      that fall to <code>0</code> stay in place but disabled, so the list never jumps.
     </p>
 
     <app-generic-table-tanstack
@@ -30,7 +30,9 @@
       [trackBy]="trackById"
       (rowClick)="onRowClick($event)"
       (rowAction)="onRowAction($event)"
-    />
+    >
+      <button gttTool type="button" (click)="onReload()">Reload</button>
+    </app-generic-table-tanstack>
 
     @if (selectedRow(); as row) {
       <p class="demo__selection">Selected: {{ row.name }} ({{ row.email }})</p>
@@ -44,12 +46,50 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">2. Scrollable column filters</h2>
+    <h2 class="demo__title">2. Responsive behaviour — drag to resize</h2>
     <p class="demo__hint">
-      Searchable columns show a text field; toggleable columns list unique
-      values as checkboxes. With <code>filterMinHeight</code>, the rail keeps
-      its own height and scrolls when filters overflow. Text + toggles AND
-      together; multiple checks within a column OR.
+      Grab the bottom-right corner. Three things change, each at its own threshold and
+      none of them changing the table's height:
+    </p>
+    <ul class="demo__list">
+      <li>
+        <strong>720px</strong> — the filter rail costs more than it returns, so it is
+        replaced by a modal with draft state: closing discards, <code>Apply</code>
+        commits. The Filters button itself never moves.
+      </li>
+      <li>
+        <strong>34rem</strong> — toolbar controls and the paginator's
+        <em>Rows per page</em> label collapse to icons.
+      </li>
+      <li>
+        <strong>26rem / 17rem</strong> — the paginator drops its first/last buttons, then
+        its range label. It sheds controls instead of wrapping, so it stays
+        <code>2.75rem</code> tall throughout.
+      </li>
+    </ul>
+
+    <div class="demo__resizable">
+      <app-generic-table-tanstack
+        [columns]="filterColumns"
+        [data]="rows()"
+        [paginated]="true"
+        [pageSize]="5"
+        [showExport]="true"
+        [striped]="true"
+        [trackBy]="trackById"
+      />
+    </div>
+
+    <app-demo-code-block [snippet]="snippets.responsive" />
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">3. Filter rail height</h2>
+    <p class="demo__hint">
+      In <code>auto</code> height mode the rail is capped by <code>filterMaxHeight</code>
+      (default <code>26rem</code>) and scrolls past it, so a long filter list can't
+      stretch a short table. In <code>fill</code> and <code>parent</code> modes the rail
+      simply matches the table and the cap is ignored.
     </p>
 
     <app-generic-table-tanstack
@@ -57,8 +97,8 @@
       [data]="rows()"
       [paginated]="true"
       [pageSize]="5"
-      filterMinHeight="280px"
-      [showColumnToggle]="false"
+      filterMaxHeight="280px"
+      columnToggle="none"
       [trackBy]="trackById"
     />
 
@@ -66,11 +106,31 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">3. Row details menu</h2>
+    <h2 class="demo__title">4. Column visibility: menu vs. chips</h2>
     <p class="demo__hint">
-      Same ⋮ trigger with <code>rowMenuVariant="details"</code> — opens a larger
-      panel of read-only fields via <code>[rowDetails]</code> /
-      <code>[rowDetailsTitle]</code> instead of action items.
+      <code>columnToggle="menu"</code> (the default) keeps a constant footprint no matter
+      how many columns there are. <code>columnToggle="chips"</code> renders a full-width
+      band <em>below</em> the toolbar so the chips can wrap freely without ever pushing
+      the tools around. Neither mode lets you hide the last visible column.
+    </p>
+
+    <app-generic-table-tanstack
+      [columns]="columns"
+      [data]="catalogRows()"
+      columnToggle="chips"
+      [showExport]="true"
+      [trackBy]="trackById"
+    />
+
+    <app-demo-code-block [snippet]="snippets.columnToggle" />
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">5. Row details menu</h2>
+    <p class="demo__hint">
+      Same ⋮ trigger with <code>rowMenuVariant="details"</code> — opens a larger panel of
+      read-only fields via <code>[rowDetails]</code> / <code>[rowDetailsTitle]</code>
+      instead of action items.
     </p>
 
     <app-generic-table-tanstack
@@ -79,7 +139,7 @@
       rowMenuVariant="details"
       [rowDetails]="resolveRowDetails"
       [rowDetailsTitle]="resolveRowDetailsTitle"
-      [showColumnToggle]="false"
+      columnToggle="none"
       [trackBy]="trackById"
     />
 
@@ -87,19 +147,17 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">4. Cell component catalog</h2>
+    <h2 class="demo__title">6. Cell component catalog</h2>
     <p class="demo__hint">
       Reusable library cells via <code>ColumnDef.cellComponent</code>:
-      <code>PersonCellComponent</code>,
-      <code>MailtoCellComponent</code>,
-      <code>StatusBadgeCellComponent</code>, and
-      <code>BooleanCellComponent</code>.
+      <code>PersonCellComponent</code>, <code>MailtoCellComponent</code>,
+      <code>StatusBadgeCellComponent</code>, and <code>BooleanCellComponent</code>.
     </p>
 
     <app-generic-table-tanstack
       [columns]="catalogColumns"
       [data]="catalogRows()"
-      [showColumnToggle]="false"
+      columnToggle="none"
       [trackBy]="trackById"
     />
 
@@ -107,16 +165,16 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">5. Animated cells</h2>
+    <h2 class="demo__title">7. Animated cells</h2>
     <p class="demo__hint">
-      Motion-friendly cells (respect <code>prefers-reduced-motion</code>):
-      pulsing presence, grow-in progress bars, and trend deltas.
+      Motion-friendly cells (respect <code>prefers-reduced-motion</code>): pulsing
+      presence, grow-in progress bars, and trend deltas.
     </p>
 
     <app-generic-table-tanstack
       [columns]="animatedColumns"
       [data]="animatedRows()"
-      [showColumnToggle]="false"
+      columnToggle="none"
       [trackBy]="trackById"
     />
 
@@ -124,9 +182,12 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">6. Server-side pagination</h2>
+    <h2 class="demo__title">8. Server-side pagination</h2>
     <p class="demo__hint">
-      Parent owns the page slice. Export waits for <code>exportRequest.complete()</code>.
+      The parent owns the page slice. With <code>serverSide</code> the table also stops
+      sorting locally — it emits <code>sortChange</code> and leaves the row order alone —
+      and export waits for <code>exportRequest.complete()</code>. Filter edits are
+      published through <code>filtersChange</code>.
     </p>
 
     <app-generic-table-tanstack
@@ -137,7 +198,7 @@
       [totalCount]="serverSideTotal"
       [pageIndex]="serverSidePageIndex()"
       [pageSize]="serverSidePageSize()"
-      [showColumnToggle]="false"
+      columnToggle="none"
       [showExport]="true"
       exportFileName="server-users.csv"
       [trackBy]="trackById"
@@ -149,10 +210,11 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">7. Virtual scroll (10 000 rows)</h2>
+    <h2 class="demo__title">9. Virtual scroll (10 000 rows)</h2>
     <p class="demo__hint">
-      TanStack Virtual — person + status cells stay cheap enough for large lists.
-      Mutually exclusive with pagination.
+      TanStack Virtual, with the header stickied inside the same scroll container as the
+      rows — so it tracks horizontal scrolling for free. Mutually exclusive with
+      pagination.
     </p>
 
     <app-generic-table-tanstack
@@ -161,7 +223,7 @@
       [virtualized]="true"
       [rowHeight]="40"
       height="400px"
-      [showColumnToggle]="false"
+      columnToggle="none"
       [trackBy]="trackById"
     />
 
@@ -169,49 +231,107 @@
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">8. Empty state</h2>
-    <p class="demo__hint">Non-virtual table with no rows.</p>
+    <h2 class="demo__title">10. Horizontal overflow</h2>
+    <p class="demo__hint">
+      Column tracks resolve to <code>minmax(minWidth, width)</code>, and the grid is
+      <code>min-width: min-content</code> — the sum of those floors. Wider than the
+      container and it scrolls sideways under a pinned header; narrower and the flexible
+      columns absorb the slack. No width measurement in JavaScript.
+    </p>
+
+    <div class="demo__narrow">
+      <app-generic-table-tanstack
+        [columns]="columns"
+        [data]="catalogRows()"
+        columnToggle="none"
+        [trackBy]="trackById"
+      />
+    </div>
+  </article>
+
+  <article class="demo__card">
+    <h2 class="demo__title">11. Empty states</h2>
+    <p class="demo__hint">
+      No rows at all shows <code>emptyMessage</code>. Rows filtered down to nothing shows
+      a different message plus a one-click escape hatch.
+    </p>
 
     <app-generic-table-tanstack
       [columns]="columns"
       [data]="emptyRows()"
-      [showColumnToggle]="false"
+      columnToggle="none"
       emptyMessage="No team members found."
+    />
+
+    <app-generic-table-tanstack
+      [columns]="filterColumns"
+      [data]="catalogRows()"
+      columnToggle="none"
+      [trackBy]="trackById"
     />
   </article>
 
   <article class="demo__card">
-    <h2 class="demo__title">9. Parent height mode</h2>
+    <h2 class="demo__title">12. Height modes</h2>
     <p class="demo__hint">
-      <code>heightMode="parent"</code> fills a <code>flex: 1</code> parent, even
-      when rows are fewer than the space. <code>height</code> is a floor;
-      <code>maxHeight</code> is a cap.
+      In <code>auto</code>, <code>height</code>/<code>minHeight</code>/<code>maxHeight</code>
+      size the scroll shell (header + rows). In <code>fill</code> and <code>parent</code>
+      the parent's box governs instead: <code>height</code> becomes the whole table's
+      floor and <code>maxHeight</code> its cap.
     </p>
 
     <div class="demo__parent-row">
       <div class="demo__parent-frame">
-        <span class="demo__parent-label">flex: 1 parent (40rem), maxHeight="360px"</span>
+        <span class="demo__parent-label">
+          parent mode · 40rem frame · maxHeight="360px"
+        </span>
         <div class="demo__parent-slot">
           <app-generic-table-tanstack
             heightMode="parent"
             maxHeight="360px"
             [columns]="scrollColumns"
             [data]="catalogRows()"
-            [showColumnToggle]="false"
+            columnToggle="none"
             [trackBy]="trackById"
           />
         </div>
       </div>
 
       <div class="demo__parent-frame demo__parent-frame--short">
-        <span class="demo__parent-label">flex: 1 parent (8rem), height="240px"</span>
+        <span class="demo__parent-label">parent mode · 8rem frame · height="240px"</span>
         <div class="demo__parent-slot">
           <app-generic-table-tanstack
             heightMode="parent"
             height="240px"
             [columns]="scrollColumns"
             [data]="catalogRows()"
-            [showColumnToggle]="false"
+            columnToggle="none"
+            [trackBy]="trackById"
+          />
+        </div>
+      </div>
+
+      <div class="demo__parent-frame">
+        <span class="demo__parent-label">fill mode · 40rem frame · 3 rows</span>
+        <div class="demo__parent-slot">
+          <app-generic-table-tanstack
+            heightMode="fill"
+            [columns]="scrollColumns"
+            [data]="shortRows()"
+            columnToggle="none"
+            [trackBy]="trackById"
+          />
+        </div>
+      </div>
+
+      <div class="demo__parent-frame demo__parent-frame--short">
+        <span class="demo__parent-label">fill mode · 8rem frame · 8 rows</span>
+        <div class="demo__parent-slot">
+          <app-generic-table-tanstack
+            heightMode="fill"
+            [columns]="scrollColumns"
+            [data]="catalogRows()"
+            columnToggle="none"
             [trackBy]="trackById"
           />
         </div>

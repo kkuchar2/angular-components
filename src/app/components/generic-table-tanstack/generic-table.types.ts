@@ -18,11 +18,12 @@ export interface GenericTableRowActionEvent<T = unknown> {
   row: T;
 }
 
-export interface GenericTableCellComponentInputs<T = unknown> {
+/** A type alias, not an interface, so it stays assignable to `ngComponentOutletInputs`. */
+export type GenericTableCellComponentInputs<T = unknown> = {
   value: unknown;
   row: T;
   column: ColumnDef<T>;
-}
+};
 
 export interface ColumnToggleGroup<T = unknown> {
   id: string;
@@ -33,6 +34,8 @@ export interface ColumnToggleGroup<T = unknown> {
 export interface ColumnToggleConfig<T = unknown> {
   groups: ColumnToggleGroup<T>[];
 }
+
+export type GenericTableAlign = 'left' | 'center' | 'right';
 
 export interface ColumnDef<T = unknown> {
   key: string;
@@ -51,10 +54,17 @@ export interface ColumnDef<T = unknown> {
   visible?: boolean;
   width?: string;
   minWidth?: string;
-  align?: 'left' | 'center' | 'right';
+  align?: GenericTableAlign;
 }
 
+/**
+ * `auto`   – the table is as tall as its rows, capped by `maxHeight`.
+ * `fill`   – the table shrinks to its rows but never exceeds the space the parent leaves it.
+ * `parent` – the table always claims the parent's available space, even with few rows.
+ */
 export type GenericTableHeightMode = 'auto' | 'fill' | 'parent';
+
+export type GenericTableColumnToggle = 'menu' | 'chips' | 'none';
 
 export interface GenericTableCellContext<T = unknown> {
   $implicit: T;
@@ -66,4 +76,19 @@ export interface GenericTableExportRequest<T = unknown> {
   complete: (rows: readonly T[]) => void;
 }
 
-export const GENERIC_TABLE_ROW_ACTIONS_TRACK = '48px';
+export interface GenericTableSort {
+  active: string;
+  direction: 'asc' | 'desc' | '';
+}
+
+export interface GenericTablePageEvent {
+  pageIndex: number;
+  previousPageIndex: number;
+  pageSize: number;
+  length: number;
+}
+
+export interface GenericTableFilterChange {
+  text: Readonly<Record<string, string>>;
+  toggles: Readonly<Record<string, readonly string[]>>;
+}

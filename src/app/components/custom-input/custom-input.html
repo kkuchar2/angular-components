@@ -4,6 +4,7 @@
   [class.focused]="isFocused()"
   [class.has-error]="!!error()"
   [class.appearance-outlined]="appearance() === 'outlined'"
+  [class.has-floating-label]="hasFloatingLabel()"
   [class.label-floated]="isLabelFloated()"
 >
   @if (label() && appearance() !== 'outlined') {
@@ -11,7 +12,7 @@
   }
 
   <div class="custom-input__field">
-    @if (label() && appearance() === 'outlined') {
+    @if (hasFloatingLabel()) {
       <label class="custom-input__label custom-input__label--floating" [attr.for]="controlId">{{ label() }}</label>
     }
 
@@ -31,6 +32,7 @@
       [value]="value()"
       [attr.autocomplete]="autocomplete()"
       [attr.spellcheck]="spellcheck()"
+      [attr.aria-label]="ariaLabel() || null"
       [attr.aria-invalid]="error() ? true : null"
       [attr.aria-describedby]="describedBy()"
       (input)="onInput($event)"

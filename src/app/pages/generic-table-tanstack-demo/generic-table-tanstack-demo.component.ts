@@ -1,5 +1,4 @@
 import { Component, signal } from '@angular/core';
-import { PageEvent } from '@angular/material/paginator';
 import { LucideCopy, LucidePencil, LucideTrash2 } from '@lucide/angular';
 
 import {
@@ -7,9 +6,11 @@ import {
   ColumnDef,
   ContextMenuDetailField,
   GenericTableExportRequest,
+  GenericTablePageEvent,
   GenericTableRowAction,
   GenericTableRowActionEvent,
   GenericTableTanstackComponent,
+  GenericTableToolDirective,
   MailtoCellComponent,
   PersonCellComponent,
   PresencePulseCellComponent,
@@ -38,7 +39,11 @@ interface DemoUser {
 
 @Component({
   selector: 'app-generic-table-tanstack-demo',
-  imports: [GenericTableTanstackComponent, DemoCodeBlockComponent],
+  imports: [
+    GenericTableTanstackComponent,
+    GenericTableToolDirective,
+    DemoCodeBlockComponent,
+  ],
   templateUrl: './generic-table-tanstack-demo.component.html',
   styleUrl: './generic-table-tanstack-demo.component.scss',
 })
@@ -237,6 +242,7 @@ export class GenericTableTanstackDemoComponent {
 
   readonly rows = signal<DemoUser[]>(this.buildVirtualRows(42));
   readonly catalogRows = signal<DemoUser[]>(this.buildVirtualRows(8));
+  readonly shortRows = signal<DemoUser[]>(this.buildVirtualRows(3));
   readonly animatedRows = signal<DemoUser[]>(this.buildVirtualRows(8));
   readonly virtualRows = signal<DemoUser[]>(this.buildVirtualRows(10_000));
   readonly emptyRows = signal<DemoUser[]>([]);
@@ -301,7 +307,12 @@ export class GenericTableTanstackDemoComponent {
     this.lastRowAction.set(`${event.actionId} → ${event.row.name}`);
   }
 
-  onServerSidePageChange(event: PageEvent): void {
+  onReload(): void {
+    this.rows.set(this.buildVirtualRows(42));
+    this.lastRowAction.set('Reloaded 42 rows');
+  }
+
+  onServerSidePageChange(event: GenericTablePageEvent): void {
     this.loadServerSidePage(event.pageIndex, event.pageSize);
   }
 
@@ -323,7 +334,12 @@ export class GenericTableTanstackDemoComponent {
           [trackBy]="trackById"
           (rowClick)="onRowClick($event)"
           (rowAction)="onRowAction($event)"
-        />
+        >
+          <!-- Projected into the toolbar's trailing slot, before Columns and Export.
+               The directive applies the toolbar's button chrome; opt out with
+               [gttToolChrome]="false". -->
+          <button gttTool type="button" (click)="onReload()">Reload</button>
+        </app-generic-table-tanstack>
       `,
       ts: code`
         import { signal } from '@angular/core';
@@ -435,6 +451,56 @@ export class GenericTableTanstackDemoComponent {
       `,
       cells: tanstackCellTabs('StatusBadge'),
     },
+    responsive: {
+      html: code`
+        <!-- Everything below is driven by the host's own width, not the viewport,
+             so a table in a narrow panel adapts even on a wide screen. -->
+        <div style="resize: horizontal; overflow: hidden; min-width: 16rem">
+          <app-generic-table-tanstack
+            [columns]="columns"
+            [data]="rows()"
+            [paginated]="true"
+            [pageSize]="5"
+            [showExport]="true"
+            [striped]="true"
+            [trackBy]="trackById"
+          />
+        </div>
+      `,
+      ts: code`
+        // Breakpoints, all measured against the component's own box:
+        //
+        //   720px    filter rail -> modal with draft state (Apply / discard)
+        //   34rem    toolbar controls and "Rows per page" collapse to icons
+        //   26rem    paginator drops its first/last buttons
+        //   17rem    paginator drops its range label
+        //
+        // Only the first is a behaviour change and lives in TypeScript. The rest are
+        // CSS container queries, so they cost nothing at runtime.
+      `,
+    },
+    columnToggle: {
+      html: code`
+        <!-- "menu" (default): constant footprint, scales to any column count. -->
+        <app-generic-table-tanstack columnToggle="menu" [columns]="columns" [data]="rows()" />
+
+        <!-- "chips": full-width band below the toolbar, free to wrap. -->
+        <app-generic-table-tanstack columnToggle="chips" [columns]="columns" [data]="rows()" />
+
+        <!-- "none": no column control at all. -->
+        <app-generic-table-tanstack columnToggle="none" [columns]="columns" [data]="rows()" />
+      `,
+      ts: code`
+        import { GenericTableColumnToggle } from './components/generic-table-tanstack';
+
+        // Columns opt out individually with hideable: false — those never appear in the
+        // menu or the chip band, and always render.
+        readonly columns: ColumnDef<DemoUser>[] = [
+          { key: 'name', header: 'Name', hideable: false },
+          { key: 'email', header: 'Email' },
+        ];
+      `,
+    },
     columnFilters: {
       html: code`
         <app-generic-table-tanstack
@@ -442,7 +508,8 @@ export class GenericTableTanstackDemoComponent {
           [data]="rows()"
           [paginated]="true"
           [pageSize]="5"
-          filterMinHeight="280px"
+          filterMaxHeight="280px"
+          columnToggle="none"
           [trackBy]="trackById"
         />
       `,
@@ -544,7 +611,7 @@ export class GenericTableTanstackDemoComponent {
         <app-generic-table-tanstack
           [columns]="columns"
           [data]="rows()"
-          [showColumnToggle]="false"
+          columnToggle="none"
           [trackBy]="trackById"
         />
       `,
@@ -607,7 +674,7 @@ export class GenericTableTanstackDemoComponent {
         <app-generic-table-tanstack
           [columns]="columns"
           [data]="rows()"
-          [showColumnToggle]="false"
+          columnToggle="none"
           [trackBy]="trackById"
         />
       `,
@@ -691,15 +758,17 @@ export class GenericTableTanstackDemoComponent {
       `,
       ts: code`
         import { signal } from '@angular/core';
-        import { PageEvent } from '@angular/material/paginator';
-        import { GenericTableExportRequest } from './components/generic-table-tanstack';
+        import {
+          GenericTableExportRequest,
+          GenericTablePageEvent,
+        } from './components/generic-table-tanstack';
 
         readonly totalCount = 87;
         readonly pageIndex = signal(0);
         readonly pageSize = signal(5);
         readonly pageRows = signal<DemoUser[]>([]);
 
-        onPageChange(event: PageEvent): void {
+        onPageChange(event: GenericTablePageEvent): void {
           this.pageIndex.set(event.pageIndex);
           this.pageSize.set(event.pageSize);
           this.loadPage(event.pageIndex, event.pageSize);

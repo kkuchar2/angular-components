@@ -1,0 +1,115 @@
+@use './generic-table-controls' as controls;
+
+@include controls.control;
+
+// Fixed height at every width: the paginator sheds controls instead of wrapping, so a
+// bounded-height table never reflows when its container narrows.
+:host {
+  container-type: inline-size;
+  container-name: gtt-paginator;
+
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--gtt-space-sm);
+  height: var(--gtt-paginator-height);
+  padding-inline: var(--gtt-cell-padding-x) 0;
+  overflow: hidden;
+  font-size: 0.8125rem;
+  color: var(--gtt-text-muted);
+}
+
+.gtt-paginator__size {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gtt-paginator__size-label {
+  white-space: nowrap;
+}
+
+.gtt-paginator__select {
+  box-sizing: border-box;
+  height: var(--gtt-control-height);
+  padding: 0 1.5rem 0 0.5rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gtt-text);
+  cursor: pointer;
+  background-color: transparent;
+  background-image: linear-gradient(45deg, transparent 50%, currentcolor 50%),
+    linear-gradient(135deg, currentcolor 50%, transparent 50%);
+  background-position:
+    right 0.75rem center,
+    right 0.5rem center;
+  background-size:
+    0.25rem 0.25rem,
+    0.25rem 0.25rem;
+  background-repeat: no-repeat;
+  border: 1px solid var(--gtt-border);
+  border-radius: var(--gtt-radius-sm);
+  appearance: none;
+}
+
+.gtt-paginator__select:hover:not(:disabled) {
+  background-color: var(--gtt-row-hover-bg);
+}
+
+.gtt-paginator__select:focus-visible {
+  outline: 2px solid var(--gtt-accent);
+  outline-offset: 1px;
+}
+
+.gtt-paginator__select:disabled {
+  cursor: not-allowed;
+  opacity: var(--gtt-disabled-opacity);
+}
+
+.gtt-paginator__select option {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.gtt-paginator__range {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.gtt-paginator__nav {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+@container gtt-paginator (max-width: 34rem) {
+  .gtt-paginator__size-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@container gtt-paginator (max-width: 26rem) {
+  .gtt-paginator__edge {
+    display: none;
+  }
+}
+
+@container gtt-paginator (max-width: 17rem) {
+  .gtt-paginator__range {
+    display: none;
+  }
+}

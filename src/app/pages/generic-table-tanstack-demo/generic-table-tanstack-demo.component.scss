@@ -1,7 +1,7 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 .demo__card {
@@ -18,14 +18,42 @@
 
 .demo__hint {
   margin: 0;
+  max-width: 62ch;
   color: var(--color-text-muted, rgb(0 0 0 / 60%));
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+.demo__list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  max-width: 62ch;
+  color: var(--color-text-muted, rgb(0 0 0 / 60%));
+  line-height: 1.55;
+
+  li + li {
+    margin-top: 0.375rem;
+  }
 }
 
 .demo__selection {
   margin: 0;
   font-size: 0.875rem;
   color: var(--color-text, rgb(0 0 0 / 87%));
+}
+
+.demo__resizable {
+  resize: horizontal;
+  overflow: hidden;
+  min-width: 16rem;
+  max-width: 100%;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px dashed var(--color-border, #c8c8c8);
+  border-radius: var(--radius-md, 8px);
+}
+
+.demo__narrow {
+  width: min(30rem, 100%);
 }
 
 .demo__parent-row {
@@ -46,7 +74,6 @@
 
 .demo__parent-frame--short {
   height: 8rem;
-  overflow: visible;
 }
 
 .demo__parent-label {
@@ -63,6 +90,7 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  padding: 0.5rem;
 }
 
 @media (max-width: 768px) {

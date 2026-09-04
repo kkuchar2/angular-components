@@ -1,0 +1,127 @@
+@for (section of sections(); track section.column.key) {
+  <section class="gt-filters__section">
+    <h3 class="gt-filters__heading">
+      @if (section.collapsible) {
+        <button
+          type="button"
+          class="gt-filters__toggle gt-filters__toggle--section"
+          [attr.aria-expanded]="!isCollapsed(section.collapseKey)"
+          [attr.aria-controls]="bodyId(section.collapseKey)"
+          (click)="onToggleCollapsed(section.collapseKey)"
+        >
+          <svg
+            class="gt-filters__chevron"
+            [class.gt-filters__chevron--collapsed]="isCollapsed(section.collapseKey)"
+            [lucideIcon]="LucideChevronDown"
+            [size]="14"
+            aria-hidden="true"
+          ></svg>
+          <span class="gt-filters__toggle-name">{{ section.heading }}</span>
+          @if (sectionActiveCount(section); as count) {
+            <span class="gt-filters__count">{{ count }}</span>
+          }
+        </button>
+      } @else {
+        <span class="gt-filters__label">{{ section.heading }}</span>
+      }
+    </h3>
+
+    <div
+      class="gt-filters__body"
+      [class.gt-filters__body--flush]="!section.collapsible"
+      [id]="bodyId(section.collapseKey)"
+      [hidden]="section.collapsible && isCollapsed(section.collapseKey)"
+    >
+      @if (section.searchable) {
+        <app-custom-input
+          appearance="outlined"
+          type="search"
+          height="3rem"
+          placeholder="Search…"
+          autocomplete="off"
+          [label]="section.searchLabel"
+          [spellcheck]="false"
+          [clearable]="true"
+          [disabled]="disabled()"
+          [ngModel]="values().textValue(section.column.key)"
+          (ngModelChange)="onSearch(section.column.key, $event)"
+        />
+      }
+
+      @for (group of section.groups; track group.facet.key) {
+        <div class="gt-filters__group">
+          @if (group.heading) {
+            <button
+              type="button"
+              class="gt-filters__toggle gt-filters__toggle--group"
+              [attr.aria-expanded]="!isCollapsed(group.facet.key)"
+              [attr.aria-controls]="bodyId(group.facet.key)"
+              (click)="onToggleCollapsed(group.facet.key)"
+            >
+              <svg
+                class="gt-filters__chevron"
+                [class.gt-filters__chevron--collapsed]="isCollapsed(group.facet.key)"
+                [lucideIcon]="LucideChevronDown"
+                [size]="14"
+                aria-hidden="true"
+              ></svg>
+              <span class="gt-filters__toggle-name">{{ group.heading }}</span>
+              @if (selectedCount(group.facet.key); as count) {
+                <span class="gt-filters__count">{{ count }}</span>
+              }
+            </button>
+          }
+
+          <div
+            class="gt-filters__options"
+            role="group"
+            [id]="bodyId(group.facet.key)"
+            [hidden]="group.heading !== null && isCollapsed(group.facet.key)"
+            [attr.aria-label]="group.facet.label"
+          >
+            @for (option of visibleOptions(group.facet); track option.value) {
+              <label
+                class="gt-filters__option"
+                [class.gt-filters__option--disabled]="
+                  isOptionDisabled(group.facet.key, option.value, option.count)
+                "
+                [attr.for]="optionId(group.facet.key, option.value)"
+              >
+                <input
+                  class="gt-filters__checkbox"
+                  type="checkbox"
+                  [id]="optionId(group.facet.key, option.value)"
+                  [checked]="values().isSelected(group.facet.key, option.value)"
+                  [disabled]="isOptionDisabled(group.facet.key, option.value, option.count)"
+                  (change)="onToggle(group.facet.key, option.value, $event)"
+                />
+                <span class="gt-filters__option-name">{{ optionLabel(option.value) }}</span>
+                @if (showCounts()) {
+                  <span class="gt-filters__option-count">{{ option.count }}</span>
+                }
+              </label>
+            }
+
+            @if (hiddenOptionCount(group.facet); as hidden) {
+              <button
+                type="button"
+                class="gt-filters__more"
+                (click)="onToggleExpanded(group.facet.key)"
+              >
+                Show {{ hidden }} more
+              </button>
+            } @else if (isExpanded(group.facet.key)) {
+              <button
+                type="button"
+                class="gt-filters__more"
+                (click)="onToggleExpanded(group.facet.key)"
+              >
+                Show less
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+}

@@ -1,456 +1,181 @@
+@use './generic-table-controls' as controls;
+
+@include controls.control;
+
+// Height model, entirely in CSS:
+//   auto   – the shell is as tall as its rows, capped by `maxHeight` (default 30rem).
+//   fill   – the host shrinks to its rows but never outgrows the space the parent leaves.
+//   parent – the host claims the parent's space and the shell stretches into it.
+// Every level of the chain carries `min-height: 0` so the scroll container, not the
+// document, is what actually scrolls.
 :host {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
 }
 
-:host(.generic-table-tanstack-host--fill) {
+:host(.gtt-host--fill) {
   flex: 0 1 auto;
-  min-height: 0;
-  height: auto;
-  max-height: var(--gtt-bounded-max-height, 100%);
+  max-height: 100%;
   overflow: hidden;
 }
 
-:host(.generic-table-tanstack-host--parent) {
+:host(.gtt-host--parent) {
   flex: 1 1 0;
   align-self: stretch;
-  width: 100%;
   height: 100%;
-  min-height: var(--gtt-parent-min-height, 0px);
-  max-height: var(--gtt-bounded-max-height, none);
   overflow: hidden;
 }
 
-:host(.generic-table-tanstack-host--virtualized.generic-table-tanstack-host--fill),
-:host(.generic-table-tanstack-host--virtualized.generic-table-tanstack-host--parent) {
-  flex: 1 1 0;
-  height: 100%;
-  min-height: var(--gtt-parent-min-height, 0px);
-}
+.gtt {
+  --gtt-space-xs: 0.25rem;
+  --gtt-space-sm: 0.5rem;
+  --gtt-space-md: 0.75rem;
+  --gtt-space-lg: 1.25rem;
 
-.generic-table-tanstack {
-  --gtt-max-height: 480px;
-  --gtt-gap: var(--spacing-md, 1rem);
-  --gtt-toggle-gap: var(--spacing-sm, 0.5rem);
-  --gtt-border: var(--color-border, #e0e0e0);
-  --gtt-radius: var(--radius-md, 8px);
-  --gtt-header-bg: transparent;
-  --gtt-header-text: var(--color-text, rgb(0 0 0 / 87%));
-  --gtt-header-accent: #ff6200;
-  --gtt-row-bg: transparent;
-  --gtt-row-hover-bg: var(--color-row-hover, #f2f2f2);
-  --gtt-row-divider: var(--color-border, #e0e0e0);
-  --gtt-empty-color: var(--color-text-muted, rgb(0 0 0 / 60%));
-  --gtt-empty-padding: var(--spacing-2xl, 3rem);
-  --gtt-disabled-opacity: 0.55;
   --gtt-row-height: 40px;
-  --gtt-font-size: 14px;
-  --gtt-body-text: var(--color-text, rgb(0 0 0 / 87%));
+  --gtt-control-height: 2rem;
+  --gtt-paginator-height: 2.75rem;
+  --gtt-cell-padding-x: 1rem;
+  --gtt-actions-width: 3rem;
+  --gtt-column-min-width: 4rem;
   --gtt-filter-width: 15.5rem;
+
+  --gtt-radius-sm: var(--radius-sm, 4px);
+  --gtt-radius-md: var(--radius-md, 8px);
+  --gtt-disabled-opacity: 0.55;
+
+  --gtt-accent: #ff6200;
   --gtt-surface: var(--color-surface, #ffffff);
-  --gtt-apply-text: #fff;
+  --gtt-border: var(--color-border, #e0e4ef);
+  --gtt-text: var(--color-text, rgb(0 0 0 / 87%));
+  --gtt-text-muted: var(--color-text-muted, rgb(0 0 0 / 60%));
+  --gtt-header-bg: var(--gtt-surface);
+  --gtt-row-hover-bg: var(--color-row-hover, #f2f2f2);
+  --gtt-row-alt-bg: var(--color-row-even, #fafbfc);
+  --gtt-row-divider: var(--color-border, #e0e4ef);
+
+  container-type: inline-size;
+  container-name: gtt;
 
   display: flex;
   flex-direction: column;
-  gap: var(--gtt-gap);
-  font-size: var(--gtt-font-size);
-  color: var(--gtt-body-text);
-  container-type: inline-size;
-  container-name: gtt;
+  gap: var(--gtt-space-md);
+  min-width: 0;
+  min-height: 0;
+  font-size: 14px;
+  color: var(--gtt-text);
 }
 
-:host-context(html[data-theme='dark']) .generic-table-tanstack {
-  --gtt-header-bg: transparent;
-  --gtt-header-text: #c4c4c4;
-  --gtt-header-accent: #ff6200;
-  --gtt-row-bg: transparent;
-  --gtt-row-hover-bg: #323232;
-  --gtt-border: #3a3a3a;
-  --gtt-row-divider: rgb(255 255 255 / 5%);
-  --gtt-body-text: #d0d0d0;
-  --gtt-empty-color: #8e8e8e;
+:host-context(html[data-theme='dark']) .gtt {
   --gtt-surface: #2a2a2a;
+  --gtt-border: #3a3a3a;
+  --gtt-text: #d0d0d0;
+  --gtt-text-muted: #8e8e8e;
+  --gtt-row-hover-bg: #323232;
+  --gtt-row-alt-bg: #262626;
+  --gtt-row-divider: rgb(255 255 255 / 8%);
 }
 
-.generic-table-tanstack--disabled {
+.gtt--disabled {
   opacity: var(--gtt-disabled-opacity);
   pointer-events: none;
   user-select: none;
 }
 
-.generic-table-tanstack__toolbar {
+// ── Toolbar ────────────────────────────────────────────────────────────────
+// Two slots anchored to opposite edges with flexible space between them, so the
+// filter affordance and the tools can never collide or swap places. Both slots keep
+// a single line at every width — controls drop their labels instead of wrapping.
+
+.gtt__toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  gap: var(--gtt-toggle-gap);
-}
-
-.generic-table-tanstack__toolbar--overlay {
-  align-items: stretch;
-}
-
-.generic-table-tanstack__filters-open {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.875rem;
-  font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--gtt-header-text);
-  cursor: pointer;
-  touch-action: manipulation;
-  background: transparent;
-  border: 1px solid var(--gtt-border);
-  border-radius: var(--radius-sm, 4px);
-}
-
-.generic-table-tanstack__filters-open:hover:not(:disabled) {
-  background: var(--gtt-row-hover-bg);
-}
-
-.generic-table-tanstack__filters-open:disabled {
-  cursor: not-allowed;
-  opacity: var(--gtt-disabled-opacity);
-}
-
-.generic-table-tanstack__filters-open:focus-visible {
-  outline: 2px solid var(--gtt-header-accent);
-  outline-offset: 2px;
-}
-
-.generic-table-tanstack__filters-open .generic-table-tanstack__filters-toggle-badge {
-  top: 0.35rem;
-  right: 0.35rem;
-}
-
-.generic-table-tanstack__filters-dialog {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  padding: 0.75rem;
-  overflow: hidden;
-  color: var(--gtt-body-text);
-  background: transparent;
-  border: none;
-}
-
-.generic-table-tanstack__filters-dialog[open] {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.generic-table-tanstack__filters-dialog:focus,
-.generic-table-tanstack__filters-dialog:focus-visible {
-  outline: none;
-}
-
-.generic-table-tanstack__filters-dialog::backdrop {
-  background: rgb(0 0 0 / 40%);
-}
-
-.generic-table-tanstack__filters-dialog-frame {
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  width: min(42rem, calc(100vw - 1.5rem));
-  max-height: min(36rem, calc(100vh - 1.5rem));
-  margin: 0;
-  overflow: hidden;
-  background: var(--gtt-surface);
-  border: 1px solid var(--gtt-border);
-  border-radius: var(--gtt-radius);
-  box-shadow: var(--shadow-md, 0 4px 12px rgb(0 0 0 / 10%));
-}
-
-.generic-table-tanstack__filters-dialog-header {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 0;
-  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--gtt-border);
-}
-
-.generic-table-tanstack__filters-dialog-title {
-  margin: 0;
-  margin-inline-end: auto;
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.3;
-  color: var(--gtt-header-text);
-}
-
-.generic-table-tanstack__filters-dialog-header .generic-table-tanstack__clear-filters {
-  flex: 0 0 auto;
-  width: auto;
+  gap: var(--gtt-space-sm);
   min-width: 0;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
 }
 
-.generic-table-tanstack__filters-dialog-close {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  margin: 0;
-  padding: 0;
-  color: var(--gtt-header-text);
-  cursor: pointer;
-  touch-action: manipulation;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm, 4px);
-}
-
-.generic-table-tanstack__filters-dialog-close:hover {
-  background: var(--gtt-row-hover-bg);
-}
-
-.generic-table-tanstack__filters-dialog-close:focus-visible {
-  outline: 2px solid var(--gtt-header-accent);
-  outline-offset: 2px;
-}
-
-.generic-table-tanstack__filters-dialog-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 0.75rem;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--gtt-border) transparent;
-}
-
-.generic-table-tanstack__filters-modal {
+.gtt__toolbar-lead,
+.gtt__toolbar-trail {
   display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.generic-table-tanstack__filters-modal-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.75rem 1rem;
-  align-items: start;
-
-  .generic-table-tanstack__filter {
-    gap: 0.375rem;
-  }
-}
-
-.generic-table-tanstack__filters-modal-toggles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 1rem 1.25rem;
-  align-items: start;
-
-  .generic-table-tanstack__toggle-list {
-    max-height: 12rem;
-  }
-}
-
-.generic-table-tanstack__filters-dialog-footer {
-  display: flex;
-  flex: 0 0 auto;
-  justify-content: flex-end;
-  padding: 0.5rem 0.75rem;
-  border-top: 1px solid var(--gtt-border);
-  background: var(--gtt-surface);
-}
-
-.generic-table-tanstack__filters-apply {
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 7.5rem;
-  min-height: 2.25rem;
-  padding: 0.5rem 1rem;
-  font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--gtt-apply-text);
-  cursor: pointer;
-  touch-action: manipulation;
-  background: var(--gtt-header-accent);
-  border: 1px solid var(--gtt-header-accent);
-  border-radius: var(--radius-sm, 4px);
+  gap: var(--gtt-space-sm);
+  min-width: 0;
 }
 
-.generic-table-tanstack__filters-apply:hover:not(:disabled) {
-  filter: brightness(0.94);
-}
-
-.generic-table-tanstack__filters-apply:disabled {
-  cursor: not-allowed;
-  opacity: var(--gtt-disabled-opacity);
-}
-
-.generic-table-tanstack__filters-apply:focus-visible {
-  outline: 2px solid var(--gtt-header-accent);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .generic-table-tanstack__filters-dialog,
-  .generic-table-tanstack__filters-apply,
-  .generic-table-tanstack__filters-dialog-close,
-  .generic-table-tanstack__filters-open {
-    transition: none;
-  }
-}
-
-.generic-table-tanstack__column-toggle {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gtt-toggle-gap);
-}
-
-.generic-table-tanstack__export,
-.generic-table-tanstack__clear-filters {
-  padding: 0.375rem 0.75rem;
-  font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--gtt-header-text);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--gtt-border);
-  border-radius: var(--gtt-radius);
-}
-
-.generic-table-tanstack__export {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+.gtt__toolbar-trail {
   margin-inline-start: auto;
 }
 
-.generic-table-tanstack__export-icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-  display: block;
+// Projected tools are compiled against the consumer's stylesheet, so the shared control
+// chrome has to be pierced through to reach them. Scoped to the slot rather than the
+// document, and only for elements the directive marked.
+.gtt__toolbar-trail ::ng-deep {
+  @include controls.control;
 }
 
-.generic-table-tanstack__filters-export {
-  flex: 0 0 auto;
-  padding-bottom: 0.5rem;
-}
-
-.generic-table-tanstack__filters-export .generic-table-tanstack__export {
+.gtt__filter-count {
   display: inline-flex;
-  width: 100%;
-  margin-inline-start: 0;
-  box-sizing: border-box;
-  border-radius: var(--radius-sm, 4px);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding-inline: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--gtt-surface);
+  background: var(--gtt-accent);
+  border-radius: 999px;
 }
 
-.generic-table-tanstack__clear-filters {
-  flex: 1 1 auto;
-  width: auto;
-  min-width: 0;
-  box-sizing: border-box;
-  border-radius: var(--radius-sm, 4px);
+.gtt__clear {
+  font-weight: 500;
+  color: var(--gtt-text-muted);
 }
 
-.generic-table-tanstack__export:hover:not(:disabled),
-.generic-table-tanstack__clear-filters:hover:not(:disabled) {
-  background: var(--gtt-row-hover-bg);
-}
-
-.generic-table-tanstack__export:disabled,
-.generic-table-tanstack__clear-filters:disabled {
-  cursor: not-allowed;
-  opacity: var(--gtt-disabled-opacity);
-}
-
-.generic-table-tanstack__layout {
+// Chips get a full-width band of their own. They may wrap to any number of lines
+// without ever pushing the toolbar controls around.
+.gtt__chips {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: var(--gtt-space-sm);
 }
 
-.generic-table-tanstack__layout--filters {
-  display: grid;
-  grid-template-columns: var(--gtt-filter-width) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  column-gap: var(--gtt-gap);
-  row-gap: 0;
-  align-items: stretch;
-}
+// ── Body: filter rail + table pane ─────────────────────────────────────────
 
-.generic-table-tanstack__layout--filters-collapsed {
-  grid-template-columns: auto minmax(0, 1fr);
-}
-
-.generic-table-tanstack__layout--filters-independent {
-  align-items: start;
-}
-
-.generic-table-tanstack__table-pane {
+.gtt__body {
   display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
+  gap: var(--gtt-space-md);
   min-width: 0;
   min-height: 0;
 }
 
-.generic-table-tanstack__layout--filters .generic-table-tanstack__table-pane {
-  grid-column: 2;
-  grid-row: 1;
-  flex: initial;
+:host(.gtt-host--fill) .gtt__body,
+:host(.gtt-host--parent) .gtt__body {
+  flex: 1 1 auto;
 }
 
-.generic-table-tanstack__layout--filters .generic-table-tanstack__paginator {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.generic-table-tanstack__filters {
+.gtt__rail {
   box-sizing: border-box;
   display: flex;
+  flex: 0 0 var(--gtt-filter-width);
   flex-direction: column;
   width: var(--gtt-filter-width);
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
-  padding: 0.875rem 0.875rem 0.75rem 0;
-  border: none;
-  border-radius: 0;
 }
 
-.generic-table-tanstack__filters-header {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: stretch;
-  gap: 0.5rem;
-  padding-bottom: 0.875rem;
-}
-
-.generic-table-tanstack__filters-body {
+.gtt__rail-body {
   flex: 1 1 auto;
   min-height: 0;
+  padding-inline-end: var(--gtt-space-xs);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -458,453 +183,130 @@
   scrollbar-color: var(--gtt-border) transparent;
 }
 
-.generic-table-tanstack__layout--filters .generic-table-tanstack__filters,
-.generic-table-tanstack__layout--filters .generic-table-tanstack__filters-collapsed {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: stretch;
-}
-
-.generic-table-tanstack__layout--filters-independent .generic-table-tanstack__filters {
-  align-self: start;
-  min-height: var(--gtt-filter-min-height);
-  height: var(--gtt-filter-min-height);
-  max-height: var(--gtt-filter-min-height);
-}
-
-.generic-table-tanstack__filters-collapsed {
+.gtt__pane {
   display: flex;
-  align-items: stretch;
-  align-self: stretch;
-  min-width: 0;
-  padding-top: 0.5rem;
-}
-
-.generic-table-tanstack__filters-toggle {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0.375rem 0.625rem;
-  font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--gtt-header-text);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--gtt-border);
-  border-radius: var(--radius-sm, 4px);
-}
-
-.generic-table-tanstack__filters-toggle--collapse {
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  align-self: stretch;
-  padding: 0.375rem 0.75rem;
-}
-
-.generic-table-tanstack__filters-toggle--rail {
-  box-sizing: border-box;
-  flex-direction: column;
-  align-self: flex-start;
-  width: 1.75rem;
-  min-height: 5.5rem;
-  padding: 0.5rem 0.15rem 0.75rem;
-  gap: 0.45rem;
-  writing-mode: horizontal-tb;
-  letter-spacing: 0.06em;
-  border-radius: var(--radius-sm, 4px);
-}
-
-.generic-table-tanstack__filters-toggle--rail .generic-table-tanstack__filters-toggle-icon {
-  flex-shrink: 0;
-  transform: rotate(-90deg);
-}
-
-.generic-table-tanstack__filters-toggle--rail .generic-table-tanstack__filters-toggle-label {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
-
-.generic-table-tanstack__filters-toggle:hover:not(:disabled) {
-  background: var(--gtt-row-hover-bg);
-}
-
-.generic-table-tanstack__filters-toggle:disabled {
-  cursor: not-allowed;
-  opacity: var(--gtt-disabled-opacity);
-}
-
-.generic-table-tanstack__filters-toggle-icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-  display: block;
-}
-
-.generic-table-tanstack__filters-toggle-badge {
-  position: absolute;
-  top: 0.2rem;
-  right: 0.2rem;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: var(--gtt-header-accent);
-}
-
-.generic-table-tanstack__filters-toggle--rail .generic-table-tanstack__filters-toggle-badge {
-  top: 0.25rem;
-  right: 0.2rem;
-  bottom: auto;
-  left: auto;
-  transform: none;
-}
-
-.generic-table-tanstack__paginator {
-  flex-shrink: 0;
-  background: transparent;
-
-  &.mat-mdc-paginator {
-    background: transparent;
-  }
-}
-
-.generic-table-tanstack__filters-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.generic-table-tanstack__filter {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.875rem;
-  min-width: 0;
-}
-
-.generic-table-tanstack__toggle-group {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.375rem;
-  min-width: 0;
-}
-
-.generic-table-tanstack__filter-label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--gtt-header-text);
-}
-
-.generic-table-tanstack__toggle-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-width: 0;
-  max-height: var(--gtt-toggle-list-max-height, 22rem);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--gtt-border) transparent;
-}
-
-.generic-table-tanstack__toggle-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-  margin: 0;
-  font: inherit;
-  font-size: 0.8125rem;
-  line-height: 1.3;
-  color: var(--gtt-body-text);
-  cursor: pointer;
-  user-select: none;
-}
-
-.generic-table-tanstack__toggle-option--disabled {
-  cursor: not-allowed;
-  opacity: var(--gtt-disabled-opacity);
-}
-
-.generic-table-tanstack__toggle-checkbox {
-  flex-shrink: 0;
-  width: 1.125rem;
-  height: 1.125rem;
-  margin: 0;
-  accent-color: #ff6200;
-  cursor: inherit;
-}
-
-.generic-table-tanstack__toggle-value {
-  display: flex;
-  align-items: baseline;
-  gap: 0.25rem;
-  min-width: 0;
   flex: 1 1 auto;
-}
-
-.generic-table-tanstack__toggle-name {
+  flex-direction: column;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.generic-table-tanstack__toggle-count {
-  flex-shrink: 0;
-  white-space: nowrap;
-  color: var(--gtt-empty-color);
-}
-
-.generic-table-tanstack--fill .generic-table-tanstack__layout,
-.generic-table-tanstack--parent .generic-table-tanstack__layout,
-.generic-table-tanstack--bounded .generic-table-tanstack__layout,
-.generic-table-tanstack--fill .generic-table-tanstack__table-pane,
-.generic-table-tanstack--parent .generic-table-tanstack__table-pane,
-.generic-table-tanstack--bounded .generic-table-tanstack__table-pane {
-  flex: 1 1 0;
   min-height: 0;
-  overflow: hidden;
 }
 
-.generic-table-tanstack--fill,
-.generic-table-tanstack--bounded:not(.generic-table-tanstack--parent) {
+.gtt__shell {
+  box-sizing: border-box;
+  display: flex;
   flex: 0 1 auto;
-  min-height: 0;
-  height: auto;
-  max-height: 100%;
-  overflow: hidden;
-}
-
-.generic-table-tanstack--parent {
-  flex: 1 1 0;
-  min-height: 0;
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden;
-}
-
-.generic-table-tanstack--virtualized.generic-table-tanstack--fill,
-.generic-table-tanstack--virtualized.generic-table-tanstack--parent,
-.generic-table-tanstack--virtualized.generic-table-tanstack--bounded {
-  flex: 1 1 0;
-  height: 100%;
-  min-height: 0;
-}
-
-.generic-table-tanstack__virtual-shell {
-  display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border: none;
-  border-radius: 0;
-  max-height: var(--gtt-max-height);
+  background: var(--gtt-surface);
+  border: 1px solid var(--gtt-border);
+  border-radius: var(--gtt-radius-md);
 }
 
-.generic-table-tanstack__virtual-shell--bounded {
+:host(.gtt-host--parent) .gtt__shell {
   flex: 1 1 0;
-  height: auto;
-  max-height: 100%;
-  min-height: var(--gtt-min-height, 0);
 }
 
-.generic-table-tanstack__static-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  border: none;
-  border-radius: 0;
-  max-height: var(--gtt-max-height);
-}
-
-.generic-table-tanstack__static-shell--bounded {
-  flex: 1 1 0;
-  height: auto;
-  max-height: 100%;
-  min-height: var(--gtt-min-height, 0);
-}
-
-.generic-table-tanstack__scroll {
+.gtt__scroll {
   position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   overflow-anchor: none;
-  scroll-behavior: auto;
   scrollbar-gutter: stable;
-  max-height: var(--gtt-max-height);
-  min-height: var(--gtt-min-height, 0);
-  border: none;
-  border-radius: 0;
-  background: var(--gtt-row-bg);
 }
 
-.generic-table-tanstack__scroll--static-body {
+// ── Grid ───────────────────────────────────────────────────────────────────
+// `min-width: min-content` resolves to the sum of the column track floors, so the
+// grid stretches to fill the viewport when the columns fit and overflows into a
+// horizontal scroll when they don't — no measurement in JS.
 
-  flex: 1 1 auto;
-  max-height: none;
-  min-height: 0;
+.gtt__grid {
+  width: 100%;
+  min-width: min-content;
 }
 
-.generic-table-tanstack__scroll--fill {
-  flex: 1 1 0;
-  min-height: 0;
-  max-height: none;
-}
-
-.generic-table-tanstack__scroll--bounded {
-  flex: 1 1 auto;
-  max-height: none;
-  min-height: var(--gtt-min-height, 0);
-}
-
-.generic-table-tanstack--parent .generic-table-tanstack__scroll--bounded {
-  flex: 1 1 0;
-  min-height: var(--gtt-min-height, 0);
-}
-
-.generic-table-tanstack__scroll--virtual {
-  border: none;
-  border-radius: 0;
-  max-height: none;
-}
-
-.generic-table-tanstack__scroll--virtual.generic-table-tanstack__scroll--bounded,
-.generic-table-tanstack__scroll--static-body.generic-table-tanstack__scroll--bounded {
-  flex: 1 1 0;
-  min-height: 0;
-}
-
-.generic-table-tanstack__header-track {
-  flex-shrink: 0;
-  width: calc(100% - var(--gtt-virtual-scrollbar-gutter, 0px));
-  overflow: hidden;
+.gtt__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   background: var(--gtt-header-bg);
+  box-shadow: inset 0 -1px 0 var(--gtt-accent);
 }
 
-.generic-table-tanstack__header {
+.gtt__header,
+.gtt__row {
   display: grid;
   grid-template-columns: var(--gtt-cols);
   box-sizing: border-box;
   width: 100%;
-  min-width: var(--gtt-grid-min, 0);
-  background: var(--gtt-header-bg);
 }
 
-.generic-table-tanstack__header--sticky {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 3;
-    height: 1px;
-    background: var(--gtt-header-accent);
-  }
-}
-
-.generic-table-tanstack__header--virtual {
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1;
-    height: 1px;
-    pointer-events: none;
-    background: var(--gtt-header-accent);
-  }
-}
-
-.generic-table-tanstack__header-cell {
+.gtt__header-cell,
+.gtt__cell {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  min-width: 0;
-  height: var(--gtt-row-height);
-  padding-inline: 16px;
   box-sizing: border-box;
+  min-width: 0;
+  padding-inline: var(--gtt-cell-padding-x);
   overflow: hidden;
-  font-weight: 600;
-  color: var(--gtt-header-text);
   white-space: nowrap;
   text-overflow: ellipsis;
-  line-height: 1.25;
 }
 
-.generic-table-tanstack__header-cluster {
+.gtt__header-cell {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-width: 0;
-  max-width: 100%;
+  height: var(--gtt-row-height);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--gtt-text);
 }
 
-.generic-table-tanstack__header-accessories {
+.gtt__header-cell--sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.gtt__header-cell--sortable:hover {
+  background: var(--gtt-row-hover-bg);
+}
+
+.gtt__header-cell:focus-visible {
+  outline: 2px solid var(--gtt-accent);
+  outline-offset: -2px;
+}
+
+.gtt__header-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gtt__header-accessories {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   gap: 0.35rem;
 }
 
-.generic-table-tanstack__header-cell--center {
-  .generic-table-tanstack__header-cluster {
-    gap: 0;
-  }
-
-  .generic-table-tanstack__header-accessories {
-    position: absolute;
-    left: 100%;
-    top: 50%;
-    margin-left: 0.35rem;
-    transform: translateY(-50%);
-  }
+// Centered headers keep the label optically centred by lifting the sort/info glyphs
+// out of the flow instead of letting them shift the text off-centre.
+.gtt__header-cell--center .gtt__header-accessories,
+.gtt__header-cell--right .gtt__header-accessories {
+  position: absolute;
+  inset-inline-start: auto;
+  inset-inline-end: 0.35rem;
 }
 
-.generic-table-tanstack__header-cell--sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.generic-table-tanstack__header-cell--sortable:hover {
-  background: var(--gtt-row-hover-bg);
-}
-
-.generic-table-tanstack__header-cell--plain {
-  padding-inline-end: 18px;
-}
-
-.generic-table-tanstack__header-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.generic-table-tanstack__sort {
+.gtt__sort {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 12px;
   height: 12px;
-  color: currentColor;
   opacity: 0;
   transform: rotate(180deg);
   transition:
@@ -912,143 +314,209 @@
     transform 200ms cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.generic-table-tanstack__header-cell--sortable:hover .generic-table-tanstack__sort,
-.generic-table-tanstack__header-cell--sortable:focus-visible .generic-table-tanstack__sort,
-.generic-table-tanstack__sort--active {
+.gtt__header-cell--sortable:hover .gtt__sort,
+.gtt__header-cell--sortable:focus-visible .gtt__sort,
+.gtt__sort--active {
   opacity: 0.54;
 }
 
-.generic-table-tanstack__sort--asc {
-  transform: rotate(180deg);
-}
-
-.generic-table-tanstack__sort--desc {
+.gtt__sort--desc {
   transform: rotate(0deg);
 }
 
-.generic-table-tanstack__sort-icon {
+.gtt__sort-icon {
   display: block;
   width: 10px;
   height: 5px;
-  fill: currentColor;
+  fill: currentcolor;
 }
 
-.generic-table-tanstack__spacer {
+.gtt__rows {
   position: relative;
   width: 100%;
-  min-width: var(--gtt-grid-min, 0);
-  box-sizing: border-box;
 }
 
-.generic-table-tanstack__body {
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  background: var(--gtt-row-bg);
-}
-
-.generic-table-tanstack__row {
-  display: grid;
-  grid-template-columns: var(--gtt-cols);
-  box-sizing: border-box;
-  width: 100%;
-  min-width: var(--gtt-grid-min, 0);
-}
-
-.generic-table-tanstack__row:not(.generic-table-tanstack__row--static) {
+.gtt__rows--virtual > .gtt__row {
   position: absolute;
+  inset-inline: 0;
   top: 0;
-  left: 0;
   will-change: transform;
 }
 
-.generic-table-tanstack__row--static {
-  position: relative;
+.gtt__rows:not(.gtt__rows--virtual) > .gtt__row {
   height: var(--gtt-row-height);
-  min-height: var(--gtt-row-height);
 }
 
-.generic-table-tanstack__row--odd,
-.generic-table-tanstack__row--even {
-  background: var(--gtt-row-bg);
+.gtt__rows--striped > .gtt__row:nth-child(even) {
+  background: var(--gtt-row-alt-bg);
 }
 
-.generic-table-tanstack__row--odd .generic-table-tanstack__cell,
-.generic-table-tanstack__row--even .generic-table-tanstack__cell {
-  background: var(--gtt-row-bg);
-}
-
-.generic-table-tanstack__row--clickable {
-  cursor: pointer;
-}
-
-.generic-table-tanstack__scroll:not(.generic-table-tanstack__scroll--scrolling) {
-  .generic-table-tanstack__row--clickable:hover .generic-table-tanstack__cell {
-    background: var(--gtt-row-hover-bg);
-  }
-}
-
-.generic-table-tanstack__cell {
-  display: flex;
-  align-items: center;
+.gtt__cell {
   height: 100%;
-  min-width: 0;
   min-height: var(--gtt-row-height);
-  padding-inline: 16px;
-  box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  background: var(--gtt-row-bg);
-
   box-shadow: inset 0 -1px 0 var(--gtt-row-divider);
 }
 
-.generic-table-tanstack__header-cell--actions,
-.generic-table-tanstack__cell--actions {
+.gtt__cell--center {
   justify-content: center;
-  padding-inline: 4px;
+  text-align: center;
+}
+
+.gtt__cell--right {
+  justify-content: flex-end;
+  text-align: end;
+}
+
+.gtt__cell--actions {
+  justify-content: center;
+  padding-inline: 0.25rem;
   overflow: visible;
 }
 
-.generic-table-tanstack__cell-content {
+.gtt__cell-content {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
 }
 
-.generic-table-tanstack__empty {
+.gtt__row--clickable {
+  cursor: pointer;
+}
+
+.gtt__row:focus-visible {
+  outline: 2px solid var(--gtt-accent);
+  outline-offset: -2px;
+}
+
+// Suppressed mid-gesture so momentum scrolling doesn't strobe the hover state.
+.gtt__scroll:not(.gtt__scroll--scrolling) .gtt__row--clickable:hover .gtt__cell {
+  background: var(--gtt-row-hover-bg);
+}
+
+// Pinned to the inline start so the message stays in view while scrolling sideways.
+.gtt__empty {
+  position: sticky;
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gtt-space-md);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(var(--gtt-row-height) * 3);
+  padding: var(--gtt-space-lg);
+  text-align: center;
+  color: var(--gtt-text-muted);
+}
+
+.gtt__empty-text {
+  margin: 0;
+}
+
+.gtt__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// ── Filters dialog (narrow hosts) ──────────────────────────────────────────
+
+.gtt__dialog {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: var(--gtt-space-md);
+  overflow: hidden;
+  color: var(--gtt-text);
+  background: transparent;
+  border: none;
+}
+
+.gtt__dialog[open] {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-  padding: var(--gtt-empty-padding);
-  text-align: center;
-  color: var(--gtt-empty-color);
 }
 
-@container gtt (max-width: 40rem) {
-  .generic-table-tanstack__layout--filters {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gtt-gap);
-  }
+.gtt__dialog:focus,
+.gtt__dialog:focus-visible {
+  outline: none;
+}
 
-  .generic-table-tanstack__layout--filters .generic-table-tanstack__table-pane,
-  .generic-table-tanstack__layout--filters .generic-table-tanstack__paginator {
-    grid-column: auto;
-    grid-row: auto;
-  }
+.gtt__dialog::backdrop {
+  background: rgb(0 0 0 / 40%);
+}
 
-  .generic-table-tanstack__toolbar--overlay {
-    justify-content: flex-start;
-  }
+.gtt__dialog-frame {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(42rem, 100%);
+  max-height: min(36rem, 100%);
+  overflow: hidden;
+  background: var(--gtt-surface);
+  border: 1px solid var(--gtt-border);
+  border-radius: var(--gtt-radius-md);
+  box-shadow: var(--shadow-md, 0 4px 12px rgb(0 0 0 / 10%));
+}
 
-  .generic-table-tanstack__toolbar--overlay .generic-table-tanstack__export {
-    margin-inline-start: auto;
-  }
+.gtt__dialog-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--gtt-space-sm);
+  padding: var(--gtt-space-sm) var(--gtt-space-sm) var(--gtt-space-sm) var(--gtt-space-md);
+  border-bottom: 1px solid var(--gtt-border);
+}
 
-  .generic-table-tanstack__toolbar--with-filters {
-    justify-content: flex-start;
+.gtt__dialog-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.gtt__dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--gtt-space-md);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gtt-border) transparent;
+}
+
+.gtt__dialog-footer {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding: var(--gtt-space-sm) var(--gtt-space-md);
+  border-top: 1px solid var(--gtt-border);
+}
+
+.gtt__apply {
+  min-width: 7.5rem;
+  color: #fff;
+  background: var(--gtt-accent);
+  border-color: var(--gtt-accent);
+}
+
+.gtt__apply:hover:not(:disabled) {
+  background: var(--gtt-accent);
+  filter: brightness(0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gtt__sort {
+    transition: none;
   }
 }
