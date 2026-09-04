@@ -212,10 +212,7 @@ export class GenericTableTanstackComponent<T = unknown> {
 
   readonly hostMinHeight = computed(() => (this.isBounded() ? this.height() : null));
 
-  readonly hostMaxHeight = computed(() => {
-    const cap = this.isBounded() ? this.maxHeight() : null;
-    return cap ? `min(100%, ${cap})` : null;
-  });
+  readonly hostMaxHeight = computed(() => (this.isBounded() ? this.maxHeight() : null));
 
   readonly shellHeight = computed(() => (this.isBounded() ? null : this.height()));
 

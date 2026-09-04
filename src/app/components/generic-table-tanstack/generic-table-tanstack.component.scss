@@ -8,6 +8,10 @@
 //   parent – the host claims the parent's space and the shell stretches into it.
 // Every level of the chain carries `min-height: 0` so the scroll container, not the
 // document, is what actually scrolls.
+//
+// Parent mode uses `max-height: inherit` so a parent that only declares `max-height`
+// (no definite `height`) still caps the host. Plain `max-height: 100%` does nothing in
+// that case because the percentage base is indefinite.
 :host {
   display: flex;
   flex-direction: column;
@@ -24,7 +28,13 @@
 :host(.gtt-host--parent) {
   flex: 1 1 0;
   align-self: stretch;
+  box-sizing: border-box;
   height: 100%;
+  // Inherit the parent's max-height so a wrapper that only sets `max-height` (no
+  // definite `height`) still bounds the host. `max-height: 100%` is a no-op when the
+  // parent's height is indefinite. Prefer a flex parent with `min-height: 0` when you
+  // can; inherit covers the plain `max-height` wrapper case for length values.
+  max-height: inherit;
   overflow: hidden;
 }
 
@@ -66,6 +76,13 @@
   min-height: 0;
   font-size: 14px;
   color: var(--gtt-text);
+}
+
+:host(.gtt-host--fill) .gtt,
+:host(.gtt-host--parent) .gtt {
+  flex: 1 1 auto;
+  height: 100%;
+  overflow: hidden;
 }
 
 :host-context(html[data-theme='dark']) .gtt {
@@ -159,7 +176,8 @@
 
 :host(.gtt-host--fill) .gtt__body,
 :host(.gtt-host--parent) .gtt__body {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  overflow: hidden;
 }
 
 .gtt__rail {
@@ -185,10 +203,11 @@
 
 .gtt__pane {
   display: flex;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .gtt__shell {

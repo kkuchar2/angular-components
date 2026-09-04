@@ -61,6 +61,7 @@ export interface ColumnDef<T = unknown> {
  * `auto`   – the table is as tall as its rows, capped by `maxHeight`.
  * `fill`   – the table shrinks to its rows but never exceeds the space the parent leaves it.
  * `parent` – the table always claims the parent's available space, even with few rows.
+ *            Inherits the parent's `max-height` when the parent has no definite height.
  */
 export type GenericTableHeightMode = 'auto' | 'fill' | 'parent';
 

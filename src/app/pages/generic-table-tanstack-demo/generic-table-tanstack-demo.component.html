@@ -277,7 +277,9 @@
       In <code>auto</code>, <code>height</code>/<code>minHeight</code>/<code>maxHeight</code>
       size the scroll shell (header + rows). In <code>fill</code> and <code>parent</code>
       the parent's box governs instead: <code>height</code> becomes the whole table's
-      floor and <code>maxHeight</code> its cap.
+      floor and <code>maxHeight</code> its cap. A parent that only sets
+      <code>max-height</code> (no definite <code>height</code>) still works in
+      <code>parent</code> mode — the host inherits that cap and scrolls internally.
     </p>
 
     <div class="demo__parent-row">
