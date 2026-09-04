@@ -6,6 +6,10 @@ export { GenericTableCellValueComponent } from './generic-table-cell-value.compo
 export { GenericTableColumnsMenuComponent } from './generic-table-columns-menu.component';
 export { GenericTableFiltersComponent } from './generic-table-filters.component';
 export { GenericTablePaginatorComponent } from './generic-table-paginator.component';
+export {
+  genericTableFeatures,
+  type GenericTableFeatures,
+} from './generic-table-features';
 export { StatusBadgeCellComponent } from './cells/status-badge-cell.component';
 export { PersonCellComponent } from './cells/person-cell.component';
 export { MailtoCellComponent } from './cells/mailto-cell.component';

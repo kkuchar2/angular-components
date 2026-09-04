@@ -20,14 +20,12 @@ import {
 import { MatChipListboxChange, MatChipsModule } from '@angular/material/chips';
 import { LucideDownload, LucideDynamicIcon, LucideFunnel, LucideX } from '@lucide/angular';
 import {
-  createAngularTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
+  injectTable,
   type ColumnDef as TanstackColumnDef,
   type PaginationState,
-  type Row,
+  type RowData,
   type SortingState,
+  type Updater,
 } from '@tanstack/angular-table';
 import { injectVirtualizer } from '@tanstack/angular-virtual';
 
@@ -37,6 +35,10 @@ import { GenericTableCellDirective } from './generic-table-cell.directive';
 import { resolveCellRawValue, resolveSortValue } from './generic-table-cell-format';
 import { GenericTableCellValueComponent } from './generic-table-cell-value.component';
 import { GenericTableColumnsMenuComponent } from './generic-table-columns-menu.component';
+import {
+  genericTableFeatures,
+  type GenericTableFeatures,
+} from './generic-table-features';
 import {
   GenericTableFilterUiState,
   GenericTableFilterValues,
@@ -108,7 +110,7 @@ interface RowMenuEntry {
     '[style.--gtt-row-height.px]': 'rowHeight()',
   },
 })
-export class GenericTableTanstackComponent<T = unknown> {
+export class GenericTableTanstackComponent<T extends RowData = RowData> {
   private static instanceCount = 0;
 
   private readonly hostEl = inject(ElementRef<HTMLElement>);
@@ -120,10 +122,6 @@ export class GenericTableTanstackComponent<T = unknown> {
     Map<string, GenericTableCellComponentInputs<T>>
   >();
   private readonly rowMenuCache = new WeakMap<object, RowMenuEntry>();
-
-  private readonly coreRowModel = getCoreRowModel<T>();
-  private readonly sortedRowModel = getSortedRowModel<T>();
-  private readonly paginationRowModel = getPaginationRowModel<T>();
 
   private scrollIdleTimer: ReturnType<typeof setTimeout> | null = null;
   private hasEmittedFilters = false;
@@ -348,13 +346,14 @@ export class GenericTableTanstackComponent<T = unknown> {
     return tracks.length > 0 ? tracks.join(' ') : 'minmax(0, 1fr)';
   });
 
-  private readonly tanstackColumns = computed((): TanstackColumnDef<T, unknown>[] =>
-    this.displayedColumns().map((column) => ({
-      id: column.key,
-      accessorFn: (row) => resolveSortValue(column, row),
-      header: column.header,
-      enableSorting: column.sortable === true,
-    })),
+  private readonly tanstackColumns = computed(
+    (): TanstackColumnDef<GenericTableFeatures, T>[] =>
+      this.displayedColumns().map((column) => ({
+        id: column.key,
+        accessorFn: (row: T) => resolveSortValue(column, row),
+        header: column.header,
+        enableSorting: column.sortable === true,
+      })),
   );
 
   private readonly paginationState = computed(
@@ -364,7 +363,8 @@ export class GenericTableTanstackComponent<T = unknown> {
     }),
   );
 
-  private readonly table = createAngularTable(() => ({
+  private readonly table = injectTable(() => ({
+    features: genericTableFeatures,
     data: this.filteredRows() as T[],
     columns: this.tanstackColumns(),
     state: {
@@ -376,7 +376,7 @@ export class GenericTableTanstackComponent<T = unknown> {
     pageCount: this.isServerPagination()
       ? Math.max(1, Math.ceil(this.totalCount() / this.activePageSize()))
       : undefined,
-    onSortingChange: (updater) => {
+    onSortingChange: (updater: Updater<SortingState>) => {
       const next = typeof updater === 'function' ? updater(this.sorting()) : updater;
       this.sorting.set(next);
       this.sortChange.emit(
@@ -385,14 +385,11 @@ export class GenericTableTanstackComponent<T = unknown> {
           : { active: next[0].id, direction: next[0].desc ? 'desc' : 'asc' },
       );
     },
-    getCoreRowModel: this.coreRowModel,
-    getSortedRowModel: this.sortedRowModel,
-    getPaginationRowModel: this.isClientPagination() ? this.paginationRowModel : undefined,
   }));
 
   readonly sortedRows = computed(() => this.table.getSortedRowModel().rows);
 
-  readonly bodyRows = computed((): Row<T>[] =>
+  readonly bodyRows = computed(() =>
     this.virtualized() ? this.sortedRows() : this.table.getRowModel().rows,
   );
 

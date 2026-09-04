@@ -15,6 +15,9 @@ module.exports = defineConfig([
     ],
     processor: angular.processInlineTemplates,
     rules: {
+      // Microsyntax aliases like `appGenericTableCell="key"` / `appGenericTableCellFor`
+      // are intentional public API; other packages in the monorepo may not enable this rule.
+      '@angular-eslint/no-input-rename': 'off',
       '@angular-eslint/directive-selector': [
         'error',
         {
