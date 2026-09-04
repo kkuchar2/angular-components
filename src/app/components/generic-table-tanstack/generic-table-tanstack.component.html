@@ -12,14 +12,38 @@
   [style.--gtt-row-height.px]="rowHeight()"
   [style.--gtt-virtual-scrollbar-gutter.px]="scrollbarGutterPx()"
 >
-  @if (
-    (showColumnToggle() && hideableColumns().length > 0) ||
-    (showExport() && (!hasFilterColumns() || filtersCollapsed()))
-  ) {
+  @if (showToolbar()) {
     <div
       class="generic-table-tanstack__toolbar"
       [class.generic-table-tanstack__toolbar--with-filters]="hasFilterColumns()"
+      [class.generic-table-tanstack__toolbar--overlay]="filtersOverlayMode()"
     >
+      @if (hasFilterColumns() && filtersOverlayMode()) {
+        <button
+          type="button"
+          class="generic-table-tanstack__filters-open"
+          [disabled]="disabled()"
+          [attr.aria-expanded]="filtersModalOpen()"
+          aria-haspopup="dialog"
+          [attr.aria-controls]="filtersDialogId"
+          [attr.aria-label]="
+            hasActiveFilters() ? 'Open filters (filters active)' : 'Open filters'
+          "
+          (click)="openFiltersModal()"
+        >
+          <svg
+            class="generic-table-tanstack__filters-toggle-icon"
+            [lucideIcon]="LucideFunnel"
+            [size]="14"
+            aria-hidden="true"
+          ></svg>
+          <span class="generic-table-tanstack__filters-toggle-label">Filters</span>
+          @if (hasActiveFilters()) {
+            <span class="generic-table-tanstack__filters-toggle-badge" aria-hidden="true"></span>
+          }
+        </button>
+      }
+
       @if (showColumnToggle() && hideableColumns().length > 0) {
         <mat-chip-listbox
           class="generic-table-tanstack__column-toggle"
@@ -36,7 +60,7 @@
         </mat-chip-listbox>
       }
 
-      @if (showExport() && (!hasFilterColumns() || filtersCollapsed())) {
+      @if (showExport() && exportSitsInToolbar()) {
         <button
           type="button"
           class="generic-table-tanstack__export"
@@ -57,16 +81,16 @@
 
   <div
     class="generic-table-tanstack__layout"
-    [class.generic-table-tanstack__layout--filters]="hasFilterColumns()"
+    [class.generic-table-tanstack__layout--filters]="showSidebarFilters()"
     [class.generic-table-tanstack__layout--filters-collapsed]="
-      hasFilterColumns() && filtersCollapsed()
+      showSidebarFilters() && filtersCollapsed()
     "
     [class.generic-table-tanstack__layout--filters-independent]="
-      hasIndependentFilterHeight() && !filtersCollapsed()
+      showSidebarFilters() && hasIndependentFilterHeight() && !filtersCollapsed()
     "
     [style.--gtt-filter-min-height]="filterMinHeight()"
   >
-    @if (hasFilterColumns()) {
+    @if (showSidebarFilters()) {
       @if (filtersCollapsed()) {
         <div class="generic-table-tanstack__filters-collapsed" aria-label="Table filters">
           <button
@@ -141,83 +165,10 @@
           </div>
 
           <div class="generic-table-tanstack__filters-body">
-            <div class="generic-table-tanstack__filters-inner">
-              @for (col of filterColumns(); track col.key) {
-                <div class="generic-table-tanstack__filter">
-                  @if (col.searchable) {
-                    <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
-                    <app-custom-input
-                      [label]="'Search on ' + col.header"
-                      appearance="outlined"
-                      type="search"
-                      [disabled]="disabled()"
-                      [placeholder]="'Search on ' + col.header"
-                      autocomplete="off"
-                      [spellcheck]="false"
-                      [ngModel]="columnFilterDisplayValue(col.key)"
-                      (ngModelChange)="onColumnFilterValue(col.key, $event)"
-                    />
-                  }
-
-                  @for (facet of toggleFacetsForColumn(col.key); track facet.group.id) {
-                    <div class="generic-table-tanstack__toggle-group">
-                      <span class="generic-table-tanstack__filter-label">{{ facet.label }}</span>
-                      <div
-                        class="generic-table-tanstack__toggle-list"
-                        role="group"
-                        [attr.aria-label]="facet.label + ' values'"
-                      >
-                        @for (option of facet.options; track option.value) {
-                          <label
-                            class="generic-table-tanstack__toggle-option"
-                            [class.generic-table-tanstack__toggle-option--disabled]="
-                              disabled() ||
-                              (option.count === 0 &&
-                                !isToggleValueSelected(col.key, facet.group.id, option.value))
-                            "
-                            [attr.for]="toggleOptionId(col.key, facet.group.id, option.value)"
-                          >
-                            <input
-                              class="generic-table-tanstack__toggle-checkbox"
-                              type="checkbox"
-                              [id]="toggleOptionId(col.key, facet.group.id, option.value)"
-                              [checked]="
-                                isToggleValueSelected(col.key, facet.group.id, option.value)
-                              "
-                              [disabled]="
-                                disabled() ||
-                                (option.count === 0 &&
-                                  !isToggleValueSelected(
-                                    col.key,
-                                    facet.group.id,
-                                    option.value
-                                  ))
-                              "
-                              (change)="
-                                onToggleFilterInput(
-                                  col.key,
-                                  facet.group.id,
-                                  option.value,
-                                  $event
-                                )
-                              "
-                            />
-                            <span class="generic-table-tanstack__toggle-value">
-                              <span class="generic-table-tanstack__toggle-name">
-                                {{ toggleFilterName(option.value) }}
-                              </span>
-                              <span class="generic-table-tanstack__toggle-count">
-                                ({{ option.count }})
-                              </span>
-                            </span>
-                          </label>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
+            <ng-container
+              [ngTemplateOutlet]="filterFields"
+              [ngTemplateOutletContext]="{ source: 'applied' }"
+            />
           </div>
         </aside>
       }
@@ -579,4 +530,256 @@
         />
       }
   </div>
+
+  @if (hasFilterColumns() && filtersOverlayMode()) {
+    <dialog
+      #filtersDialog
+      class="generic-table-tanstack__filters-dialog"
+      [id]="filtersDialogId"
+      [attr.aria-labelledby]="filtersDialogTitleId"
+      (click)="onFiltersDialogBackdrop($event)"
+      (close)="onFiltersDialogClose()"
+    >
+      <div class="generic-table-tanstack__filters-dialog-frame">
+        <header class="generic-table-tanstack__filters-dialog-header">
+          <h2 class="generic-table-tanstack__filters-dialog-title" [id]="filtersDialogTitleId">
+            Filters
+          </h2>
+          <button
+            type="button"
+            class="generic-table-tanstack__clear-filters"
+            [disabled]="disabled() || !hasDraftFilters()"
+            (click)="clearAllFilters('draft')"
+          >
+            Clear filter
+          </button>
+          <button
+            type="button"
+            class="generic-table-tanstack__filters-dialog-close"
+            aria-label="Close filters"
+            (click)="closeFiltersModal()"
+          >
+            <svg [lucideIcon]="LucideX" [size]="16" aria-hidden="true"></svg>
+          </button>
+        </header>
+
+        <div class="generic-table-tanstack__filters-dialog-body">
+          <div class="generic-table-tanstack__filters-modal">
+            @if (searchableColumns().length > 0) {
+              <div class="generic-table-tanstack__filters-modal-fields">
+                @for (col of searchableColumns(); track col.key) {
+                  <div class="generic-table-tanstack__filter">
+                    <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
+                    <app-custom-input
+                      [label]="'Search on ' + col.header"
+                      appearance="outlined"
+                      type="search"
+                      [disabled]="disabled()"
+                      [placeholder]="'Search on ' + col.header"
+                      autocomplete="off"
+                      [spellcheck]="false"
+                      [ngModel]="columnFilterDisplayValue(col.key, 'draft')"
+                      (ngModelChange)="onColumnFilterValue(col.key, $event, 'draft')"
+                    />
+                  </div>
+                }
+              </div>
+            }
+
+            @if (draftToggleFacets().length > 0) {
+              <div class="generic-table-tanstack__filters-modal-toggles">
+                @for (facet of draftToggleFacets(); track facet.columnKey + '-' + facet.group.id) {
+                  <div class="generic-table-tanstack__toggle-group">
+                    <span class="generic-table-tanstack__filter-label">{{ facet.label }}</span>
+                    <div
+                      class="generic-table-tanstack__toggle-list"
+                      role="group"
+                      [attr.aria-label]="facet.label + ' values'"
+                    >
+                      @for (option of facet.options; track option.value) {
+                        <label
+                          class="generic-table-tanstack__toggle-option"
+                          [class.generic-table-tanstack__toggle-option--disabled]="
+                            disabled() ||
+                            (option.count === 0 &&
+                              !isToggleValueSelected(
+                                facet.columnKey,
+                                facet.group.id,
+                                option.value,
+                                'draft'
+                              ))
+                          "
+                          [attr.for]="
+                            toggleOptionId(
+                              facet.columnKey,
+                              facet.group.id,
+                              option.value,
+                              'draft'
+                            )
+                          "
+                        >
+                          <input
+                            class="generic-table-tanstack__toggle-checkbox"
+                            type="checkbox"
+                            [id]="
+                              toggleOptionId(
+                                facet.columnKey,
+                                facet.group.id,
+                                option.value,
+                                'draft'
+                              )
+                            "
+                            [checked]="
+                              isToggleValueSelected(
+                                facet.columnKey,
+                                facet.group.id,
+                                option.value,
+                                'draft'
+                              )
+                            "
+                            [disabled]="
+                              disabled() ||
+                              (option.count === 0 &&
+                                !isToggleValueSelected(
+                                  facet.columnKey,
+                                  facet.group.id,
+                                  option.value,
+                                  'draft'
+                                ))
+                            "
+                            (change)="
+                              onToggleFilterInput(
+                                facet.columnKey,
+                                facet.group.id,
+                                option.value,
+                                $event,
+                                'draft'
+                              )
+                            "
+                          />
+                          <span class="generic-table-tanstack__toggle-value">
+                            <span class="generic-table-tanstack__toggle-name">
+                              {{ toggleFilterName(option.value) }}
+                            </span>
+                            <span class="generic-table-tanstack__toggle-count">
+                              ({{ option.count }})
+                            </span>
+                          </span>
+                        </label>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <footer class="generic-table-tanstack__filters-dialog-footer">
+          <button
+            type="button"
+            class="generic-table-tanstack__filters-apply"
+            [disabled]="disabled()"
+            (click)="applyFiltersModal()"
+          >
+            Apply
+          </button>
+        </footer>
+      </div>
+    </dialog>
+  }
+
+  <ng-template #filterFields let-source="source">
+    <div class="generic-table-tanstack__filters-inner">
+      @for (col of filterColumns(); track col.key) {
+        <div class="generic-table-tanstack__filter">
+          @if (col.searchable) {
+            <span class="generic-table-tanstack__filter-label">{{ col.header }}</span>
+            <app-custom-input
+              [label]="'Search on ' + col.header"
+              appearance="outlined"
+              type="search"
+              [disabled]="disabled()"
+              [placeholder]="'Search on ' + col.header"
+              autocomplete="off"
+              [spellcheck]="false"
+              [ngModel]="columnFilterDisplayValue(col.key, source)"
+              (ngModelChange)="onColumnFilterValue(col.key, $event, source)"
+            />
+          }
+
+          @for (facet of toggleFacetsForColumn(col.key, source); track facet.group.id) {
+            <div class="generic-table-tanstack__toggle-group">
+              <span class="generic-table-tanstack__filter-label">{{ facet.label }}</span>
+              <div
+                class="generic-table-tanstack__toggle-list"
+                role="group"
+                [attr.aria-label]="facet.label + ' values'"
+              >
+                @for (option of facet.options; track option.value) {
+                  <label
+                    class="generic-table-tanstack__toggle-option"
+                    [class.generic-table-tanstack__toggle-option--disabled]="
+                      disabled() ||
+                      (option.count === 0 &&
+                        !isToggleValueSelected(
+                          col.key,
+                          facet.group.id,
+                          option.value,
+                          source
+                        ))
+                    "
+                    [attr.for]="
+                      toggleOptionId(col.key, facet.group.id, option.value, source)
+                    "
+                  >
+                    <input
+                      class="generic-table-tanstack__toggle-checkbox"
+                      type="checkbox"
+                      [id]="toggleOptionId(col.key, facet.group.id, option.value, source)"
+                      [checked]="
+                        isToggleValueSelected(
+                          col.key,
+                          facet.group.id,
+                          option.value,
+                          source
+                        )
+                      "
+                      [disabled]="
+                        disabled() ||
+                        (option.count === 0 &&
+                          !isToggleValueSelected(
+                            col.key,
+                            facet.group.id,
+                            option.value,
+                            source
+                          ))
+                      "
+                      (change)="
+                        onToggleFilterInput(
+                          col.key,
+                          facet.group.id,
+                          option.value,
+                          $event,
+                          source
+                        )
+                      "
+                    />
+                    <span class="generic-table-tanstack__toggle-value">
+                      <span class="generic-table-tanstack__toggle-name">
+                        {{ toggleFilterName(option.value) }}
+                      </span>
+                      <span class="generic-table-tanstack__toggle-count">
+                        ({{ option.count }})
+                      </span>
+                    </span>
+                  </label>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </ng-template>
 </div>

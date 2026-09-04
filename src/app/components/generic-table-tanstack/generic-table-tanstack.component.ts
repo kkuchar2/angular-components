@@ -1,5 +1,6 @@
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -21,7 +22,13 @@ import { FormsModule } from '@angular/forms';
 import { MatChipListboxChange, MatChipsModule } from '@angular/material/chips';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Sort } from '@angular/material/sort';
-import { LucideDynamicIcon, LucideDownload, LucideFunnel, LucidePanelLeftClose } from '@lucide/angular';
+import {
+  LucideDynamicIcon,
+  LucideDownload,
+  LucideFunnel,
+  LucidePanelLeftClose,
+  LucideX,
+} from '@lucide/angular';
 import {
   createAngularTable,
   getCoreRowModel,
@@ -63,6 +70,9 @@ import {
 } from './generic-table.types';
 
 const DEFAULT_MAX_HEIGHT_PX = 480;
+const FILTERS_OVERLAY_MAX_REM = 40;
+
+type FilterEditSource = 'applied' | 'draft';
 
 @Component({
   selector: 'app-generic-table-tanstack',
@@ -93,17 +103,24 @@ const DEFAULT_MAX_HEIGHT_PX = 480;
   },
 })
 export class GenericTableTanstackComponent<T = unknown> {
+  private static instanceCount = 0;
+
   private readonly destroyRef = inject(DestroyRef);
   private readonly hostEl = inject(ElementRef<HTMLElement>);
   private scrollEndTimer: ReturnType<typeof setTimeout> | null = null;
   private layoutSyncFrame: number | null = null;
   private boundedResizeObserver: ResizeObserver | null = null;
+  private filtersOverlayObserver: ResizeObserver | null = null;
   private observedBoundedTargets = new Set<HTMLElement>();
 
+  readonly instanceId = `gtt-${++GenericTableTanstackComponent.instanceCount}`;
+  readonly filtersDialogId = `${this.instanceId}-filters-dialog`;
+  readonly filtersDialogTitleId = `${this.instanceId}-filters-title`;
   readonly isScrolling = signal(false);
   readonly LucideFunnel = LucideFunnel;
   readonly LucidePanelLeftClose = LucidePanelLeftClose;
   readonly LucideDownload = LucideDownload;
+  readonly LucideX = LucideX;
 
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly data = input.required<readonly T[]>();
@@ -157,6 +174,7 @@ export class GenericTableTanstackComponent<T = unknown> {
   private readonly scrollElement = viewChild<ElementRef<HTMLDivElement>>('scrollElement');
   private readonly headerTrack = viewChild<ElementRef<HTMLElement>>('headerTrack');
   private readonly virtualShell = viewChild<ElementRef<HTMLElement>>('virtualShell');
+  private readonly filtersDialog = viewChild<ElementRef<HTMLDialogElement>>('filtersDialog');
   private readonly cellDirectives = contentChildren(GenericTableCellDirective);
   private readonly cellContextCache = new WeakMap<object, GenericTableCellContext<T>>();
 
@@ -314,94 +332,66 @@ export class GenericTableTanstackComponent<T = unknown> {
     {},
   );
 
+  readonly draftColumnFilterValues = signal<Readonly<Record<string, string>>>({});
+
+  readonly draftColumnToggleSelections = signal<
+    Readonly<Record<string, ReadonlySet<string>>>
+  >({});
+
   readonly filtersCollapsed = signal(false);
 
-  readonly toggleFacets = computed((): GenericTableToggleFacet<T>[] => {
-    const rows = this.data();
-    const textValues = this.columnFilterValues();
-    const toggleValues = this.columnToggleSelections();
-    const searchable = this.searchableColumns();
-    const facets: GenericTableToggleFacet<T>[] = [];
+  readonly filtersOverlayMode = signal(
+    typeof globalThis.matchMedia === 'function' &&
+      globalThis.matchMedia(`(max-width: ${FILTERS_OVERLAY_MAX_REM}rem)`).matches,
+  );
 
-    const activeText = searchable.filter(
-      (column) => (textValues[column.key] ?? '').trim().length > 0,
-    );
+  readonly filtersModalOpen = signal(false);
 
-    const textFilteredRows = rows.filter((row) =>
-      activeText.every((textColumn) =>
-        columnMatchesFilter(
-          textColumn,
-          row,
-          textValues[textColumn.key] ?? '',
-        ),
-      ),
-    );
+  readonly showSidebarFilters = computed(
+    () => this.hasFilterColumns() && !this.filtersOverlayMode(),
+  );
 
-    for (const column of this.toggleableColumns()) {
-      for (const group of resolveToggleGroups(column)) {
-        const selfKey = toggleSelectionKey(column.key, group.id);
+  readonly exportSitsInToolbar = computed(
+    () =>
+      !this.hasFilterColumns() || this.filtersCollapsed() || this.filtersOverlayMode(),
+  );
 
-        const baseRows = textFilteredRows.filter((row) =>
-          this.toggleableColumns().every((toggleColumn) =>
-            resolveToggleGroups(toggleColumn).every((otherGroup) => {
-              const otherKey = toggleSelectionKey(toggleColumn.key, otherGroup.id);
+  readonly showToolbar = computed(
+    () =>
+      (this.showColumnToggle() && this.hideableColumns().length > 0) ||
+      (this.showExport() && this.exportSitsInToolbar()) ||
+      (this.hasFilterColumns() && this.filtersOverlayMode()),
+  );
 
-              // Ignore current group's selection when computing its siblings' counts.
-              if (otherKey === selfKey) {
-                return true;
-              }
+  readonly toggleFacets = computed((): GenericTableToggleFacet<T>[] =>
+    this.buildToggleFacets(this.columnFilterValues(), this.columnToggleSelections()),
+  );
 
-              return rowMatchesToggleGroup(otherGroup, row, toggleValues[otherKey]);
-            }),
-          ),
-        );
+  readonly draftToggleFacets = computed((): GenericTableToggleFacet<T>[] =>
+    this.buildToggleFacets(
+      this.draftColumnFilterValues(),
+      this.draftColumnToggleSelections(),
+    ),
+  );
 
-        const counted = collectToggleGroupOptions(group, baseRows);
-        const countByValue = new Map(counted.map((option) => [option.value, option.count]));
-        const universe = collectToggleGroupOptions(group, textFilteredRows);
-        const values = new Set(universe.map((option) => option.value));
-        const selected = toggleValues[selfKey];
-
-        if (selected?.size) {
-          for (const value of selected) {
-            values.add(value);
-          }
-        }
-
-        facets.push({
-          columnKey: column.key,
-          group,
-          label: group.label ?? column.header,
-          options: sortToggleOptions(
-            [...values].map((value) => ({
-              value,
-              count: countByValue.get(value) ?? 0,
-            })),
-          ),
-        });
-      }
-    }
-
-    return facets;
-  });
-
-  toggleFacetsForColumn(columnKey: string): GenericTableToggleFacet<T>[] {
-    return this.toggleFacets().filter((facet) => facet.columnKey === columnKey);
+  toggleFacetsForColumn(
+    columnKey: string,
+    source: FilterEditSource = 'applied',
+  ): GenericTableToggleFacet<T>[] {
+    const facets = source === 'draft' ? this.draftToggleFacets() : this.toggleFacets();
+    return facets.filter((facet) => facet.columnKey === columnKey);
   }
 
-  readonly hasActiveFilters = computed(() => {
-    const textValues = this.columnFilterValues();
-    const hasText = this.searchableColumns().some(
-      (column) => (textValues[column.key] ?? '').trim().length > 0,
-    );
+  readonly hasActiveFilters = computed(() =>
+    this.hasFilterState(this.columnFilterValues(), this.columnToggleSelections()),
+  );
 
-    if (hasText) {
-      return true;
-    }
-
-    const toggles = this.columnToggleSelections();
-    return Object.values(toggles).some((selected) => (selected?.size ?? 0) > 0);
-  });
+  readonly hasDraftFilters = computed(() =>
+    this.hasFilterState(
+      this.draftColumnFilterValues(),
+      this.draftColumnToggleSelections(),
+    ),
+  );
 
   readonly filteredRows = computed((): T[] => {
     const rows = this.data();
@@ -603,6 +593,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       }
 
       this.boundedResizeObserver?.disconnect();
+      this.filtersOverlayObserver?.disconnect();
     });
 
     this.boundedResizeObserver = new ResizeObserver((entries) => {
@@ -658,6 +649,7 @@ export class GenericTableTanstackComponent<T = unknown> {
       this.showColumnToggle();
       this.hideableColumns();
       this.hasFilterColumns();
+      this.filtersOverlayMode();
       this.data();
       this.virtualized();
 
@@ -724,6 +716,16 @@ export class GenericTableTanstackComponent<T = unknown> {
         this.scrollContentWidthPx.set(viewportEl.clientWidth);
       });
     });
+
+    this.filtersOverlayObserver = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? this.hostEl.nativeElement.clientWidth;
+      this.syncFiltersOverlayMode(width);
+    });
+    this.filtersOverlayObserver.observe(this.hostEl.nativeElement);
+
+    afterNextRender(() => {
+      this.syncFiltersOverlayMode(this.hostEl.nativeElement.clientWidth);
+    });
   }
 
   cellContext(row: T): GenericTableCellContext<T> {
@@ -753,12 +755,16 @@ export class GenericTableTanstackComponent<T = unknown> {
     return this.visibleKeys().has(key);
   }
 
-  onColumnFilterValue(key: string, value: string): void {
+  onColumnFilterValue(
+    key: string,
+    value: string,
+    source: FilterEditSource = 'applied',
+  ): void {
     if (this.disabled()) {
       return;
     }
 
-    this.columnFilterValues.update((current) => {
+    const update = (current: Readonly<Record<string, string>>) => {
       if (!value) {
         if (!(key in current)) {
           return current;
@@ -774,11 +780,32 @@ export class GenericTableTanstackComponent<T = unknown> {
       }
 
       return { ...current, [key]: value };
-    });
+    };
+
+    if (source === 'draft') {
+      this.draftColumnFilterValues.update(update);
+      return;
+    }
+
+    this.columnFilterValues.update(update);
   }
 
-  clearAllFilters(): void {
-    if (this.disabled() || !this.hasActiveFilters()) {
+  clearAllFilters(source: FilterEditSource = 'applied'): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    if (source === 'draft') {
+      if (!this.hasDraftFilters()) {
+        return;
+      }
+
+      this.draftColumnFilterValues.set({});
+      this.draftColumnToggleSelections.set({});
+      return;
+    }
+
+    if (!this.hasActiveFilters()) {
       return;
     }
 
@@ -794,14 +821,75 @@ export class GenericTableTanstackComponent<T = unknown> {
     this.filtersCollapsed.update((collapsed) => !collapsed);
   }
 
-  columnFilterDisplayValue(key: string): string {
-    return this.columnFilterValues()[key] ?? '';
+  openFiltersModal(): void {
+    if (this.disabled() || !this.filtersOverlayMode()) {
+      return;
+    }
+
+    this.draftColumnFilterValues.set({ ...this.columnFilterValues() });
+    this.draftColumnToggleSelections.set(
+      this.cloneToggleSelections(this.columnToggleSelections()),
+    );
+    this.filtersModalOpen.set(true);
+
+    requestAnimationFrame(() => {
+      const dialog = this.filtersDialog()?.nativeElement;
+
+      if (dialog && !dialog.open) {
+        dialog.showModal();
+      }
+    });
   }
 
-  isToggleValueSelected(columnKey: string, groupId: string, value: string): boolean {
+  closeFiltersModal(): void {
+    this.filtersModalOpen.set(false);
+
+    const dialog = this.filtersDialog()?.nativeElement;
+
+    if (dialog?.open) {
+      dialog.close();
+    }
+  }
+
+  applyFiltersModal(): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    this.columnFilterValues.set({ ...this.draftColumnFilterValues() });
+    this.columnToggleSelections.set(
+      this.cloneToggleSelections(this.draftColumnToggleSelections()),
+    );
+    this.closeFiltersModal();
+  }
+
+  onFiltersDialogClose(): void {
+    this.filtersModalOpen.set(false);
+  }
+
+  onFiltersDialogBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeFiltersModal();
+    }
+  }
+
+  columnFilterDisplayValue(
+    key: string,
+    source: FilterEditSource = 'applied',
+  ): string {
+    return this.filterValues(source)[key] ?? '';
+  }
+
+  isToggleValueSelected(
+    columnKey: string,
+    groupId: string,
+    value: string,
+    source: FilterEditSource = 'applied',
+  ): boolean {
     return (
-      this.columnToggleSelections()[toggleSelectionKey(columnKey, groupId)]?.has(value) ===
-      true
+      this.toggleSelections(source)[toggleSelectionKey(columnKey, groupId)]?.has(
+        value,
+      ) === true
     );
   }
 
@@ -810,9 +898,10 @@ export class GenericTableTanstackComponent<T = unknown> {
     groupId: string,
     value: string,
     event: Event,
+    source: FilterEditSource = 'applied',
   ): void {
     const checked = (event.target as HTMLInputElement).checked;
-    this.onToggleFilterChange(columnKey, groupId, value, checked);
+    this.onToggleFilterChange(columnKey, groupId, value, checked, source);
   }
 
   onToggleFilterChange(
@@ -820,14 +909,14 @@ export class GenericTableTanstackComponent<T = unknown> {
     groupId: string,
     value: string,
     checked: boolean,
+    source: FilterEditSource = 'applied',
   ): void {
     if (this.disabled()) {
       return;
     }
 
     const selectionKey = toggleSelectionKey(columnKey, groupId);
-
-    this.columnToggleSelections.update((current) => {
+    const update = (current: Readonly<Record<string, ReadonlySet<string>>>) => {
       const existing = current[selectionKey] ?? new Set<string>();
       const nextSet = new Set(existing);
 
@@ -848,17 +937,29 @@ export class GenericTableTanstackComponent<T = unknown> {
       }
 
       return { ...current, [selectionKey]: nextSet };
-    });
+    };
+
+    if (source === 'draft') {
+      this.draftColumnToggleSelections.update(update);
+      return;
+    }
+
+    this.columnToggleSelections.update(update);
   }
 
   toggleFilterName(value: string): string {
     return value === '' ? '(Empty)' : value;
   }
 
-  toggleOptionId(columnKey: string, groupId: string, value: string): string {
+  toggleOptionId(
+    columnKey: string,
+    groupId: string,
+    value: string,
+    source: FilterEditSource = 'applied',
+  ): string {
     const safe =
       value === '' ? '__empty' : encodeURIComponent(value).replaceAll('%', '_');
-    return `gtt-toggle-${columnKey}-${groupId}-${safe}`;
+    return `${this.instanceId}-toggle-${source}-${columnKey}-${groupId}-${safe}`;
   }
 
   onToggleColumns(event: MatChipListboxChange): void {
@@ -1133,6 +1234,135 @@ export class GenericTableTanstackComponent<T = unknown> {
     }
 
     return String(value);
+  }
+
+  private filterValues(
+    source: FilterEditSource,
+  ): Readonly<Record<string, string>> {
+    return source === 'draft'
+      ? this.draftColumnFilterValues()
+      : this.columnFilterValues();
+  }
+
+  private toggleSelections(
+    source: FilterEditSource,
+  ): Readonly<Record<string, ReadonlySet<string>>> {
+    return source === 'draft'
+      ? this.draftColumnToggleSelections()
+      : this.columnToggleSelections();
+  }
+
+  private hasFilterState(
+    textValues: Readonly<Record<string, string>>,
+    toggleValues: Readonly<Record<string, ReadonlySet<string>>>,
+  ): boolean {
+    const hasText = this.searchableColumns().some(
+      (column) => (textValues[column.key] ?? '').trim().length > 0,
+    );
+
+    if (hasText) {
+      return true;
+    }
+
+    return Object.values(toggleValues).some((selected) => (selected?.size ?? 0) > 0);
+  }
+
+  private cloneToggleSelections(
+    source: Readonly<Record<string, ReadonlySet<string>>>,
+  ): Readonly<Record<string, ReadonlySet<string>>> {
+    const next: Record<string, ReadonlySet<string>> = {};
+
+    for (const [key, value] of Object.entries(source)) {
+      next[key] = new Set(value);
+    }
+
+    return next;
+  }
+
+  private syncFiltersOverlayMode(width: number): void {
+    if (width <= 0) {
+      return;
+    }
+
+    const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const threshold = FILTERS_OVERLAY_MAX_REM * (Number.isNaN(rem) ? 16 : rem);
+    const overlay = width <= threshold;
+
+    if (this.filtersOverlayMode() === overlay) {
+      return;
+    }
+
+    this.filtersOverlayMode.set(overlay);
+
+    if (!overlay) {
+      this.closeFiltersModal();
+    }
+  }
+
+  private buildToggleFacets(
+    textValues: Readonly<Record<string, string>>,
+    toggleValues: Readonly<Record<string, ReadonlySet<string>>>,
+  ): GenericTableToggleFacet<T>[] {
+    const rows = this.data();
+    const searchable = this.searchableColumns();
+    const facets: GenericTableToggleFacet<T>[] = [];
+
+    const activeText = searchable.filter(
+      (column) => (textValues[column.key] ?? '').trim().length > 0,
+    );
+
+    const textFilteredRows = rows.filter((row) =>
+      activeText.every((textColumn) =>
+        columnMatchesFilter(textColumn, row, textValues[textColumn.key] ?? ''),
+      ),
+    );
+
+    for (const column of this.toggleableColumns()) {
+      for (const group of resolveToggleGroups(column)) {
+        const selfKey = toggleSelectionKey(column.key, group.id);
+
+        const baseRows = textFilteredRows.filter((row) =>
+          this.toggleableColumns().every((toggleColumn) =>
+            resolveToggleGroups(toggleColumn).every((otherGroup) => {
+              const otherKey = toggleSelectionKey(toggleColumn.key, otherGroup.id);
+
+              // Ignore current group's selection when computing its siblings' counts.
+              if (otherKey === selfKey) {
+                return true;
+              }
+
+              return rowMatchesToggleGroup(otherGroup, row, toggleValues[otherKey]);
+            }),
+          ),
+        );
+
+        const counted = collectToggleGroupOptions(group, baseRows);
+        const countByValue = new Map(counted.map((option) => [option.value, option.count]));
+        const universe = collectToggleGroupOptions(group, rows);
+        const values = new Set(universe.map((option) => option.value));
+        const selected = toggleValues[selfKey];
+
+        if (selected?.size) {
+          for (const value of selected) {
+            values.add(value);
+          }
+        }
+
+        facets.push({
+          columnKey: column.key,
+          group,
+          label: group.label ?? column.header,
+          options: sortToggleOptions(
+            [...values].map((value) => ({
+              value,
+              count: countByValue.get(value) ?? 0,
+            })),
+          ),
+        });
+      }
+    }
+
+    return facets;
   }
 
   private resolveColumnTrack(
