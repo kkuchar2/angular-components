@@ -84,6 +84,10 @@
   gap: var(--gtt-toggle-gap);
 }
 
+.generic-table-tanstack__toolbar--with-filters {
+  justify-content: flex-start;
+}
+
 .generic-table-tanstack__column-toggle {
   display: flex;
   flex-wrap: wrap;
@@ -96,6 +100,7 @@
   font: inherit;
   font-size: 0.8125rem;
   font-weight: 600;
+  line-height: 1.2;
   color: var(--gtt-header-text);
   cursor: pointer;
   background: transparent;
@@ -104,7 +109,31 @@
 }
 
 .generic-table-tanstack__export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   margin-inline-start: auto;
+}
+
+.generic-table-tanstack__export-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  display: block;
+}
+
+.generic-table-tanstack__filters-export {
+  flex: 0 0 auto;
+  padding-bottom: 0.5rem;
+}
+
+.generic-table-tanstack__filters-export .generic-table-tanstack__export {
+  display: inline-flex;
+  width: 100%;
+  margin-inline-start: 0;
+  box-sizing: border-box;
+  border-radius: var(--radius-sm, 4px);
 }
 
 .generic-table-tanstack__clear-filters {
@@ -112,7 +141,6 @@
   width: auto;
   min-width: 0;
   box-sizing: border-box;
-  line-height: 1.2;
   border-radius: var(--radius-sm, 4px);
 }
 
@@ -778,6 +806,7 @@
   }
 
   .generic-table-tanstack__layout--filters .generic-table-tanstack__filters,
+  .generic-table-tanstack__layout--filters .generic-table-tanstack__filters-collapsed,
   .generic-table-tanstack__layout--filters .generic-table-tanstack__table-pane,
   .generic-table-tanstack__layout--filters .generic-table-tanstack__paginator {
     grid-column: auto;
@@ -787,6 +816,23 @@
   .generic-table-tanstack__filters {
     width: 100%;
     max-height: 14rem;
+    padding-inline: 0;
+  }
+
+  .generic-table-tanstack__filters-export .generic-table-tanstack__export {
+    width: 100%;
+  }
+
+  .generic-table-tanstack__toolbar--with-filters {
+    justify-content: flex-start;
+  }
+
+  .generic-table-tanstack__toolbar--with-filters .generic-table-tanstack__export {
+    margin-inline-start: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: var(--radius-sm, 4px);
+    text-align: center;
   }
 
   .generic-table-tanstack__layout--filters-independent .generic-table-tanstack__filters {

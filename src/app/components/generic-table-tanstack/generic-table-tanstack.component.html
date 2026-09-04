@@ -12,8 +12,14 @@
   [style.--gtt-row-height.px]="rowHeight()"
   [style.--gtt-virtual-scrollbar-gutter.px]="scrollbarGutterPx()"
 >
-  @if ((showColumnToggle() && hideableColumns().length > 0) || showExport()) {
-    <div class="generic-table-tanstack__toolbar">
+  @if (
+    (showColumnToggle() && hideableColumns().length > 0) ||
+    (showExport() && (!hasFilterColumns() || filtersCollapsed()))
+  ) {
+    <div
+      class="generic-table-tanstack__toolbar"
+      [class.generic-table-tanstack__toolbar--with-filters]="hasFilterColumns()"
+    >
       @if (showColumnToggle() && hideableColumns().length > 0) {
         <mat-chip-listbox
           class="generic-table-tanstack__column-toggle"
@@ -30,13 +36,19 @@
         </mat-chip-listbox>
       }
 
-      @if (showExport()) {
+      @if (showExport() && (!hasFilterColumns() || filtersCollapsed())) {
         <button
           type="button"
           class="generic-table-tanstack__export"
           [disabled]="disabled()"
           (click)="onExportClick()"
         >
+          <svg
+            class="generic-table-tanstack__export-icon"
+            [lucideIcon]="LucideDownload"
+            [size]="14"
+            aria-hidden="true"
+          ></svg>
           Export CSV
         </button>
       }
@@ -82,6 +94,25 @@
         </div>
       } @else {
         <aside class="generic-table-tanstack__filters" aria-label="Table filters">
+          @if (showExport()) {
+            <div class="generic-table-tanstack__filters-export">
+              <button
+                type="button"
+                class="generic-table-tanstack__export"
+                [disabled]="disabled()"
+                (click)="onExportClick()"
+              >
+                <svg
+                  class="generic-table-tanstack__export-icon"
+                  [lucideIcon]="LucideDownload"
+                  [size]="14"
+                  aria-hidden="true"
+                ></svg>
+                Export CSV
+              </button>
+            </div>
+          }
+
           <div class="generic-table-tanstack__filters-header">
             <button
               type="button"

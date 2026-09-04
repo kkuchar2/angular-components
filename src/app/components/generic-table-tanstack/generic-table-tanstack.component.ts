@@ -21,7 +21,7 @@ import { FormsModule } from '@angular/forms';
 import { MatChipListboxChange, MatChipsModule } from '@angular/material/chips';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Sort } from '@angular/material/sort';
-import { LucideDynamicIcon, LucideFunnel, LucidePanelLeftClose } from '@lucide/angular';
+import { LucideDynamicIcon, LucideDownload, LucideFunnel, LucidePanelLeftClose } from '@lucide/angular';
 import {
   createAngularTable,
   getCoreRowModel,
@@ -103,6 +103,7 @@ export class GenericTableTanstackComponent<T = unknown> {
   readonly isScrolling = signal(false);
   readonly LucideFunnel = LucideFunnel;
   readonly LucidePanelLeftClose = LucidePanelLeftClose;
+  readonly LucideDownload = LucideDownload;
 
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly data = input.required<readonly T[]>();
