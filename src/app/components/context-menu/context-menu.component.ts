@@ -110,7 +110,11 @@ export class ContextMenuComponent {
       return;
     }
 
-    this.isOpen() ? this.close() : this.open();
+    if (this.isOpen()) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
 
   open(options: { focusFirst?: boolean } = {}): void {

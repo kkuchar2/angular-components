@@ -7,8 +7,6 @@ import { GenericTableCellContext } from './generic-table.types';
 })
 export class GenericTableCellDirective<T = unknown> {
   readonly columnKey = input.required<string>({ alias: 'appGenericTableCell' });
-
-  // eslint-disable-next-line @angular-eslint/no-input-rename -- public template API
   readonly for = input<readonly T[]>([], { alias: 'appGenericTableCellFor' });
 
   readonly templateRef = inject<TemplateRef<GenericTableCellContext<T>>>(TemplateRef);

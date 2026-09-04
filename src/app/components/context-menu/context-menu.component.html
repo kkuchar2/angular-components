@@ -20,6 +20,7 @@
       class="context-menu__panel context-menu__panel--details"
       [id]="menuId"
       role="dialog"
+      tabindex="-1"
       [attr.aria-labelledby]="title() ? titleId : controlId"
       (keydown)="onMenuKeyDown($event)"
     >
@@ -51,6 +52,7 @@
       class="context-menu__panel"
       [id]="menuId"
       role="menu"
+      tabindex="-1"
       [attr.aria-labelledby]="controlId"
       (keydown)="onMenuKeyDown($event)"
     >
