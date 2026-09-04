@@ -218,8 +218,6 @@
   min-height: 0;
   overflow: hidden;
   background: transparent;
-  border: 1px solid var(--gtt-border);
-  border-radius: var(--gtt-radius-md);
 }
 
 :host(.gtt-host--parent) .gtt__shell {
