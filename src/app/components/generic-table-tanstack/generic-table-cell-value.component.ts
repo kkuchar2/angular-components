@@ -32,9 +32,10 @@ export class GenericTableCellValueComponent<T = unknown> {
   readonly copyable = computed(() => this.column().copyable === true);
   readonly isUuid = computed(() => this.column().cellType === 'uuid');
   readonly isDate = computed(() => this.column().cellType === 'date');
+  readonly splitByNewline = computed(() => this.column().splitByNewline === true);
   readonly titleAttr = computed(() => {
     const text = this.display();
-    return text.length > 24 ? text : null;
+    return !this.splitByNewline() && text.length > 24 ? text : null;
   });
 
   async onCopy(event: Event): Promise<void> {

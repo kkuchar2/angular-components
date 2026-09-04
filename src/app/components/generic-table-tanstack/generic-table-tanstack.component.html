@@ -186,6 +186,7 @@
                         role="cell"
                         [class.gtt__cell--center]="column.align === 'center'"
                         [class.gtt__cell--right]="column.align === 'right'"
+                        [class.gtt__cell--multiline]="column.splitByNewline === true"
                       >
                         @if (cellTemplates().get(column.key); as template) {
                           <div class="gtt__cell-content">

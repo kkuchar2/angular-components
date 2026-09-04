@@ -50,6 +50,8 @@ export interface ColumnDef<T = unknown> {
   cell?: (row: T) => unknown;
   cellComponent?: Type<unknown>;
   sortAccessor?: (row: T) => string | number;
+  /** Render `\n` in default text cells as hard line breaks. */
+  splitByNewline?: boolean;
   hideable?: boolean;
   visible?: boolean;
   width?: string;

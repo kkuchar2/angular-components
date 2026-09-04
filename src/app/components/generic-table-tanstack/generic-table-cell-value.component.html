@@ -3,6 +3,7 @@
   [class.gt-cell-value--uuid]="isUuid()"
   [class.gt-cell-value--date]="isDate()"
   [class.gt-cell-value--copyable]="copyable()"
+  [class.gt-cell-value--multiline]="splitByNewline()"
 >
   <span class="gt-cell-value__text" [attr.title]="titleAttr()">{{ display() }}</span>
 

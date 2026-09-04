@@ -19,6 +19,17 @@
   white-space: nowrap;
 }
 
+.gt-cell-value--multiline {
+  align-items: flex-start;
+}
+
+.gt-cell-value--multiline .gt-cell-value__text {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
 .gt-cell-value--uuid .gt-cell-value__text {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
